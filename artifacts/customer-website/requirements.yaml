@@ -1,0 +1,25 @@
+packages:
+  "framer-motion": "For premium entry and scroll animations"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For Zod schema validation in forms"
+  "clsx": "For conditional tailwind classes"
+  "tailwind-merge": "For merging tailwind classes safely"
+  "date-fns": "For date formatting"
+
+images:
+  - path: "artifacts/customer-website/public/images/hero-bg.png"
+    description: "Modern sleek solar panels on a luxury house roof at sunrise, clear blue sky, photorealistic, cinematic lighting, hyper-detailed"
+    aspect_ratio: "16:9"
+  - path: "artifacts/customer-website/public/images/about-team.png"
+    description: "Team of friendly diverse solar panel technicians in clean green and white uniforms standing in front of a modern electric van, bright sunny day, highly professional"
+    aspect_ratio: "16:9"
+  - path: "artifacts/customer-website/public/images/cleaning-service.png"
+    description: "Close up of a robotic brush or professional technician cleaning a modern solar panel, water sparkling in the sun, highly detailed, clean energy concept"
+    aspect_ratio: "4:3"
+  - path: "artifacts/customer-website/public/images/maintenance-service.png"
+    description: "Technician examining a solar inverter with a digital tablet, high tech modern aesthetic, bright professional lighting"
+    aspect_ratio: "4:3"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react for data mutations
+  - Building a multi-step booking form that chains customer creation and subscription creation

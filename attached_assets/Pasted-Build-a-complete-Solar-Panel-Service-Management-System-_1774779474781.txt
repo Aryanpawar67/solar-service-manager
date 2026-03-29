@@ -1,0 +1,320 @@
+Build a complete **Solar Panel Service Management System (GreenVolt)** consisting of:
+
+## 🎯 SYSTEM OVERVIEW
+
+A full-stack platform that manages:
+
+* Customers
+* Staff
+* Service scheduling
+* Subscription plans
+* Payments
+* Notifications
+* Field service execution via Android app
+
+The system should include:
+
+1. Admin Web Dashboard
+2. Customer Website
+3. Staff Android App
+4. (Optional) Customer Mobile App
+
+---
+
+# 🌐 1. ADMIN PANEL (WEB DASHBOARD)
+
+## Core Features:
+
+### 👤 Customer Management
+
+* Add / Edit / Delete customers
+* Store:
+there should be one form to be filled by customers 
+  * Name
+  * Phone number
+  * Address (Google Maps integration)
+  * Solar panel capacity
+  * Installation details
+
+---
+
+### 👨‍🔧 Staff Management
+
+* Add / Manage staff
+* Assign:
+
+  * Work area
+  * Availability
+  * Contact details
+
+---
+
+### 📅 Service Management
+
+* Create service jobs
+* Assign staff
+* Select service date
+* Add notes/instructions
+* Track status:
+
+  * Pending
+  * In Progress
+  * Completed
+
+---
+
+### 🔔 Notifications & Reminders
+
+* Auto reminders before service date
+* Notifications via:
+
+  * Push notifications
+  * SMS
+  * WhatsApp
+
+---
+
+### 📊 Dashboard Analytics
+
+* Total customers
+* Active subscriptions
+* Completed services
+* Pending services
+* Revenue tracking
+
+---
+
+### 📥 Contact Form Integration
+
+* Website "Contact Us" submissions stored automatically in admin panel
+
+---
+
+### 📅 Schedule Visibility
+
+* View:
+
+  * All staff schedules
+  * All customer service schedules
+
+---
+
+# 📱 2. STAFF ANDROID APP
+
+## Features:
+
+### 📅 Schedule Dashboard
+
+* View assigned services:
+
+  * Today
+  * Upcoming
+  * Completed
+
+---
+
+### 📍 Customer Details
+
+* Name
+* Phone number
+* Address (open in Google Maps navigation)
+
+---
+
+### 🧰 Service Workflow
+
+1. Start Service
+2. Capture **Pre-Service Photo**
+3. Perform cleaning/service
+4. Capture **Post-Service Photo**
+5. Submit service report
+
+---
+
+### 📤 Report Generation
+
+* Auto-generate PDF report including:
+
+  * Before/After images
+  * Service date/time
+  * Staff name
+  * Remarks
+
+---
+
+### 📲 WhatsApp Integration
+
+* Send report automatically to customer via WhatsApp
+
+---
+
+# 💰 3. SUBSCRIPTION SYSTEM
+
+## Plan Types:
+
+* Basic (1 visit/month)
+* Standard (2 visits/month)
+* Premium (4 visits/month)
+
+---
+
+## Features:
+
+* Subscribe to plans
+* Auto-generate service schedules monthly
+* Auto-renew subscription
+* Pause / Cancel subscription
+* Reminder before expiry
+
+---
+
+# 💳 4. PAYMENT INTEGRATION
+
+Integrate with Razorpay for:
+
+* UPI payments
+* Cards
+* Net banking
+
+---
+
+## Payment Flow:
+
+1. Customer selects plan
+2. Creates order via backend
+3. Opens payment gateway
+4. Verifies payment
+5. Activates subscription
+
+---
+
+# 🌐 5. CUSTOMER WEBSITE
+
+## Features:
+
+* Book service
+* Choose subscription plans
+* Contact form
+* View services & pricing
+* About company (GreenVolt)
+
+---
+
+# 📱 6. CUSTOMER APP (OPTIONAL)
+
+## Features:
+
+* View subscription details
+* View service schedule
+* Book service
+* View reports
+* Payment history
+* Notifications
+
+---
+
+# 🔗 SYSTEM FLOW
+
+Customer → Website/App → Select Plan → Payment →
+Subscription Created → Auto Scheduling →
+Staff Assigned → Staff App Execution →
+Photos Uploaded → Report Generated →
+Report Sent via WhatsApp → Repeat Monthly
+
+---
+
+# 🧠 ADVANCED FEATURES
+
+* Auto staff assignment (based on location & workload)
+* GPS tracking of staff
+* Service history tracking
+* Discount coupons
+* AMC (Annual Maintenance Contracts)
+* Multi-city support
+
+---
+
+# 🛠️ TECH STACK
+
+Backend:
+
+* Node.js + Express OR Django
+
+Frontend:
+
+* React.js (Admin Panel)
+
+Mobile App:
+
+* Flutter (recommended)
+
+Database:
+
+* MongoDB
+
+Storage:
+
+* AWS S3 / Firebase Storage
+
+Notifications:
+
+* Firebase Cloud Messaging (FCM)
+
+---
+
+# 🧾 DATABASE STRUCTURE
+
+Customers:
+
+* id, name, phone, address, solar_capacity
+
+Staff:
+
+* id, name, phone, role
+
+Services:
+
+* id, customer_id, staff_id, date, status, images, report
+
+Subscriptions:
+
+* id, customer_id, plan, visits_per_month, start_date, end_date, status
+
+Payments:
+
+* id, customer_id, amount, status, payment_id
+
+---
+
+# 🔧 DEVELOPMENT SUPPORT
+
+Provide:
+
+* 6 months support
+* Bug fixes
+* Feature updates
+* Maintenance
+
+---
+
+# 💸 COST REQUIREMENTS
+
+* Domain: ₹2000–₹2500/year
+* Hosting: ₹10,000/year (cloud server)
+* SMS DLT Registration: ₹6000 (one-time)
+* SMS Credits: As per usage
+* WhatsApp API: Paid per message
+
+---
+
+# 🎯 GOAL
+
+Build a scalable SaaS-based solar service platform that automates:
+
+* Scheduling
+* Staff management
+* Customer interaction
+* Payments
+* Reporting
+
+The system should be production-ready, user-friendly, and scalable for multiple cities.

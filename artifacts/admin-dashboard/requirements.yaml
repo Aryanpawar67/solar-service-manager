@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "For page transitions and smooth micro-interactions"
+  "recharts": "For rendering beautiful analytics charts on the dashboard"
+  "date-fns": "For date formatting and schedule calendar logic"
+  "react-hook-form": "For robust form state management"
+  "@hookform/resolvers": "For integrating Zod schemas with react-hook-form"
+  "zod": "For strict schema validation on all forms"
+  "@tanstack/react-query": "Already base, but emphasizing use for cache invalidation"
+  "lucide-react": "Already base, for premium iconography"
+
+images:
+  - path: "artifacts/admin-dashboard/public/images/greenvolt-logo.png"
+    description: "A modern, minimalist enterprise logo for 'GreenVolt', a solar energy and maintenance company. Emerald green and dark slate colors, featuring a geometric sun and solar panel motif."
+    aspect_ratio: "1:1"
+  - path: "artifacts/admin-dashboard/public/images/solar-dashboard-header.png"
+    description: "A beautiful, subtle abstract gradient background featuring emerald green, teal, and soft yellow light leaks, resembling clean energy and sunlight. Minimalist, for use as a dashboard header backdrop."
+    aspect_ratio: "16:9"
+
+notes:
+  - All hooks are imported from @workspace/api-client-react.
+  - Using Zod for all form validation and coercing string inputs to numbers/dates where needed.
+  - Wouter is configured with a base path for the admin portal.

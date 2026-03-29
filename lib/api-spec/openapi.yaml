@@ -1,22 +1,34 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: GreenVolt Solar Panel Service Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: customers
+    description: Customer management
+  - name: staff
+    description: Staff management
+  - name: services
+    description: Service job management
+  - name: subscriptions
+    description: Subscription plan management
+  - name: payments
+    description: Payment management
+  - name: contact
+    description: Contact form submissions
+  - name: analytics
+    description: Dashboard analytics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +36,567 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List all customers
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerListResponse"
+    post:
+      operationId: createCustomer
+      tags: [customers]
+      summary: Create a new customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCustomerInput"
+      responses:
+        "201":
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get customer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: Not found
+    put:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerInput"
+      responses:
+        "200":
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    delete:
+      operationId: deleteCustomer
+      tags: [customers]
+      summary: Delete customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /staff:
+    get:
+      operationId: listStaff
+      tags: [staff]
+      summary: List all staff
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: available
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of staff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffListResponse"
+    post:
+      operationId: createStaff
+      tags: [staff]
+      summary: Create new staff member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStaffInput"
+      responses:
+        "201":
+          description: Staff created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Staff"
+
+  /staff/{id}:
+    get:
+      operationId: getStaff
+      tags: [staff]
+      summary: Get staff member by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Staff found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Staff"
+    put:
+      operationId: updateStaff
+      tags: [staff]
+      summary: Update staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStaffInput"
+      responses:
+        "200":
+          description: Staff updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Staff"
+    delete:
+      operationId: deleteStaff
+      tags: [staff]
+      summary: Delete staff member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List all service jobs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed]
+        - name: staffId
+          in: query
+          schema:
+            type: integer
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of service jobs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceListResponse"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a service job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceInput"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/{id}:
+    get:
+      operationId: getService
+      tags: [services]
+      summary: Get service job by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    put:
+      operationId: updateService
+      tags: [services]
+      summary: Update service job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceInput"
+      responses:
+        "200":
+          description: Service updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete service job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResponse"
+
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      tags: [subscriptions]
+      summary: List all subscriptions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, paused, cancelled, expired]
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of subscriptions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionListResponse"
+    post:
+      operationId: createSubscription
+      tags: [subscriptions]
+      summary: Create a subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionInput"
+      responses:
+        "201":
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/{id}:
+    get:
+      operationId: getSubscription
+      tags: [subscriptions]
+      summary: Get subscription by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscription found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+    put:
+      operationId: updateSubscription
+      tags: [subscriptions]
+      summary: Update subscription
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSubscriptionInput"
+      responses:
+        "200":
+          description: Subscription updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List all payments
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, success, failed]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentListResponse"
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Create/record a payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentInput"
+      responses:
+        "201":
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{id}:
+    get:
+      operationId: getPayment
+      tags: [payments]
+      summary: Get payment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+    put:
+      operationId: updatePayment
+      tags: [payments]
+      summary: Update payment status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePaymentInput"
+      responses:
+        "200":
+          description: Payment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /contact:
+    get:
+      operationId: listContactSubmissions
+      tags: [contact]
+      summary: List all contact form submissions
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Contact submissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactListResponse"
+    post:
+      operationId: submitContact
+      tags: [contact]
+      summary: Submit contact form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactInput"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+
+  /analytics/dashboard:
+    get:
+      operationId: getDashboardAnalytics
+      tags: [analytics]
+      summary: Get dashboard analytics summary
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardAnalytics"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +607,616 @@ components:
       required:
         - status
 
+    DeleteResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        solarCapacity:
+          type: number
+          nullable: true
+        installationDate:
+          type: string
+          nullable: true
+        installationDetails:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - phone
+        - address
+        - createdAt
+        - updatedAt
+
+    CreateCustomerInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        solarCapacity:
+          type: number
+        installationDate:
+          type: string
+        installationDetails:
+          type: string
+        city:
+          type: string
+        notes:
+          type: string
+      required:
+        - name
+        - phone
+        - address
+
+    UpdateCustomerInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        solarCapacity:
+          type: number
+        installationDate:
+          type: string
+        installationDetails:
+          type: string
+        city:
+          type: string
+        notes:
+          type: string
+
+    CustomerListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Customer"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Staff:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+        workArea:
+          type: string
+          nullable: true
+        availability:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - phone
+        - role
+        - isActive
+        - createdAt
+        - updatedAt
+
+    CreateStaffInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+        workArea:
+          type: string
+        availability:
+          type: string
+        isActive:
+          type: boolean
+      required:
+        - name
+        - phone
+        - role
+
+    UpdateStaffInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+        workArea:
+          type: string
+        availability:
+          type: string
+        isActive:
+          type: boolean
+
+    StaffListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Staff"
+        total:
+          type: integer
+      required:
+        - data
+        - total
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        staffId:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        scheduledDate:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        serviceType:
+          type: string
+          nullable: true
+        preServiceImage:
+          type: string
+          nullable: true
+        postServiceImage:
+          type: string
+          nullable: true
+        remarks:
+          type: string
+          nullable: true
+        completedAt:
+          type: string
+          nullable: true
+        customer:
+          $ref: "#/components/schemas/Customer"
+          nullable: true
+        staff:
+          $ref: "#/components/schemas/Staff"
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerId
+        - status
+        - scheduledDate
+        - createdAt
+        - updatedAt
+
+    CreateServiceInput:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        staffId:
+          type: integer
+        scheduledDate:
+          type: string
+        notes:
+          type: string
+        serviceType:
+          type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+      required:
+        - customerId
+        - scheduledDate
+
+    UpdateServiceInput:
+      type: object
+      properties:
+        staffId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+        scheduledDate:
+          type: string
+        notes:
+          type: string
+        serviceType:
+          type: string
+        preServiceImage:
+          type: string
+        postServiceImage:
+          type: string
+        remarks:
+          type: string
+        completedAt:
+          type: string
+
+    ServiceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        plan:
+          type: string
+          enum: [basic, standard, premium]
+        visitsPerMonth:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: string
+        status:
+          type: string
+          enum: [active, paused, cancelled, expired]
+        amount:
+          type: number
+        customer:
+          $ref: "#/components/schemas/Customer"
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerId
+        - plan
+        - visitsPerMonth
+        - startDate
+        - endDate
+        - status
+        - amount
+        - createdAt
+        - updatedAt
+
+    CreateSubscriptionInput:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        plan:
+          type: string
+          enum: [basic, standard, premium]
+        startDate:
+          type: string
+        amount:
+          type: number
+      required:
+        - customerId
+        - plan
+        - startDate
+        - amount
+
+    UpdateSubscriptionInput:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [basic, standard, premium]
+        status:
+          type: string
+          enum: [active, paused, cancelled, expired]
+        endDate:
+          type: string
+        amount:
+          type: number
+
+    SubscriptionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+        customerId:
+          type: integer
+        subscriptionId:
+          type: integer
+          nullable: true
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, success, failed]
+        paymentMethod:
+          type: string
+          nullable: true
+        transactionId:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        customer:
+          $ref: "#/components/schemas/Customer"
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - customerId
+        - amount
+        - status
+        - createdAt
+        - updatedAt
+
+    CreatePaymentInput:
+      type: object
+      properties:
+        customerId:
+          type: integer
+        subscriptionId:
+          type: integer
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, success, failed]
+        paymentMethod:
+          type: string
+        transactionId:
+          type: string
+        description:
+          type: string
+      required:
+        - customerId
+        - amount
+        - status
+
+    UpdatePaymentInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, success, failed]
+        transactionId:
+          type: string
+        paymentMethod:
+          type: string
+
+    PaymentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    Contact:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        subject:
+          type: string
+          nullable: true
+        message:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - message
+        - isRead
+        - createdAt
+
+    CreateContactInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+      required:
+        - name
+        - email
+        - message
+
+    ContactListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Contact"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+
+    DashboardAnalytics:
+      type: object
+      properties:
+        totalCustomers:
+          type: integer
+        activeSubscriptions:
+          type: integer
+        completedServices:
+          type: integer
+        pendingServices:
+          type: integer
+        inProgressServices:
+          type: integer
+        totalRevenue:
+          type: number
+        monthlyRevenue:
+          type: number
+        newContactsUnread:
+          type: integer
+        totalStaff:
+          type: integer
+        activeStaff:
+          type: integer
+        recentServices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        recentPayments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+      required:
+        - totalCustomers
+        - activeSubscriptions
+        - completedServices
+        - pendingServices
+        - inProgressServices
+        - totalRevenue
+        - monthlyRevenue
+        - newContactsUnread
+        - totalStaff
+        - activeStaff
+        - recentServices
+        - recentPayments
