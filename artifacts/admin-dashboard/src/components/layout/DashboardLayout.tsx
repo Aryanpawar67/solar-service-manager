@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
+import { clearToken, getUser } from "@/lib/auth";
 import { 
   LayoutDashboard, 
   Users, 
@@ -38,7 +39,14 @@ const NAV_ITEMS = [
 ];
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const user = getUser();
+  const initials = user?.name?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) ?? "A";
+
+  function handleLogout() {
+    clearToken();
+    navigate("/login");
+  }
 
   const SidebarContent = () => (
     <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
@@ -73,8 +81,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             <AvatarFallback className="bg-primary/20 text-primary">AD</AvatarFallback>
           </Avatar>
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium text-white truncate">Admin User</p>
-            <p className="text-xs text-sidebar-foreground/60 truncate">admin@greenvolt.in</p>
+            <p className="text-sm font-medium text-white truncate">{user?.name ?? "Admin"}</p>
+            <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email ?? ""}</p>
           </div>
         </div>
       </div>
@@ -125,8 +133,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 <DropdownMenuContent className="w-56 rounded-xl" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Admin User</p>
-                      <p className="text-xs leading-none text-muted-foreground">admin@greenvolt.in</p>
+                      <p className="text-sm font-medium leading-none">{user?.name ?? "Admin"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email ?? ""}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -135,7 +143,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                     <span>Profile Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 text-destructive focus:bg-destructive/10 cursor-pointer">
+                  <DropdownMenuItem className="gap-2 text-destructive focus:bg-destructive/10 cursor-pointer" onClick={handleLogout}>
                     <LogOut className="h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
