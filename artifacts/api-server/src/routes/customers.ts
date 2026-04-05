@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { customersTable, insertCustomerSchema, updateCustomerSchema } from "@workspace/db/schema";
-import { eq, like, or, sql } from "drizzle-orm";
+import { eq, isNull, like, or, sql, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -11,22 +11,21 @@ router.get("/", async (req, res) => {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
   const offset = (pageNum - 1) * limitNum;
 
-  let query = db.select().from(customersTable);
-  let countQuery = db.select({ count: sql<number>`count(*)` }).from(customersTable);
+  const notDeleted = isNull(customersTable.deletedAt);
 
+  let baseFilter = notDeleted;
   if (search) {
     const searchFilter = or(
       like(customersTable.name, `%${search}%`),
       like(customersTable.phone, `%${search}%`),
       like(customersTable.address, `%${search}%`)
-    );
-    query = query.where(searchFilter) as typeof query;
-    countQuery = countQuery.where(searchFilter) as typeof countQuery;
+    )!;
+    baseFilter = and(notDeleted, searchFilter)!;
   }
 
   const [data, [{ count }]] = await Promise.all([
-    query.limit(limitNum).offset(offset).orderBy(customersTable.createdAt),
-    countQuery,
+    db.select().from(customersTable).where(baseFilter).limit(limitNum).offset(offset).orderBy(customersTable.createdAt),
+    db.select({ count: sql<number>`count(*)` }).from(customersTable).where(baseFilter),
   ]);
 
   res.json({ data, total: Number(count), page: pageNum, limit: limitNum });
@@ -34,7 +33,10 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  const [customer] = await db.select().from(customersTable).where(eq(customersTable.id, id));
+  const [customer] = await db
+    .select()
+    .from(customersTable)
+    .where(and(eq(customersTable.id, id), isNull(customersTable.deletedAt)));
   if (!customer) return res.status(404).json({ error: "Customer not found" });
   res.json(customer);
 });
@@ -55,7 +57,7 @@ router.put("/:id", async (req, res) => {
   const [customer] = await db
     .update(customersTable)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(customersTable.id, id))
+    .where(and(eq(customersTable.id, id), isNull(customersTable.deletedAt)))
     .returning();
   if (!customer) return res.status(404).json({ error: "Customer not found" });
   res.json(customer);
@@ -63,8 +65,12 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  const [deleted] = await db.delete(customersTable).where(eq(customersTable.id, id)).returning();
-  if (!deleted) return res.status(404).json({ error: "Customer not found" });
+  const [customer] = await db
+    .update(customersTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(customersTable.id, id), isNull(customersTable.deletedAt)))
+    .returning();
+  if (!customer) return res.status(404).json({ error: "Customer not found" });
   res.json({ success: true, message: "Customer deleted" });
 });
 

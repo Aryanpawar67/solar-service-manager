@@ -10,12 +10,14 @@ export const staffTable = pgTable("staff", {
   workArea: text("work_area"),
   availability: text("availability"),
   isActive: boolean("is_active").default(true).notNull(),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertStaffSchema = createInsertSchema(staffTable).omit({
   id: true,
+  deletedAt: true,
   createdAt: true,
   updatedAt: true,
 });

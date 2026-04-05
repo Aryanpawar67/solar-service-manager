@@ -1,37 +1,32 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { staffTable, insertStaffSchema, updateStaffSchema } from "@workspace/db/schema";
-import { eq, like, or, sql } from "drizzle-orm";
+import { and, eq, isNull, like, or, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
   const { search, available } = req.query as Record<string, string>;
 
-  let query = db.select().from(staffTable);
-  let countQuery = db.select({ count: sql<number>`count(*)` }).from(staffTable);
+  const notDeleted = isNull(staffTable.deletedAt);
+  const filters: ReturnType<typeof eq>[] = [notDeleted as any];
 
-  const filters = [];
   if (search) {
     filters.push(or(
       like(staffTable.name, `%${search}%`),
       like(staffTable.phone, `%${search}%`),
       like(staffTable.role, `%${search}%`)
-    ));
+    ) as any);
   }
   if (available === "true") {
-    filters.push(eq(staffTable.isActive, true));
+    filters.push(eq(staffTable.isActive, true) as any);
   }
 
-  if (filters.length > 0) {
-    const combined = filters.length === 1 ? filters[0]! : sql`${filters[0]} AND ${filters[1]}`;
-    query = query.where(combined) as typeof query;
-    countQuery = countQuery.where(combined) as typeof countQuery;
-  }
+  const combined = filters.length === 1 ? filters[0]! : and(...filters as any) as any;
 
   const [data, [{ count }]] = await Promise.all([
-    query.orderBy(staffTable.name),
-    countQuery,
+    db.select().from(staffTable).where(combined).orderBy(staffTable.name),
+    db.select({ count: sql<number>`count(*)` }).from(staffTable).where(combined),
   ]);
 
   res.json({ data, total: Number(count) });
@@ -39,7 +34,10 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  const [member] = await db.select().from(staffTable).where(eq(staffTable.id, id));
+  const [member] = await db
+    .select()
+    .from(staffTable)
+    .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)));
   if (!member) return res.status(404).json({ error: "Staff not found" });
   res.json(member);
 });
@@ -60,7 +58,7 @@ router.put("/:id", async (req, res) => {
   const [member] = await db
     .update(staffTable)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(staffTable.id, id))
+    .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)))
     .returning();
   if (!member) return res.status(404).json({ error: "Staff not found" });
   res.json(member);
@@ -68,8 +66,12 @@ router.put("/:id", async (req, res) => {
 
 router.delete("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  const [deleted] = await db.delete(staffTable).where(eq(staffTable.id, id)).returning();
-  if (!deleted) return res.status(404).json({ error: "Staff not found" });
+  const [member] = await db
+    .update(staffTable)
+    .set({ deletedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)))
+    .returning();
+  if (!member) return res.status(404).json({ error: "Staff not found" });
   res.json({ success: true, message: "Staff deleted" });
 });
 

@@ -6,20 +6,25 @@ export const customersTable = pgTable("customers", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
+  email: text("email"),
   address: text("address").notNull(),
+  pincode: text("pincode"),
   latitude: real("latitude"),
   longitude: real("longitude"),
   solarCapacity: real("solar_capacity"),
   installationDate: date("installation_date"),
+  warrantyExpiry: date("warranty_expiry"),
   installationDetails: text("installation_details"),
   city: text("city"),
   notes: text("notes"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertCustomerSchema = createInsertSchema(customersTable).omit({
   id: true,
+  deletedAt: true,
   createdAt: true,
   updatedAt: true,
 });

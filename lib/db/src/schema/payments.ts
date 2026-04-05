@@ -1,13 +1,22 @@
-import { pgTable, serial, integer, text, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, serial, integer, text, numeric, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { customersTable } from "./customers";
+import { subscriptionsTable } from "./subscriptions";
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "pending",
+  "paid",
+  "failed",
+  "refunded",
+]);
 
 export const paymentsTable = pgTable("payments", {
   id: serial("id").primaryKey(),
-  customerId: integer("customer_id").notNull(),
-  subscriptionId: integer("subscription_id"),
-  amount: real("amount").notNull(),
-  status: text("status").notNull().default("pending"),
+  customerId: integer("customer_id").notNull().references(() => customersTable.id),
+  subscriptionId: integer("subscription_id").references(() => subscriptionsTable.id),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  status: paymentStatusEnum("status").notNull().default("pending"),
   paymentMethod: text("payment_method"),
   transactionId: text("transaction_id"),
   description: text("description"),
