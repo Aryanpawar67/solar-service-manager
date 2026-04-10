@@ -12,6 +12,8 @@ export type ListServicesParams = {
   staffId?: number;
   customerId?: number;
   date?: Date;
+  startDate?: Date;
+  endDate?: Date;
   page?: number;
   limit?: number;
 };

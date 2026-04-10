@@ -37,7 +37,7 @@ Solar-Service-Manager/
 └── tsconfig.base.json
 ```
 
-> **Current state (Sprint 0 complete):** The folder is still named `artifacts/`. The rename to `apps/` happens in Sprint 7.
+> **Current state (Sprint 7 complete):** The folder has been renamed from `artifacts/` to `apps/`. The `apps/staff-app/` scaffold is in place and typechecks pass.
 
 ---
 
@@ -53,7 +53,6 @@ Solar-Service-Manager/
 | `/subscriptions` | AMC subscriptions | Implemented |
 | `/payments` | Payment records | Implemented |
 | `/contact` | Incoming messages | Implemented |
-
 ---
 
 ## API Routes

@@ -8,6 +8,30 @@
 import * as zod from "zod";
 
 /**
+ * @summary Get current authenticated user
+ */
+export const GetMeResponse = zod.object({
+  user: zod.object({
+    id: zod.number(),
+    email: zod.string(),
+    name: zod.string(),
+    role: zod.enum(["admin", "staff"]),
+    staffId: zod.number().nullish(),
+  }),
+});
+
+/**
+ * @summary Register or update Expo push token for the current user
+ */
+export const RegisterPushTokenBody = zod.object({
+  token: zod.string().describe("Expo push token (ExponentPushToken[...])"),
+});
+
+export const RegisterPushTokenResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -243,6 +267,8 @@ export const ListServicesQueryParams = zod.object({
   staffId: zod.coerce.number().optional(),
   customerId: zod.coerce.number().optional(),
   date: zod.date().optional(),
+  startDate: zod.date().optional(),
+  endDate: zod.date().optional(),
   page: zod.coerce.number().default(listServicesQueryPageDefault),
   limit: zod.coerce.number().default(listServicesQueryLimitDefault),
 });
@@ -466,6 +492,7 @@ export const ListSubscriptionsResponse = zod.object({
       endDate: zod.string(),
       status: zod.enum(["active", "paused", "cancelled", "expired"]),
       amount: zod.number(),
+      daysUntilExpiry: zod.number().nullish(),
       customer: zod
         .object({
           id: zod.number(),
@@ -518,6 +545,7 @@ export const GetSubscriptionResponse = zod.object({
   endDate: zod.string(),
   status: zod.enum(["active", "paused", "cancelled", "expired"]),
   amount: zod.number(),
+  daysUntilExpiry: zod.number().nullish(),
   customer: zod
     .object({
       id: zod.number(),
@@ -562,6 +590,7 @@ export const UpdateSubscriptionResponse = zod.object({
   endDate: zod.string(),
   status: zod.enum(["active", "paused", "cancelled", "expired"]),
   amount: zod.number(),
+  daysUntilExpiry: zod.number().nullish(),
   customer: zod
     .object({
       id: zod.number(),
@@ -763,6 +792,67 @@ export const SubmitContactBody = zod.object({
   email: zod.string(),
   phone: zod.string().optional(),
   subject: zod.string().optional(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Convert a contact submission into a customer
+ */
+export const ConvertContactToCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ConvertContactToCustomerBody = zod.object({
+  address: zod.string(),
+  city: zod.string().optional(),
+});
+
+/**
+ * @summary List notification history
+ */
+export const listNotificationsQueryPageDefault = 1;
+export const listNotificationsQueryLimitDefault = 20;
+
+export const ListNotificationsQueryParams = zod.object({
+  type: zod
+    .enum(["service_scheduled", "service_completed", "subscription_expiry"])
+    .optional(),
+  status: zod.enum(["sent", "failed"]).optional(),
+  page: zod.coerce.number().default(listNotificationsQueryPageDefault),
+  limit: zod.coerce.number().default(listNotificationsQueryLimitDefault),
+});
+
+export const ListNotificationsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      id: zod.number(),
+      type: zod.enum([
+        "service_scheduled",
+        "service_completed",
+        "subscription_expiry",
+      ]),
+      recipientPhone: zod.string(),
+      recipientName: zod.string().nullish(),
+      message: zod.string(),
+      status: zod.enum(["sent", "failed"]),
+      provider: zod.string().nullish(),
+      providerMessageId: zod.string().nullish(),
+      error: zod.string().nullish(),
+      serviceId: zod.number().nullish(),
+      subscriptionId: zod.number().nullish(),
+      createdAt: zod.string(),
+    }),
+  ),
+  total: zod.number(),
+  page: zod.number(),
+  limit: zod.number(),
+});
+
+/**
+ * @summary Trigger subscription expiry notification check
+ */
+export const CheckSubscriptionExpiryResponse = zod.object({
+  sent: zod.number(),
   message: zod.string(),
 });
 

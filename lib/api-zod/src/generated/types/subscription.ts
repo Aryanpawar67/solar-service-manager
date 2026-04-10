@@ -18,6 +18,7 @@ export interface Subscription {
   endDate: string;
   status: SubscriptionStatus;
   amount: number;
+  daysUntilExpiry?: number | null;
   customer?: Customer | null;
   createdAt: string;
   updatedAt: string;

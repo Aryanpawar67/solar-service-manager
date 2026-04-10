@@ -1,0 +1,12 @@
+:80 {
+    root * /srv
+    encode gzip
+
+    # Proxy /api/* and /uploads/* to the API server
+    reverse_proxy /api/* api:3000
+    reverse_proxy /uploads/* api:3000
+
+    # SPA fallback — all other paths serve index.html
+    try_files {path} /index.html
+    file_server
+}

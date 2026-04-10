@@ -17,8 +17,10 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CheckSubscriptionExpiry200,
   Contact,
   ContactListResponse,
+  ConvertContactInput,
   CreateContactInput,
   CreateCustomerInput,
   CreatePaymentInput,
@@ -29,15 +31,20 @@ import type {
   CustomerListResponse,
   DashboardAnalytics,
   DeleteResponse,
+  GetMe200,
   HealthStatus,
   ListContactSubmissionsParams,
   ListCustomersParams,
+  ListNotificationsParams,
   ListPaymentsParams,
   ListServicesParams,
   ListStaffParams,
   ListSubscriptionsParams,
+  NotificationListResponse,
   Payment,
   PaymentListResponse,
+  PushTokenInput,
+  RegisterPushToken200,
   Service,
   ServiceListResponse,
   Staff,
@@ -59,6 +66,155 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Get current authenticated user
+ */
+export const getGetMeUrl = () => {
+  return `/api/auth/me`;
+};
+
+export const getMe = async (options?: RequestInit): Promise<GetMe200> => {
+  return customFetch<GetMe200>(getGetMeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMeQueryKey = () => {
+  return [`/api/auth/me`] as const;
+};
+
+export const getGetMeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMeQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMe>>> = ({
+    signal,
+  }) => getMe({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMe>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>;
+export type GetMeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get current authenticated user
+ */
+
+export function useGetMe<
+  TData = Awaited<ReturnType<typeof getMe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register or update Expo push token for the current user
+ */
+export const getRegisterPushTokenUrl = () => {
+  return `/api/auth/push-token`;
+};
+
+export const registerPushToken = async (
+  pushTokenInput: PushTokenInput,
+  options?: RequestInit,
+): Promise<RegisterPushToken200> => {
+  return customFetch<RegisterPushToken200>(getRegisterPushTokenUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(pushTokenInput),
+  });
+};
+
+export const getRegisterPushTokenMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerPushToken>>,
+    TError,
+    { data: BodyType<PushTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerPushToken>>,
+  TError,
+  { data: BodyType<PushTokenInput> },
+  TContext
+> => {
+  const mutationKey = ["registerPushToken"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerPushToken>>,
+    { data: BodyType<PushTokenInput> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerPushToken(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterPushTokenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerPushToken>>
+>;
+export type RegisterPushTokenMutationBody = BodyType<PushTokenInput>;
+export type RegisterPushTokenMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register or update Expo push token for the current user
+ */
+export const useRegisterPushToken = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerPushToken>>,
+    TError,
+    { data: BodyType<PushTokenInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerPushToken>>,
+  TError,
+  { data: BodyType<PushTokenInput> },
+  TContext
+> => {
+  return useMutation(getRegisterPushTokenMutationOptions(options));
+};
 
 /**
  * @summary Health check
@@ -2348,6 +2504,278 @@ export const useSubmitContact = <
   TContext
 > => {
   return useMutation(getSubmitContactMutationOptions(options));
+};
+
+/**
+ * @summary Convert a contact submission into a customer
+ */
+export const getConvertContactToCustomerUrl = (id: number) => {
+  return `/api/contact/${id}/convert`;
+};
+
+export const convertContactToCustomer = async (
+  id: number,
+  convertContactInput: ConvertContactInput,
+  options?: RequestInit,
+): Promise<Customer> => {
+  return customFetch<Customer>(getConvertContactToCustomerUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(convertContactInput),
+  });
+};
+
+export const getConvertContactToCustomerMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof convertContactToCustomer>>,
+    TError,
+    { id: number; data: BodyType<ConvertContactInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof convertContactToCustomer>>,
+  TError,
+  { id: number; data: BodyType<ConvertContactInput> },
+  TContext
+> => {
+  const mutationKey = ["convertContactToCustomer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof convertContactToCustomer>>,
+    { id: number; data: BodyType<ConvertContactInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return convertContactToCustomer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConvertContactToCustomerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof convertContactToCustomer>>
+>;
+export type ConvertContactToCustomerMutationBody =
+  BodyType<ConvertContactInput>;
+export type ConvertContactToCustomerMutationError = ErrorType<void>;
+
+/**
+ * @summary Convert a contact submission into a customer
+ */
+export const useConvertContactToCustomer = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof convertContactToCustomer>>,
+    TError,
+    { id: number; data: BodyType<ConvertContactInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof convertContactToCustomer>>,
+  TError,
+  { id: number; data: BodyType<ConvertContactInput> },
+  TContext
+> => {
+  return useMutation(getConvertContactToCustomerMutationOptions(options));
+};
+
+/**
+ * @summary List notification history
+ */
+export const getListNotificationsUrl = (params?: ListNotificationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/notifications?${stringifiedParams}`
+    : `/api/notifications`;
+};
+
+export const listNotifications = async (
+  params?: ListNotificationsParams,
+  options?: RequestInit,
+): Promise<NotificationListResponse> => {
+  return customFetch<NotificationListResponse>(
+    getListNotificationsUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListNotificationsQueryKey = (
+  params?: ListNotificationsParams,
+) => {
+  return [`/api/notifications`, ...(params ? [params] : [])] as const;
+};
+
+export const getListNotificationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNotifications>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListNotificationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNotifications>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListNotificationsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listNotifications>>
+  > = ({ signal }) => listNotifications(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNotifications>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListNotificationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNotifications>>
+>;
+export type ListNotificationsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List notification history
+ */
+
+export function useListNotifications<
+  TData = Awaited<ReturnType<typeof listNotifications>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListNotificationsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listNotifications>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListNotificationsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Trigger subscription expiry notification check
+ */
+export const getCheckSubscriptionExpiryUrl = () => {
+  return `/api/notifications/check-expiry`;
+};
+
+export const checkSubscriptionExpiry = async (
+  options?: RequestInit,
+): Promise<CheckSubscriptionExpiry200> => {
+  return customFetch<CheckSubscriptionExpiry200>(
+    getCheckSubscriptionExpiryUrl(),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCheckSubscriptionExpiryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkSubscriptionExpiry>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkSubscriptionExpiry>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["checkSubscriptionExpiry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkSubscriptionExpiry>>,
+    void
+  > = () => {
+    return checkSubscriptionExpiry(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckSubscriptionExpiryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkSubscriptionExpiry>>
+>;
+
+export type CheckSubscriptionExpiryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Trigger subscription expiry notification check
+ */
+export const useCheckSubscriptionExpiry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkSubscriptionExpiry>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof checkSubscriptionExpiry>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCheckSubscriptionExpiryMutationOptions(options));
 };
 
 /**

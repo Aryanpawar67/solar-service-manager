@@ -1,0 +1,13 @@
+# Production Caddyfile — replace {$DOMAIN} with your domain, e.g. admin.greenvolt.in
+# Caddy auto-provisions HTTPS via Let's Encrypt. Requires port 80 + 443 open.
+
+{$DOMAIN} {
+    encode gzip
+
+    # API and uploads pass-through to the backend container
+    reverse_proxy /api/* api:3000
+    reverse_proxy /uploads/* api:3000
+
+    # All other paths → admin dashboard SPA container
+    reverse_proxy dashboard:80
+}

@@ -5,6 +5,26 @@
  * GreenVolt Solar Panel Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
+
+export const AuthUserRole = {
+  admin: "admin",
+  staff: "staff",
+} as const;
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  role: AuthUserRole;
+  staffId?: number | null;
+}
+
+export interface PushTokenInput {
+  /** Expo push token (ExponentPushToken[...]) */
+  token: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -198,6 +218,7 @@ export interface Subscription {
   endDate: string;
   status: SubscriptionStatus;
   amount: number;
+  daysUntilExpiry?: number | null;
   customer?: Customer | null;
   createdAt: string;
   updatedAt: string;
@@ -326,6 +347,11 @@ export interface Contact {
   createdAt: string;
 }
 
+export interface ConvertContactInput {
+  address: string;
+  city?: string;
+}
+
 export interface CreateContactInput {
   name: string;
   email: string;
@@ -336,6 +362,45 @@ export interface CreateContactInput {
 
 export interface ContactListResponse {
   data: Contact[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export type NotificationType =
+  (typeof NotificationType)[keyof typeof NotificationType];
+
+export const NotificationType = {
+  service_scheduled: "service_scheduled",
+  service_completed: "service_completed",
+  subscription_expiry: "subscription_expiry",
+} as const;
+
+export type NotificationStatus =
+  (typeof NotificationStatus)[keyof typeof NotificationStatus];
+
+export const NotificationStatus = {
+  sent: "sent",
+  failed: "failed",
+} as const;
+
+export interface Notification {
+  id: number;
+  type: NotificationType;
+  recipientPhone: string;
+  recipientName?: string | null;
+  message: string;
+  status: NotificationStatus;
+  provider?: string | null;
+  providerMessageId?: string | null;
+  error?: string | null;
+  serviceId?: number | null;
+  subscriptionId?: number | null;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  data: Notification[];
   total: number;
   page: number;
   limit: number;
@@ -356,6 +421,14 @@ export interface DashboardAnalytics {
   recentPayments: Payment[];
 }
 
+export type GetMe200 = {
+  user: AuthUser;
+};
+
+export type RegisterPushToken200 = {
+  ok: boolean;
+};
+
 export type ListCustomersParams = {
   search?: string;
   page?: number;
@@ -372,6 +445,8 @@ export type ListServicesParams = {
   staffId?: number;
   customerId?: number;
   date?: string;
+  startDate?: string;
+  endDate?: string;
   page?: number;
   limit?: number;
 };
@@ -421,4 +496,33 @@ export const ListPaymentsStatus = {
 export type ListContactSubmissionsParams = {
   page?: number;
   limit?: number;
+};
+
+export type ListNotificationsParams = {
+  type?: ListNotificationsType;
+  status?: ListNotificationsStatus;
+  page?: number;
+  limit?: number;
+};
+
+export type ListNotificationsType =
+  (typeof ListNotificationsType)[keyof typeof ListNotificationsType];
+
+export const ListNotificationsType = {
+  service_scheduled: "service_scheduled",
+  service_completed: "service_completed",
+  subscription_expiry: "subscription_expiry",
+} as const;
+
+export type ListNotificationsStatus =
+  (typeof ListNotificationsStatus)[keyof typeof ListNotificationsStatus];
+
+export const ListNotificationsStatus = {
+  sent: "sent",
+  failed: "failed",
+} as const;
+
+export type CheckSubscriptionExpiry200 = {
+  sent: number;
+  message: string;
 };

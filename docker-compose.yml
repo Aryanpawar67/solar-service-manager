@@ -1,18 +1,89 @@
 version: "3.9"
 
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  uploads_data:
+  caddy_data:
+  caddy_config:
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  internal:   # db ↔ api (not exposed to internet)
+  public:     # caddy ↔ api ↔ dashboard
+
+# ── Services ──────────────────────────────────────────────────────────────────
 services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: solar_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: solar
-      POSTGRES_PASSWORD: solar_secret
-      POSTGRES_DB: solar_service_manager
+      POSTGRES_USER: ${POSTGRES_USER:-solar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-solar_service_manager}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"   # only accessible from localhost
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-solar}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-volumes:
-  postgres_data:
+  # ── API Server ───────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api-server/Dockerfile
+    container_name: solar_api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+      # Override DATABASE_URL to use the postgres service name
+      DATABASE_URL: postgresql://${POSTGRES_USER:-solar}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-solar_service_manager}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://${DOMAIN}}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [internal, public]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Admin Dashboard ──────────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/admin-dashboard/Dockerfile
+    container_name: solar_dashboard
+    restart: unless-stopped
+    networks: [public]
+
+  # ── Caddy (reverse proxy + auto-HTTPS) ───────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: solar_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api, dashboard]
+    networks: [public]
