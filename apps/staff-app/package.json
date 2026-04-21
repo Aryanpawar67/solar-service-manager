@@ -10,27 +10,30 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~6.1.0",
+    "@sentry/react-native": "^7.2.0",
+    "@tanstack/react-query": "catalog:",
     "@workspace/api-client-react": "workspace:*",
     "@workspace/api-zod": "workspace:*",
-    "@sentry/react-native": "^6.14.0",
-    "@tanstack/react-query": "catalog:",
     "expo": "catalog:",
-    "expo-camera": "catalog:",
-    "expo-image-picker": "catalog:",
-    "expo-linking": "catalog:",
-    "expo-notifications": "catalog:",
-    "expo-router": "catalog:",
-    "expo-secure-store": "catalog:",
+    "expo-camera": "~17.0.10",
+    "expo-image-picker": "~17.0.10",
+    "expo-linking": "~8.0.11",
+    "expo-notifications": "~0.32.16",
+    "expo-router": "~6.0.23",
+    "expo-secure-store": "~15.0.8",
     "react": "catalog:",
+    "react-dom": "catalog:",
     "react-native": "catalog:",
+    "react-native-web": "~0.21.0",
     "react-native-safe-area-context": "catalog:",
-    "react-native-screens": "catalog:",
+    "react-native-screens": "~4.16.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "@types/react": "catalog:",
+    "@types/react": "~19.1.17",
     "@types/react-native": "^0.73.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.3"
   }
 }

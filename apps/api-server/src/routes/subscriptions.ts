@@ -65,8 +65,9 @@ router.post("/", async (req, res) => {
   const plan = (body.plan as string) || "";
   if (!plan.trim()) return res.status(400).json({ error: "plan is required" });
 
-  // visitsPerMonth from known plan configs, or fall back to 1 for custom plan names
-  const config = PLAN_CONFIGS[plan.toLowerCase()] ?? { visitsPerMonth: 1 };
+  // visitsPerMonth: respect caller-provided value; fall back to plan config, then 1
+  const config = PLAN_CONFIGS[plan.toLowerCase()];
+  const visitsPerMonth = body.visitsPerMonth ?? config?.visitsPerMonth ?? 1;
 
   const startDate = body.startDate || new Date().toISOString().split("T")[0];
   // Use provided endDate if given; otherwise auto-calculate 1 month from start
@@ -77,11 +78,15 @@ router.post("/", async (req, res) => {
     endDate = endDateObj.toISOString().split("T")[0];
   }
 
+  // status: allow caller to set active/expired/cancelled; default to "active"
+  const validStatuses = ["active", "expired", "cancelled"];
+  const status = validStatuses.includes(body.status) ? body.status : "active";
+
   const dataToInsert = {
     ...body,
-    visitsPerMonth: config.visitsPerMonth,
+    visitsPerMonth,
     endDate,
-    status: "active",
+    status,
     amount: body.amount !== undefined ? String(body.amount) : "0",
   };
 

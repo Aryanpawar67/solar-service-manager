@@ -133,7 +133,7 @@ These are prerequisites before any other work. Nothing else can be tested or dep
 **Service PDF Reports:**
 - [x] Add `pdfkit` to the API server (lightweight, no headless browser needed)
 - [x] Create a PDF template with GreenVolt branding (header, customer, service, staff, notes, embedded photos)
-- [x] Add `GET /api/services/:id/report` endpoint — generates and returns PDF
+- [x] Add `GET /api/services/:id/report` endpoint — generates and returns PDFx  
 - [x] Add "Download Report" button to the service detail view and row actions
 
 **Estimated effort:** 5–7 days

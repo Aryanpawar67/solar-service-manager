@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { paymentsTable, customersTable, insertPaymentSchema, updatePaymentSchema } from "@workspace/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, gte, lte } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -39,6 +39,8 @@ router.get("/export", async (req, res) => {
   const filters = [];
   if (status) filters.push(eq(paymentsTable.status, status));
   if (customerId) filters.push(eq(paymentsTable.customerId, parseInt(customerId)));
+  if (startDate) filters.push(gte(paymentsTable.createdAt, new Date(startDate)));
+  if (endDate) filters.push(lte(paymentsTable.createdAt, new Date(endDate)));
 
   const whereClause = filters.length > 0 ? and(...filters) : undefined;
 

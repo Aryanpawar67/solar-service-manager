@@ -10,7 +10,11 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
-    "seed-admin": "tsx scripts/seed-admin.ts"
+    "seed-admin": "tsx scripts/seed-admin.ts",
+    "seed-customer-user": "tsx scripts/seed-customer-user.ts",
+    "seed-staff-user": "tsx scripts/seed-staff-user.ts",
+    "seed-dummy": "tsx scripts/seed-dummy.ts",
+    "seed-staff-services": "tsx scripts/seed-staff-services.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

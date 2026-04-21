@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { customersTable, insertCustomerSchema, updateCustomerSchema } from "@workspace/db/schema";
-import { eq, isNull, like, or, sql, and } from "drizzle-orm";
+import { eq, isNull, ilike, or, sql, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -16,9 +16,9 @@ router.get("/", async (req, res) => {
   let baseFilter = notDeleted;
   if (search) {
     const searchFilter = or(
-      like(customersTable.name, `%${search}%`),
-      like(customersTable.phone, `%${search}%`),
-      like(customersTable.address, `%${search}%`)
+      ilike(customersTable.name, `%${search}%`),
+      ilike(customersTable.phone, `%${search}%`),
+      ilike(customersTable.address, `%${search}%`)
     )!;
     baseFilter = and(notDeleted, searchFilter)!;
   }
@@ -37,9 +37,9 @@ router.get("/export", async (req, res) => {
   let filter = notDeleted;
   if (search) {
     const searchFilter = or(
-      like(customersTable.name, `%${search}%`),
-      like(customersTable.phone, `%${search}%`),
-      like(customersTable.address, `%${search}%`)
+      ilike(customersTable.name, `%${search}%`),
+      ilike(customersTable.phone, `%${search}%`),
+      ilike(customersTable.address, `%${search}%`)
     )!;
     filter = and(notDeleted, searchFilter)!;
   }

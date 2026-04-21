@@ -8,16 +8,16 @@ autoInstallPeers: false
 
 catalog:
   # Expo / React Native (pinned for staff-app)
-  expo: ~53.0.0
-  expo-router: ~4.0.0
-  expo-secure-store: ~14.0.0
-  expo-camera: ~16.0.0
-  expo-notifications: ~0.29.0
-  expo-image-picker: ~16.0.0
-  expo-linking: ~7.0.5
-  react-native: 0.79.2
-  react-native-safe-area-context: ^5.4.0
-  react-native-screens: ^4.5.0
+  expo: ~54.0.0
+  expo-router: ~6.0.0
+  expo-secure-store: ~15.0.0
+  expo-camera: ~17.0.0
+  expo-notifications: ~0.32.0
+  expo-image-picker: ~17.0.0
+  expo-linking: ~8.0.0
+  react-native: 0.81.5
+  react-native-safe-area-context: ~5.6.0
+  react-native-screens: ~4.16.0
 
   '@tailwindcss/vite': ^4.1.14
   '@tanstack/react-query': ^5.90.21
@@ -49,3 +49,4 @@ onlyBuiltDependencies:
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
+  react: 19.1.0

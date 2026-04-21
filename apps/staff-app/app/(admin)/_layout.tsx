@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { Text } from "react-native";
 
-export default function TabsLayout() {
+export default function AdminTabsLayout() {
   return (
     <Tabs
       screenOptions={{
@@ -15,8 +15,29 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="jobs"
         options={{
-          title: "My Jobs",
+          title: "Jobs",
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🔧</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="customers"
+        options={{
+          title: "Customers",
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👥</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="staff"
+        options={{
+          title: "Staff",
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🪪</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: "Analytics",
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text>,
         }}
       />
       <Tabs.Screen

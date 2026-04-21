@@ -1,17 +1,42 @@
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 const TOKEN_KEY = "auth_token";
 
+// expo-secure-store doesn't work on web — fall back to localStorage
+async function storageGet(key: string): Promise<string | null> {
+  if (Platform.OS === "web") {
+    return localStorage.getItem(key);
+  }
+  return SecureStore.getItemAsync(key);
+}
+
+async function storageSet(key: string, value: string): Promise<void> {
+  if (Platform.OS === "web") {
+    localStorage.setItem(key, value);
+    return;
+  }
+  return SecureStore.setItemAsync(key, value);
+}
+
+async function storageDelete(key: string): Promise<void> {
+  if (Platform.OS === "web") {
+    localStorage.removeItem(key);
+    return;
+  }
+  return SecureStore.deleteItemAsync(key);
+}
+
 export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY);
+  return storageGet(TOKEN_KEY);
 }
 
 export async function setToken(token: string): Promise<void> {
-  return SecureStore.setItemAsync(TOKEN_KEY, token);
+  return storageSet(TOKEN_KEY, token);
 }
 
 export async function clearToken(): Promise<void> {
-  return SecureStore.deleteItemAsync(TOKEN_KEY);
+  return storageDelete(TOKEN_KEY);
 }
 
 /** Decode the JWT payload without verifying signature (verification happens on the server). */

@@ -7,11 +7,17 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  TextInput,
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
-import { useGetService, useUpdateService } from "@workspace/api-client-react";
+import { useGetService, useUpdateService, useListStaff, useGetMe } from "@workspace/api-client-react";
 import { uploadFile } from "@workspace/api-client-react";
 import * as ImagePicker from "expo-image-picker";
+import * as Linking from "expo-linking";
+import { getToken } from "../../src/lib/auth";
+import { useState } from "react";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 const STATUS_SEQUENCE = ["pending", "in_progress", "completed"] as const;
 type Status = (typeof STATUS_SEQUENCE)[number];
@@ -22,6 +28,14 @@ export default function JobDetailScreen() {
 
   const { data: job, isLoading, refetch } = useGetService(jobId);
   const update = useUpdateService();
+  const { data: meData } = useGetMe();
+  const isAdmin = meData?.user?.role === "admin";
+  const { data: staffList } = useListStaff({ available: true });
+
+  const [remarksText, setRemarksText] = useState<string | null>(null);
+  const [savingRemarks, setSavingRemarks] = useState(false);
+
+  const currentRemarks = remarksText ?? job?.remarks ?? "";
 
   const advanceStatus = () => {
     if (!job) return;
@@ -48,8 +62,17 @@ export default function JobDetailScreen() {
   };
 
   const pickAndUpload = async (field: "preServiceImage" | "postServiceImage") => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Camera permission required",
+        "Please enable camera access in Settings to upload photos."
+      );
+      return;
+    }
+
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       quality: 0.8,
     });
     if (result.canceled) return;
@@ -67,6 +90,34 @@ export default function JobDetailScreen() {
       refetch();
     } catch {
       Alert.alert("Upload failed", "Please try again.");
+    }
+  };
+
+  const saveRemarks = async () => {
+    if (remarksText === null) return;
+    setSavingRemarks(true);
+    try {
+      await update.mutateAsync({ id: jobId, data: { remarks: remarksText } });
+      refetch();
+    } catch {
+      Alert.alert("Save failed", "Could not save remarks. Please try again.");
+    } finally {
+      setSavingRemarks(false);
+    }
+  };
+
+  const openReport = async () => {
+    const token = await getToken();
+    if (!token) {
+      Alert.alert("Not logged in", "Please log in again.");
+      return;
+    }
+    const url = `${API_BASE_URL}/api/services/${jobId}/report?token=${encodeURIComponent(token)}`;
+    const canOpen = await Linking.canOpenURL(url);
+    if (canOpen) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert("Cannot open report", "No app available to open PDF files.");
     }
   };
 
@@ -139,7 +190,70 @@ export default function JobDetailScreen() {
           />
         </View>
 
-        {/* Action */}
+        {/* Post-service Remarks */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Post-Service Remarks</Text>
+          <TextInput
+            style={styles.remarksInput}
+            placeholder="Add remarks about the completed service…"
+            placeholderTextColor="#9ca3af"
+            multiline
+            numberOfLines={3}
+            value={currentRemarks}
+            onChangeText={setRemarksText}
+          />
+          {remarksText !== null && remarksText !== (job.remarks ?? "") && (
+            <TouchableOpacity
+              style={[styles.saveRemarksBtn, savingRemarks && styles.buttonDisabled]}
+              onPress={saveRemarks}
+              disabled={savingRemarks}
+            >
+              {savingRemarks ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.saveRemarksBtnText}>Save Remarks</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Download Report */}
+        <TouchableOpacity style={styles.reportButton} onPress={openReport}>
+          <Text style={styles.reportButtonText}>⬇ Download Service Report (PDF)</Text>
+        </TouchableOpacity>
+
+        {/* Admin: Reassign Staff */}
+        {isAdmin && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Reassign Technician</Text>
+            <Text style={styles.label}>Current: {job.staff?.name ?? "Unassigned"}</Text>
+            <View style={{ gap: 8, marginTop: 8 }}>
+              {(staffList?.data ?? []).map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  style={[styles.reassignBtn, job.staffId === s.id && styles.reassignBtnActive]}
+                  onPress={() => {
+                    if (job.staffId === s.id) return;
+                    Alert.alert("Reassign", `Assign this job to ${s.name}?`, [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Assign",
+                        onPress: () => update.mutate({ id: jobId, data: { staffId: s.id } }, { onSuccess: () => refetch() }),
+                      },
+                    ]);
+                  }}
+                >
+                  <Text style={[styles.reassignBtnText, job.staffId === s.id && styles.reassignBtnTextActive]}>
+                    {s.name} {job.staffId === s.id ? "✓" : ""}
+                  </Text>
+                  <Text style={styles.reassignRole}>{s.role}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Advance Status */}
         {canAdvance && (
           <TouchableOpacity
             style={[styles.button, update.isPending && styles.buttonDisabled]}
@@ -182,10 +296,13 @@ function PhotoSlot({
     <View style={styles.photoSlot}>
       <Text style={styles.photoLabel}>{label}</Text>
       {uri ? (
-        <Image source={{ uri }} style={styles.photo} resizeMode="cover" />
+        <TouchableOpacity onPress={onCapture} activeOpacity={0.85}>
+          <Image source={{ uri }} style={styles.photo} resizeMode="cover" />
+          <Text style={styles.photoRetakeText}>Tap to retake</Text>
+        </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.photoPlaceholder} onPress={onCapture}>
-          <Text style={styles.photoPlaceholderText}>Tap to capture</Text>
+          <Text style={styles.photoPlaceholderText}>📷  Tap to capture</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -224,6 +341,7 @@ const styles = StyleSheet.create({
   photoSlot: { marginBottom: 12 },
   photoLabel: { fontSize: 13, color: "#6b7280", marginBottom: 8 },
   photo: { width: "100%", height: 180, borderRadius: 10 },
+  photoRetakeText: { fontSize: 12, color: "#6b7280", textAlign: "center", marginTop: 6 },
   photoPlaceholder: {
     width: "100%",
     height: 100,
@@ -236,6 +354,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   photoPlaceholderText: { color: "#9ca3af", fontSize: 14 },
+  remarksInput: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: "#111827",
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  saveRemarksBtn: {
+    backgroundColor: "#16a34a",
+    borderRadius: 8,
+    padding: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  saveRemarksBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  reportButton: {
+    borderWidth: 1.5,
+    borderColor: "#16a34a",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    backgroundColor: "#f0fdf4",
+  },
+  reportButtonText: { color: "#16a34a", fontWeight: "600", fontSize: 15 },
   button: {
     backgroundColor: "#16a34a",
     borderRadius: 12,
@@ -245,4 +390,15 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  reassignBtn: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: "#f9fafb",
+  },
+  reassignBtnActive: { borderColor: "#16a34a", backgroundColor: "#f0fdf4" },
+  reassignBtnText: { fontSize: 14, fontWeight: "600", color: "#374151" },
+  reassignBtnTextActive: { color: "#16a34a" },
+  reassignRole: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
 });

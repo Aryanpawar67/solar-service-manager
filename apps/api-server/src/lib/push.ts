@@ -62,3 +62,22 @@ export async function notifyJobAssigned(staffId: number, serviceId: number, cust
     data: { jobId: serviceId, screen: "job-detail" },
   });
 }
+
+/**
+ * Send an Expo push notification to a customer by their customerId.
+ */
+export async function notifyCustomer(
+  customerId: number,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+): Promise<void> {
+  const [user] = await db
+    .select({ pushToken: usersTable.pushToken, pushEnabled: usersTable.pushEnabled })
+    .from(usersTable)
+    .where(eq(usersTable.customerId, customerId));
+
+  if (!user?.pushToken || user.pushEnabled === false) return;
+
+  await sendExpoPush({ to: user.pushToken, title, body, data });
+}

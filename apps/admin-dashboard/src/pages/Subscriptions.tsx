@@ -53,7 +53,7 @@ export default function SubscriptionsPage() {
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState<Subscription | null>(null);
 
-  const { data, isLoading } = useListSubscriptions();
+  const { data, isLoading, refetch } = useListSubscriptions();
   const { data: customers } = useListCustomers({ limit: 100 });
 
   const createMut = useCreateSubscription();
@@ -134,9 +134,14 @@ export default function SubscriptionsPage() {
           <h2 className="text-3xl font-display font-bold text-foreground">Subscriptions</h2>
           <p className="text-muted-foreground mt-1">Manage recurring maintenance plans.</p>
         </div>
-        <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20">
-          <Plus className="mr-2 h-4 w-4" /> New Plan
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading} className="rounded-xl">
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+          <Button onClick={openAddDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20">
+            <Plus className="mr-2 h-4 w-4" /> New Plan
+          </Button>
+        </div>
       </div>
 
       <Card className="border-border/50 shadow-sm overflow-hidden">

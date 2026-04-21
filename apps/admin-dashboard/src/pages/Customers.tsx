@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, MoreVertical, Edit, Trash2, MapPin, Phone, Download } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Trash2, MapPin, Phone, Download, RefreshCw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -71,7 +71,7 @@ export default function Customers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  const { data, isLoading } = useListCustomers({ search: search || undefined });
+  const { data, isLoading, refetch } = useListCustomers({ search: search || undefined });
   const createMut = useCreateCustomer();
   const updateMut = useUpdateCustomer();
   const deleteMut = useDeleteCustomer();
@@ -143,6 +143,9 @@ export default function Customers() {
           <p className="text-muted-foreground mt-1">Manage your solar panel clients and their details.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading} className="rounded-xl">
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
           <Button variant="outline" onClick={() => exportCustomers(search || undefined)} className="rounded-xl">
             <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
-import * as SecureStore from "expo-secure-store";
+import { setToken, decodeJwtPayload } from "@/lib/auth";
 
 const API_BASE_URL = process.env["EXPO_PUBLIC_API_URL"] ?? "http://localhost:3000";
 
@@ -34,8 +34,15 @@ export default function LoginScreen() {
         setError(data.error ?? "Invalid email or password");
         return;
       }
-      await SecureStore.setItemAsync("auth_token", data.token ?? "");
-      router.replace("/(tabs)/jobs");
+      const token = data.token ?? "";
+      await setToken(token);
+
+      const payload = decodeJwtPayload(token);
+      const role = typeof payload?.role === "string" ? payload.role : "staff";
+
+      if (role === "admin") router.replace("/(admin)/jobs");
+      else if (role === "customer") router.replace("/(customer)");
+      else router.replace("/(staff)/jobs");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -50,7 +57,7 @@ export default function LoginScreen() {
     >
       <View style={styles.card}>
         <Text style={styles.logo}>GreenVolt</Text>
-        <Text style={styles.subtitle}>Staff Portal</Text>
+        <Text style={styles.subtitle}>Sign in to continue</Text>
 
         <TextInput
           style={styles.input}

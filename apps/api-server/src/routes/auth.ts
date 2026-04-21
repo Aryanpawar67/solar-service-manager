@@ -27,14 +27,28 @@ router.post("/login", async (req, res) => {
   if (!secret) return res.status(500).json({ error: "Server misconfigured" });
 
   const token = jwt.sign(
-    { userId: user.id, email: user.email, name: user.name, role: user.role, staffId: user.staffId ?? null },
+    {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      staffId: user.staffId ?? null,
+      customerId: user.customerId ?? null,
+    },
     secret,
     { expiresIn: "8h" }
   );
 
   res.json({
     token,
-    user: { id: user.id, email: user.email, name: user.name, role: user.role, staffId: user.staffId ?? null },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      staffId: user.staffId ?? null,
+      customerId: user.customerId ?? null,
+    },
   });
 });
 
@@ -46,6 +60,7 @@ router.get("/me", requireAuth, async (req, res) => {
       name: usersTable.name,
       role: usersTable.role,
       staffId: usersTable.staffId,
+      customerId: usersTable.customerId,
     })
     .from(usersTable)
     .where(eq(usersTable.id, req.user!.userId));

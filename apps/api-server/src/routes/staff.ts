@@ -1,25 +1,28 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { staffTable, insertStaffSchema, updateStaffSchema } from "@workspace/db/schema";
-import { and, eq, isNull, like, or, sql } from "drizzle-orm";
+import { and, eq, isNull, ilike, or, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
-  const { search, available } = req.query as Record<string, string>;
+  const { search, available, isActive } = req.query as Record<string, string>;
 
   const notDeleted = isNull(staffTable.deletedAt);
   const filters: ReturnType<typeof eq>[] = [notDeleted as any];
 
   if (search) {
     filters.push(or(
-      like(staffTable.name, `%${search}%`),
-      like(staffTable.phone, `%${search}%`),
-      like(staffTable.role, `%${search}%`)
+      ilike(staffTable.name, `%${search}%`),
+      ilike(staffTable.phone, `%${search}%`),
+      ilike(staffTable.role, `%${search}%`)
     ) as any);
   }
   if (available === "true") {
     filters.push(eq(staffTable.isActive, true) as any);
+  }
+  if (isActive === "false") {
+    filters.push(eq(staffTable.isActive, false) as any);
   }
 
   const combined = filters.length === 1 ? filters[0]! : and(...filters as any) as any;

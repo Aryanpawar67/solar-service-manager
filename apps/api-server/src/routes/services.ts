@@ -14,7 +14,7 @@ import path from "path";
 import fs from "fs";
 import { uploadsDir } from "./upload";
 import { notify } from "../lib/notifications";
-import { notifyJobAssigned } from "../lib/push";
+import { notifyJobAssigned, notifyCustomer } from "../lib/push";
 
 const router: IRouter = Router();
 
@@ -194,20 +194,42 @@ router.post("/", async (req, res) => {
   const parsed = insertServiceSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
+  const [customer] = await db
+    .select({ id: customersTable.id })
+    .from(customersTable)
+    .where(eq(customersTable.id, parsed.data.customerId));
+  if (!customer) return res.status(400).json({ error: "Customer not found" });
+
+  if (parsed.data.staffId) {
+    const [staff] = await db
+      .select({ id: staffTable.id })
+      .from(staffTable)
+      .where(eq(staffTable.id, parsed.data.staffId));
+    if (!staff) return res.status(400).json({ error: "Staff not found" });
+  }
+
   const [service] = await db.insert(servicesTable).values(parsed.data).returning();
   res.status(201).json(service);
 
-  // Fire notification (non-blocking)
-  const [customer] = await db
+  // Fire notification (non-blocking) — re-fetch full customer for phone/name
+  const [fullCustomer] = await db
     .select().from(customersTable).where(eq(customersTable.id, service.customerId));
-  if (customer?.phone) {
+  if (fullCustomer?.phone) {
+    const smsMsg = `Hi ${fullCustomer.name}, your GreenVolt solar service (${service.serviceType ?? "Maintenance"}) is scheduled for ${service.scheduledDate}. We'll be there! – GreenVolt Solar`;
     notify({
       type: "service_scheduled",
-      to: customer.phone,
-      recipientName: customer.name,
-      message: `Hi ${customer.name}, your GreenVolt solar service (${service.serviceType ?? "Maintenance"}) is scheduled for ${service.scheduledDate}. We'll be there! – GreenVolt Solar`,
+      to: fullCustomer.phone,
+      recipientName: fullCustomer.name,
+      message: smsMsg,
       serviceId: service.id,
-    }).catch(() => {}); // swallow — notification failure must not affect the response
+    }).catch(() => {});
+    // Also send Expo push to the linked customer user (if they have the app)
+    notifyCustomer(
+      service.customerId,
+      "Service Scheduled",
+      `Your ${service.serviceType ?? "maintenance"} service is booked for ${service.scheduledDate}.`,
+      { serviceId: service.id, screen: "customer-service-detail" }
+    ).catch(() => {});
   }
 });
 
@@ -253,6 +275,13 @@ router.put("/:id", async (req, res) => {
         message: `Hi ${customer.name}, your GreenVolt solar service on ${service.scheduledDate} is complete! Download your report: ${baseUrl}/api/services/${service.id}/report – GreenVolt Solar`,
         serviceId: service.id,
       }).catch(() => {});
+      // Also send Expo push to the linked customer user
+      notifyCustomer(
+        service.customerId,
+        "Service Complete",
+        `Your solar service on ${service.scheduledDate} is done! Tap to view your report.`,
+        { serviceId: service.id, screen: "customer-service-detail" }
+      ).catch(() => {});
     }
   }
 });
