@@ -47,6 +47,7 @@ app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders:
 // Stricter limit on login
 app.use("/api/auth/login", rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false }));
 
+app.get("/", (_req, res) => res.redirect("/api/healthz"));
 app.use("/api", router);
 
 // Sentry error handler (must be before other error handlers)
