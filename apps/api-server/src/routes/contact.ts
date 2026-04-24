@@ -24,7 +24,7 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const [contact] = await db.insert(contactTable).values(parsed.data).returning();
-  res.status(201).json(contact);
+  return res.status(201).json(contact);
 });
 
 // PATCH-style update: PUT /contact/:id with body { isRead: true/false }
@@ -35,7 +35,7 @@ router.put("/:id", async (req, res) => {
   if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" });
   const [contact] = await db.update(contactTable).set(updates).where(eq(contactTable.id, id)).returning();
   if (!contact) return res.status(404).json({ error: "Contact not found" });
-  res.json(contact);
+  return res.json(contact);
 });
 
 // Convenience alias: PUT /contact/:id/read
@@ -47,7 +47,7 @@ router.put("/:id/read", async (req, res) => {
     .where(eq(contactTable.id, id))
     .returning();
   if (!contact) return res.status(404).json({ error: "Contact not found" });
-  res.json(contact);
+  return res.json(contact);
 });
 
 router.post("/:id/convert", async (req, res) => {
@@ -69,7 +69,7 @@ router.post("/:id/convert", async (req, res) => {
 
   await db.update(contactTable).set({ isRead: true }).where(eq(contactTable.id, id));
 
-  res.status(201).json(customer);
+  return res.status(201).json(customer);
 });
 
 export default router;

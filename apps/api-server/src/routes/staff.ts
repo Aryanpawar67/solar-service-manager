@@ -42,7 +42,7 @@ router.get("/:id", async (req, res) => {
     .from(staffTable)
     .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)));
   if (!member) return res.status(404).json({ error: "Staff not found" });
-  res.json(member);
+  return res.json(member);
 });
 
 router.post("/", async (req, res) => {
@@ -50,7 +50,7 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const [member] = await db.insert(staffTable).values(parsed.data).returning();
-  res.status(201).json(member);
+  return res.status(201).json(member);
 });
 
 router.put("/:id", async (req, res) => {
@@ -64,7 +64,7 @@ router.put("/:id", async (req, res) => {
     .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)))
     .returning();
   if (!member) return res.status(404).json({ error: "Staff not found" });
-  res.json(member);
+  return res.json(member);
 });
 
 router.delete("/:id", async (req, res) => {
@@ -75,7 +75,7 @@ router.delete("/:id", async (req, res) => {
     .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)))
     .returning();
   if (!member) return res.status(404).json({ error: "Staff not found" });
-  res.json({ success: true, message: "Staff deleted" });
+  return res.json({ success: true, message: "Staff deleted" });
 });
 
 export default router;

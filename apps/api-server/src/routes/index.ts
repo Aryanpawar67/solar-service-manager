@@ -25,7 +25,7 @@ router.post("/contact", async (req, res) => {
   const parsed = insertContactSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
   const [contact] = await db.insert(contactTable).values(parsed.data).returning();
-  res.status(201).json(contact);
+  return res.status(201).json(contact);
 });
 
 // Public: customer website booking flow (no login required)
@@ -33,7 +33,7 @@ router.post("/customers", async (req, res) => {
   const parsed = insertCustomerSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
   const [customer] = await db.insert(customersTable).values(parsed.data).returning();
-  res.status(201).json(customer);
+  return res.status(201).json(customer);
 });
 
 router.post("/subscriptions", async (req, res) => {
@@ -61,7 +61,7 @@ router.post("/subscriptions", async (req, res) => {
   const parsed = insertSubscriptionSchema.safeParse(dataToInsert);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
   const [subscription] = await db.insert(subscriptionsTable).values(parsed.data).returning();
-  res.status(201).json(subscription);
+  return res.status(201).json(subscription);
 });
 
 // All routes below require authentication

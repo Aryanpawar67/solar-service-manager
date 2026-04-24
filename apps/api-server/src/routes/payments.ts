@@ -12,7 +12,7 @@ router.get("/", async (req, res) => {
   const offset = (pageNum - 1) * limitNum;
 
   const filters = [];
-  if (status) filters.push(eq(paymentsTable.status, status));
+  if (status) filters.push(eq(paymentsTable.status, status as "failed" | "pending" | "paid" | "refunded"));
   if (customerId) filters.push(eq(paymentsTable.customerId, parseInt(customerId)));
 
   const whereClause = filters.length > 0 ? and(...filters) : undefined;
@@ -37,7 +37,7 @@ router.get("/export", async (req, res) => {
   const { customerId, status, startDate, endDate } = req.query as Record<string, string>;
 
   const filters = [];
-  if (status) filters.push(eq(paymentsTable.status, status));
+  if (status) filters.push(eq(paymentsTable.status, status as "failed" | "pending" | "paid" | "refunded"));
   if (customerId) filters.push(eq(paymentsTable.customerId, parseInt(customerId)));
   if (startDate) filters.push(gte(paymentsTable.createdAt, new Date(startDate)));
   if (endDate) filters.push(lte(paymentsTable.createdAt, new Date(endDate)));
@@ -76,7 +76,7 @@ router.get("/:id", async (req, res) => {
     .where(eq(paymentsTable.id, id));
 
   if (!row) return res.status(404).json({ error: "Payment not found" });
-  res.json({ ...row.payment, customer: row.customer });
+  return res.json({ ...row.payment, customer: row.customer });
 });
 
 router.post("/", async (req, res) => {
@@ -86,7 +86,7 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const [payment] = await db.insert(paymentsTable).values(parsed.data).returning();
-  res.status(201).json(payment);
+  return res.status(201).json(payment);
 });
 
 router.put("/:id", async (req, res) => {
@@ -100,7 +100,7 @@ router.put("/:id", async (req, res) => {
     .where(eq(paymentsTable.id, id))
     .returning();
   if (!payment) return res.status(404).json({ error: "Payment not found" });
-  res.json(payment);
+  return res.json(payment);
 });
 
 export default router;

@@ -39,7 +39,7 @@ router.post("/login", async (req, res) => {
     { expiresIn: "8h" }
   );
 
-  res.json({
+  return res.json({
     token,
     user: {
       id: user.id,
@@ -66,7 +66,7 @@ router.get("/me", requireAuth, async (req, res) => {
     .where(eq(usersTable.id, req.user!.userId));
 
   if (!user) return res.status(404).json({ error: "User not found" });
-  res.json({ user });
+  return res.json({ user });
 });
 
 // Register / update Expo push token for mobile notifications
@@ -81,7 +81,7 @@ router.post("/push-token", requireAuth, async (req, res) => {
     .set({ pushToken: token })
     .where(eq(usersTable.id, req.user!.userId));
 
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
 export default router;

@@ -30,7 +30,7 @@ router.get("/profile", async (req, res) => {
   ]);
 
   if (!customer) return res.status(404).json({ error: "Customer not found" });
-  res.json({ ...customer, pushEnabled: userRow?.pushEnabled ?? true });
+  return res.json({ ...customer, pushEnabled: userRow?.pushEnabled ?? true });
 });
 
 /** PUT /api/me/profile — update phone, address, email */
@@ -54,7 +54,7 @@ router.put("/profile", async (req, res) => {
     .where(eq(customersTable.id, customerId))
     .returning();
 
-  res.json(updated);
+  return res.json(updated);
 });
 
 /** GET /api/me/services — service history for logged-in customer */
@@ -77,7 +77,7 @@ router.get("/services", async (req, res) => {
     .offset(offset);
 
   const data = rows.map(({ service, staff }) => ({ ...service, staff }));
-  res.json({ data, page: pageNum, limit: limitNum });
+  return res.json({ data, page: pageNum, limit: limitNum });
 });
 
 /** GET /api/me/services/:id — single service for this customer */
@@ -95,7 +95,7 @@ router.get("/services/:id", async (req, res) => {
     .where(and(eq(servicesTable.id, serviceId), eq(servicesTable.customerId, customerId)));
 
   if (!row) return res.status(404).json({ error: "Service not found" });
-  res.json({ ...row.service, staff: row.staff });
+  return res.json({ ...row.service, staff: row.staff });
 });
 
 /** GET /api/me/subscription — active subscription for logged-in customer */
@@ -111,7 +111,7 @@ router.get("/subscription", async (req, res) => {
     .limit(1);
 
   if (!subscription) return res.status(404).json({ error: "No active subscription" });
-  res.json(subscription);
+  return res.json(subscription);
 });
 
 /** GET /api/me/payments — payment history for logged-in customer */
@@ -132,7 +132,7 @@ router.get("/payments", async (req, res) => {
     .limit(limitNum)
     .offset(offset);
 
-  res.json({ data: rows, page: pageNum, limit: limitNum });
+  return res.json({ data: rows, page: pageNum, limit: limitNum });
 });
 
 /** POST /api/me/renewal-request — creates a contact inquiry for subscription renewal */
@@ -141,7 +141,7 @@ router.post("/renewal-request", async (req, res) => {
   if (!customerId) return res.status(404).json({ error: "No customer linked" });
 
   const [customer] = await db
-    .select({ name: customersTable.name, phone: customersTable.phone })
+    .select({ name: customersTable.name, phone: customersTable.phone, email: customersTable.email })
     .from(customersTable)
     .where(eq(customersTable.id, customerId));
 
@@ -149,11 +149,12 @@ router.post("/renewal-request", async (req, res) => {
 
   await db.insert(contactTable).values({
     name: customer.name,
+    email: customer.email ?? "",
     phone: customer.phone,
     message: `Subscription renewal request from customer ID ${customerId} (${customer.name}).`,
   });
 
-  res.json({ ok: true, message: "Renewal request submitted. Our team will contact you soon." });
+  return res.json({ ok: true, message: "Renewal request submitted. Our team will contact you soon." });
 });
 
 /** PUT /api/me/notifications — toggle push notification opt-in/out */
@@ -168,7 +169,7 @@ router.put("/notifications", async (req, res) => {
     .set({ pushEnabled })
     .where(eq(usersTable.id, req.user!.userId));
 
-  res.json({ ok: true, pushEnabled });
+  return res.json({ ok: true, pushEnabled });
 });
 
 /** PUT /api/me/push-token — register or update the customer's Expo push token */
@@ -183,7 +184,7 @@ router.put("/push-token", async (req, res) => {
     .set({ pushToken: token })
     .where(eq(usersTable.id, req.user!.userId));
 
-  res.json({ ok: true });
+  return res.json({ ok: true });
 });
 
 export default router;

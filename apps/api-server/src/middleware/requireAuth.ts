@@ -24,7 +24,7 @@ export function requireRole(...roles: string[]) {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    next();
+    return next();
   };
 }
 
@@ -43,7 +43,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error("JWT_SECRET not set");
     req.user = jwt.verify(token, secret) as AuthPayload;
-    next();
+    return next();
   } catch {
     return res.status(401).json({ error: "Invalid or expired token" });
   }

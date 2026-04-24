@@ -18,7 +18,7 @@ router.get("/", async (req, res) => {
   const offset = (pageNum - 1) * limitNum;
 
   const filters = [];
-  if (status) filters.push(eq(subscriptionsTable.status, status));
+  if (status) filters.push(eq(subscriptionsTable.status, status as "active" | "expired" | "cancelled"));
   if (customerId) filters.push(eq(subscriptionsTable.customerId, parseInt(customerId)));
 
   const whereClause = filters.length > 0 ? and(...filters) : undefined;
@@ -57,7 +57,7 @@ router.get("/:id", async (req, res) => {
     .where(eq(subscriptionsTable.id, id));
 
   if (!row) return res.status(404).json({ error: "Subscription not found" });
-  res.json({ ...row.subscription, customer: row.customer });
+  return res.json({ ...row.subscription, customer: row.customer });
 });
 
 router.post("/", async (req, res) => {
@@ -94,7 +94,7 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const [subscription] = await db.insert(subscriptionsTable).values(parsed.data).returning();
-  res.status(201).json(subscription);
+  return res.status(201).json(subscription);
 });
 
 router.put("/:id", async (req, res) => {
@@ -114,7 +114,7 @@ router.put("/:id", async (req, res) => {
     .where(eq(subscriptionsTable.id, id))
     .returning();
   if (!subscription) return res.status(404).json({ error: "Subscription not found" });
-  res.json(subscription);
+  return res.json(subscription);
 });
 
 export default router;

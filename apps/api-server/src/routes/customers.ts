@@ -69,7 +69,7 @@ router.get("/:id", async (req, res) => {
     .from(customersTable)
     .where(and(eq(customersTable.id, id), isNull(customersTable.deletedAt)));
   if (!customer) return res.status(404).json({ error: "Customer not found" });
-  res.json(customer);
+  return res.json(customer);
 });
 
 router.post("/", async (req, res) => {
@@ -77,7 +77,7 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const [customer] = await db.insert(customersTable).values(parsed.data).returning();
-  res.status(201).json(customer);
+  return res.status(201).json(customer);
 });
 
 router.put("/:id", async (req, res) => {
@@ -91,7 +91,7 @@ router.put("/:id", async (req, res) => {
     .where(and(eq(customersTable.id, id), isNull(customersTable.deletedAt)))
     .returning();
   if (!customer) return res.status(404).json({ error: "Customer not found" });
-  res.json(customer);
+  return res.json(customer);
 });
 
 router.delete("/:id", async (req, res) => {
@@ -102,7 +102,7 @@ router.delete("/:id", async (req, res) => {
     .where(and(eq(customersTable.id, id), isNull(customersTable.deletedAt)))
     .returning();
   if (!customer) return res.status(404).json({ error: "Customer not found" });
-  res.json({ success: true, message: "Customer deleted" });
+  return res.json({ success: true, message: "Customer deleted" });
 });
 
 export default router;

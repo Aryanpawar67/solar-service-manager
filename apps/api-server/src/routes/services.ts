@@ -25,7 +25,7 @@ router.get("/", async (req, res) => {
   const offset = (pageNum - 1) * limitNum;
 
   const filters = [];
-  if (status) filters.push(eq(servicesTable.status, status));
+  if (status) filters.push(eq(servicesTable.status, status as "cancelled" | "pending" | "in_progress" | "completed"));
   if (staffId) filters.push(eq(servicesTable.staffId, parseInt(staffId)));
   if (customerId) filters.push(eq(servicesTable.customerId, parseInt(customerId)));
   if (date) filters.push(eq(servicesTable.scheduledDate, date));
@@ -151,7 +151,7 @@ router.get("/:id/report", async (req, res) => {
       doc.fontSize(10).font("Helvetica-Bold").fillColor("#374151").text(label);
       doc.moveDown(0.3);
       try {
-        doc.image(filePath, { width: 240, align: "left" });
+        doc.image(filePath, { width: 240 });
       } catch {
         doc.font("Helvetica").fillColor("#9ca3af").text(`[Image: ${filename}]`);
       }
@@ -175,6 +175,7 @@ router.get("/:id/report", async (req, res) => {
     .text("GreenVolt Solar Panel Services  ·  This report was auto-generated.", { align: "center" });
 
   doc.end();
+  return;
 });
 
 router.get("/:id", async (req, res) => {
@@ -187,7 +188,7 @@ router.get("/:id", async (req, res) => {
     .where(eq(servicesTable.id, id));
 
   if (!row) return res.status(404).json({ error: "Service not found" });
-  res.json({ ...row.service, customer: row.customer, staff: row.staff });
+  return res.json({ ...row.service, customer: row.customer, staff: row.staff });
 });
 
 router.post("/", async (req, res) => {
@@ -209,7 +210,7 @@ router.post("/", async (req, res) => {
   }
 
   const [service] = await db.insert(servicesTable).values(parsed.data).returning();
-  res.status(201).json(service);
+  return res.status(201).json(service);
 
   // Fire notification (non-blocking) — re-fetch full customer for phone/name
   const [fullCustomer] = await db
@@ -256,14 +257,14 @@ router.put("/:id", async (req, res) => {
   res.json(service);
 
   // Fire Expo push notification when a staff member is (re-)assigned (non-blocking)
-  if (parsed.data.staffId && parsed.data.staffId !== before?.staffId) {
+  if (parsed.data!.staffId && parsed.data!.staffId !== before?.staffId) {
     const [customer] = await db.select({ name: customersTable.name })
       .from(customersTable).where(eq(customersTable.id, service.customerId));
-    notifyJobAssigned(parsed.data.staffId, service.id, customer?.name ?? "a customer").catch(() => {});
+    notifyJobAssigned(parsed.data!.staffId, service.id, customer?.name ?? "a customer").catch(() => {});
   }
 
   // Fire completion notification (non-blocking)
-  if (parsed.data.status === "completed" && before?.status !== "completed") {
+  if (parsed.data!.status === "completed" && before?.status !== "completed") {
     const [customer] = await db
       .select().from(customersTable).where(eq(customersTable.id, service.customerId));
     if (customer?.phone) {
@@ -284,6 +285,7 @@ router.put("/:id", async (req, res) => {
       ).catch(() => {});
     }
   }
+  return;
 });
 
 router.delete("/:id", async (req, res) => {
@@ -292,7 +294,7 @@ router.delete("/:id", async (req, res) => {
   await db.update(notificationsTable).set({ serviceId: null }).where(eq(notificationsTable.serviceId, id));
   const [deleted] = await db.delete(servicesTable).where(eq(servicesTable.id, id)).returning();
   if (!deleted) return res.status(404).json({ error: "Service not found" });
-  res.json({ success: true, message: "Service deleted" });
+  return res.json({ success: true, message: "Service deleted" });
 });
 
 export default router;
