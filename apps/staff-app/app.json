@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "GreenVolt Staff",
+    "name": "GreenVolt",
     "slug": "greenvolt-staff",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,7 +29,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "GreenVolt Staff needs camera access to photograph service jobs."
+          "cameraPermission": "GreenVolt needs camera access to photograph service jobs."
         }
       ],
       [

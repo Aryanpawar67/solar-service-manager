@@ -12,7 +12,10 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://greenvolt-api.onrender.com"
+      }
     },
     "production": {
       "android": { "buildType": "aab" },
