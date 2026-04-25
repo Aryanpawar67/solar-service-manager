@@ -10,7 +10,8 @@ router.get("/healthz", async (_req, res) => {
     await db.execute(sql`SELECT 1`);
     const data = HealthCheckResponse.parse({ status: "ok" });
     res.json(data);
-  } catch {
+  } catch (err) {
+    console.error("[healthz] db error:", err);
     res.status(503).json({ status: "error", detail: "database unreachable" });
   }
 });
