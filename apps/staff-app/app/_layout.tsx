@@ -133,9 +133,16 @@ async function registerForPushNotifications(): Promise<string | null> {
   if (finalStatus !== "granted") return null;
 
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    // projectId is injected by EAS into app.json `extra.eas.projectId` after `eas init`.
+    // Read it at runtime so the same build works across dev / preview / production.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const projectId = (global as any).__expoConfig?.extra?.eas?.projectId as string | undefined;
+    const tokenData = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined
+    );
     return tokenData.data;
-  } catch {
+  } catch (err) {
+    console.warn("[Push] getExpoPushTokenAsync failed:", err);
     return null;
   }
 }
