@@ -11,8 +11,7 @@ import {
 import { useState } from "react";
 import { router } from "expo-router";
 import { setToken, decodeJwtPayload } from "@/lib/auth";
-
-const API_BASE_URL = process.env["EXPO_PUBLIC_API_URL"] ?? "http://localhost:3000";
+import { API_BASE_URL } from "@/lib/constants";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");

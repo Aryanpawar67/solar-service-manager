@@ -6,20 +6,26 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "ios": { "simulator": true }
+      "android": { "buildType": "apk", "resourceClass": "medium" },
+      "ios": { "simulator": true },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://localhost:3000"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": { "buildType": "apk", "resourceClass": "medium" },
       "channel": "preview",
       "env": {
         "EXPO_PUBLIC_API_URL": "https://greenvolt-api.onrender.com"
       }
     },
     "production": {
-      "android": { "buildType": "aab" },
-      "channel": "production"
+      "android": { "buildType": "aab", "resourceClass": "medium" },
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://greenvolt-api.onrender.com"
+      }
     }
   },
   "submit": {

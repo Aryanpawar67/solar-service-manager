@@ -15,9 +15,8 @@ import { uploadFile } from "@workspace/api-client-react";
 import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
 import { getToken } from "../../src/lib/auth";
+import { API_BASE_URL } from "../../src/lib/constants";
 import { useState } from "react";
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";
 
 const STATUS_SEQUENCE = ["pending", "in_progress", "completed"] as const;
 type Status = (typeof STATUS_SEQUENCE)[number];

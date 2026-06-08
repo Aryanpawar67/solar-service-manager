@@ -3,7 +3,8 @@ services:
     name: greenvolt-api
     runtime: node
     buildCommand: pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build
-    startCommand: node --enable-source-maps apps/api-server/dist/index.mjs
+    startCommand: node --dns-result-order=ipv4first --enable-source-maps apps/api-server/dist/index.mjs
+    healthCheckPath: /api/healthz
     plan: free
     envVars:
       - key: NODE_VERSION
