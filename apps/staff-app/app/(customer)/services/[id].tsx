@@ -1,6 +1,8 @@
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Image, Linking, Alert } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetMyService } from "@workspace/api-client-react";
+import { API_BASE_URL } from "@/lib/constants";
+import { getToken } from "@/lib/auth";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#f59e0b",
@@ -22,8 +24,13 @@ export default function CustomerServiceDetailScreen() {
     );
   }
 
-  const downloadReport = () => {
-    const url = `/api/services/${serviceId}/report`;
+  const downloadReport = async () => {
+    const token = await getToken();
+    if (!token) {
+      Alert.alert("Not logged in", "Please log in again.");
+      return;
+    }
+    const url = `${API_BASE_URL}/api/services/${serviceId}/report?token=${encodeURIComponent(token)}`;
     Alert.alert("Download Report", "This will open the PDF report in your browser.", [
       { text: "Cancel", style: "cancel" },
       { text: "Open", onPress: () => Linking.openURL(url) },

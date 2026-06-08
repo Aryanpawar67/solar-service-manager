@@ -4,7 +4,7 @@
  * were added manually after the OpenAPI spec was frozen.
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { customFetch } from "./custom-fetch";
+import { customFetch, ApiError } from "./custom-fetch";
 import type { Customer, Service, Subscription, Payment } from "./generated/api.schemas";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -101,7 +101,15 @@ export function useGetMyService(id: number) {
 export function useGetMySubscription() {
   return useQuery({
     queryKey: mySubscriptionKey(),
-    queryFn: () => customFetch<Subscription | null>("/api/me/subscription"),
+    queryFn: async () => {
+      try {
+        return await customFetch<Subscription>("/api/me/subscription");
+      } catch (err) {
+        // 404 means the customer simply has no subscription yet — treat as null
+        if (err instanceof ApiError && err.status === 404) return null;
+        throw err;
+      }
+    },
   });
 }
 

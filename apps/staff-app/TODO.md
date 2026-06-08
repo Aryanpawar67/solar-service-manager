@@ -39,14 +39,14 @@
 
 ### Still needed — Milestone 1 completion
 - [ ] **Set up Firebase project** and download `google-services.json` into `apps/staff-app/`
-  > Required for FCM push notifications on Android (Expo push tokens won't reach real devices without it)
-  > 1. Go to console.firebase.google.com → New project "GreenVolt"
+  > 1. console.firebase.google.com → New project "GreenVolt"
   > 2. Add Android app with package `in.greenvolt.staff`
   > 3. Download `google-services.json` → place in `apps/staff-app/`
-  > 4. Add `"./google-services.json"` to `app.json` → `android.googleServicesFile`
+  > (googleServicesFile is already wired in app.json)
+- [ ] **Run `pnpm install`** from the repo root to install `expo-updates ~0.30.0`
 - [ ] **Create EAS account** (`eas login`) and link project (`eas init`)
+  > After `eas init`, replace `REPLACE_WITH_EAS_PROJECT_ID` in `app.json` `updates.url`
 - [ ] **Generate signing keystore** — `eas credentials` (Android) and save it securely
-- [ ] **Create `.gitignore` entries** for `google-services.json` and `google-service-account.json`
 
 ---
 
@@ -212,11 +212,26 @@
 | `allowBackup: false` | ✅ |
 | All permissions declared in `app.json` | ✅ |
 | Unnecessary permissions blocked | ✅ |
+| `SafeAreaProvider` wrapping root | ✅ |
+| `StatusBar` green/light-content on Android | ✅ |
+| `ErrorBoundary` on root | ✅ |
+| Offline banner + network hook | ✅ |
+| `expo-updates` OTA config | ✅ (needs `pnpm install` + EAS project ID) |
+| `runtimeVersion` policy set | ✅ (appVersion) |
+| `googleServicesFile` wired in app.json | ✅ (file still needed) |
+| `.gitignore` covers credentials | ✅ |
+| `API_BASE_URL` centralized | ✅ |
+| PDF download URL fixed (customer portal) | ✅ |
+| `useGetMySubscription` 404 → null fix | ✅ |
+| API server `.env.example` | ✅ |
+| Staff app `.env.example` | ✅ |
 | `google-services.json` in place | ❌ Needs Firebase setup |
+| `expo-updates` package installed | ❌ Run `pnpm install` |
+| EAS account + `eas init` done | ❌ Needs `eas login` + `eas init` |
+| OTA update URL set in `app.json` | ❌ Update after `eas init` |
 | Signing keystore created | ❌ Needs `eas credentials` |
 | Privacy policy URL | ❌ Not yet created |
 | Data Safety form | ❌ Play Console action needed |
 | Store listing screenshots | ❌ Not yet created |
 | Feature graphic | ❌ Not yet created |
-| EAS account linked | ❌ Needs `eas login` + `eas init` |
 | Production build `.aab` | ❌ Not yet built |
