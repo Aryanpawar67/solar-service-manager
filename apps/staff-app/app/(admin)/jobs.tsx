@@ -1,6 +1,7 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, FlatList, Pressable, Platform, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { useListServices } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#f59e0b",
@@ -10,7 +11,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function AdminJobsScreen() {
-  const { data, isLoading, refetch, isRefetching } = useListServices({ limit: 50 });
+  const { data, isLoading, isError, refetch, isRefetching } = useListServices({ limit: 50 });
 
   if (isLoading) {
     return (
@@ -18,6 +19,10 @@ export default function AdminJobsScreen() {
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   return (
@@ -33,7 +38,11 @@ export default function AdminJobsScreen() {
         </View>
       }
       renderItem={({ item }) => (
-        <TouchableOpacity style={styles.card} onPress={() => router.push(`/job/${item.id}`)} activeOpacity={0.7}>
+        <Pressable
+          android_ripple={{ color: "#16a34a22" }}
+          style={({ pressed }) => [styles.card, Platform.OS === "ios" && pressed && { opacity: 0.7 }]}
+          onPress={() => router.push(`/job/${item.id}`)}
+        >
           <View style={styles.cardHeader}>
             <Text style={styles.customerName}>{item.customer?.name ?? "—"}</Text>
             <View style={[styles.badge, { backgroundColor: (STATUS_COLOR[item.status] ?? "#6b7280") + "22" }]}>
@@ -49,7 +58,7 @@ export default function AdminJobsScreen() {
               {new Date(item.scheduledDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       )}
     />
   );
@@ -60,7 +69,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 12, flexGrow: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
   empty: { color: "#6b7280", fontSize: 15, textAlign: "center" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   customerName: { fontSize: 16, fontWeight: "600", color: "#111827", flex: 1 },
   badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },

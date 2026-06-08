@@ -1,8 +1,9 @@
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useGetDashboardAnalytics } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function AdminAnalyticsScreen() {
-  const { data, isLoading, refetch, isRefetching } = useGetDashboardAnalytics();
+  const { data, isLoading, isError, refetch, isRefetching } = useGetDashboardAnalytics();
 
   if (isLoading) {
     return (
@@ -10,6 +11,10 @@ export default function AdminAnalyticsScreen() {
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   const d = data as Record<string, number> | undefined;
@@ -34,14 +39,12 @@ export default function AdminAnalyticsScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" />}
     >
-      {/* Revenue */}
       <View style={styles.revenueCard}>
         <Text style={styles.revenueLabel}>Total Revenue</Text>
         <Text style={styles.revenueValue}>₹{revenue.toLocaleString("en-IN")}</Text>
         <Text style={styles.revenueMonthly}>This month: ₹{monthly.toLocaleString("en-IN")}</Text>
       </View>
 
-      {/* Metrics grid */}
       <View style={styles.grid}>
         {metrics.map((m) => (
           <View key={m.label} style={styles.metricCard}>

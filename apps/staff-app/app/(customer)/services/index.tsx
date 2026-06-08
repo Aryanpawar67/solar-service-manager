@@ -1,6 +1,7 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, FlatList, Pressable, Platform, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { useGetMyServices } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#f59e0b",
@@ -10,7 +11,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function CustomerServicesScreen() {
-  const { data, isLoading, refetch, isRefetching } = useGetMyServices({ limit: 50 });
+  const { data, isLoading, isError, refetch, isRefetching } = useGetMyServices({ limit: 50 });
 
   if (isLoading) {
     return (
@@ -18,6 +19,10 @@ export default function CustomerServicesScreen() {
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   return (
@@ -33,10 +38,10 @@ export default function CustomerServicesScreen() {
         </View>
       }
       renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.card}
+        <Pressable
+          android_ripple={{ color: "#16a34a22" }}
+          style={({ pressed }) => [styles.card, Platform.OS === "ios" && pressed && { opacity: 0.7 }]}
           onPress={() => router.push(`/(customer)/services/${item.id}`)}
-          activeOpacity={0.7}
         >
           <View style={styles.cardRow}>
             <Text style={styles.serviceType}>{item.serviceType ?? "Maintenance"}</Text>
@@ -52,7 +57,7 @@ export default function CustomerServicesScreen() {
             </Text>
           )}
           {item.staff && <Text style={styles.staff}>Technician: {item.staff.name}</Text>}
-        </TouchableOpacity>
+        </Pressable>
       )}
     />
   );
@@ -63,7 +68,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 10, flexGrow: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
   empty: { color: "#6b7280", fontSize: 15, textAlign: "center" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 14, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
   cardRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
   serviceType: { fontSize: 15, fontWeight: "600", color: "#111827" },
   badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },

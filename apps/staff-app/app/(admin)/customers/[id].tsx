@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Pressable, Platform } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetCustomer, useListServices } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#f59e0b",
@@ -13,15 +14,19 @@ export default function AdminCustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const customerId = Number(id);
 
-  const { data: customer, isLoading } = useGetCustomer(customerId);
+  const { data: customer, isLoading, isError, refetch } = useGetCustomer(customerId);
   const { data: services } = useListServices({ customerId, limit: 20 });
 
-  if (isLoading || !customer) {
+  if (isLoading || (!customer && !isError)) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError || !customer) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   return (
@@ -39,7 +44,6 @@ export default function AdminCustomerDetailScreen() {
         }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Profile */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Customer Details</Text>
           <Row label="Phone" value={customer.phone} />
@@ -50,13 +54,17 @@ export default function AdminCustomerDetailScreen() {
           {customer.notes && <Row label="Notes" value={customer.notes} />}
         </View>
 
-        {/* Service History */}
         <Text style={styles.sectionHeader}>Service History</Text>
         {(services?.data ?? []).length === 0 ? (
           <Text style={styles.empty}>No services recorded.</Text>
         ) : (
           (services?.data ?? []).map((s) => (
-            <TouchableOpacity key={s.id} style={styles.serviceCard} onPress={() => router.push(`/job/${s.id}`)} activeOpacity={0.7}>
+            <Pressable
+              key={s.id}
+              android_ripple={{ color: "#16a34a22" }}
+              style={({ pressed }) => [styles.serviceCard, Platform.OS === "ios" && pressed && { opacity: 0.7 }]}
+              onPress={() => router.push(`/job/${s.id}`)}
+            >
               <View style={styles.serviceRow}>
                 <Text style={styles.serviceType}>{s.serviceType ?? "Maintenance"}</Text>
                 <View style={[styles.badge, { backgroundColor: (STATUS_COLOR[s.status] ?? "#6b7280") + "22" }]}>
@@ -71,7 +79,7 @@ export default function AdminCustomerDetailScreen() {
                 </Text>
               )}
               {s.staff && <Text style={styles.serviceStaff}>Technician: {s.staff.name}</Text>}
-            </TouchableOpacity>
+            </Pressable>
           ))
         )}
       </ScrollView>
@@ -99,7 +107,7 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 13, color: "#6b7280", width: 110 },
   rowValue: { fontSize: 14, color: "#111827", flex: 1 },
   empty: { color: "#9ca3af", fontSize: 14, textAlign: "center", marginTop: 8 },
-  serviceCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  serviceCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
   serviceRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
   serviceType: { fontSize: 14, fontWeight: "600", color: "#111827" },
   badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },

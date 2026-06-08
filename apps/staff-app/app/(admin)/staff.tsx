@@ -1,8 +1,9 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, Switch, Alert } from "react-native";
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, Switch, Alert } from "react-native";
 import { useListStaff, useUpdateStaff } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 export default function AdminStaffScreen() {
-  const { data, isLoading, refetch, isRefetching } = useListStaff({});
+  const { data, isLoading, isError, refetch, isRefetching } = useListStaff({});
   const update = useUpdateStaff();
 
   const toggleActive = (id: number, current: boolean) => {
@@ -27,6 +28,10 @@ export default function AdminStaffScreen() {
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   return (

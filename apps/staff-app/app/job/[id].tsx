@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetService, useUpdateService, useListStaff, useGetMe } from "@workspace/api-client-react";
+import { ErrorState } from "../../src/components/ErrorState";
 import { uploadFile } from "@workspace/api-client-react";
 import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
@@ -25,7 +26,7 @@ export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const jobId = Number(id);
 
-  const { data: job, isLoading, refetch } = useGetService(jobId);
+  const { data: job, isLoading, isError, refetch } = useGetService(jobId);
   const update = useUpdateService();
   const { data: meData } = useGetMe();
   const isAdmin = meData?.user?.role === "admin";
@@ -72,7 +73,7 @@ export default function JobDetailScreen() {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ["images"],
-      quality: 0.8,
+      quality: 0.6,
     });
     if (result.canceled) return;
 
@@ -120,12 +121,16 @@ export default function JobDetailScreen() {
     }
   };
 
-  if (isLoading || !job) {
+  if (isLoading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError || !job) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   const canAdvance =

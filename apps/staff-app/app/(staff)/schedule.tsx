@@ -1,6 +1,7 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, FlatList, Pressable, Platform, StyleSheet, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useListServices, useGetMe } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#f59e0b",
@@ -13,10 +14,10 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function ScheduleScreen() {
-  const { data: meData, isLoading: meLoading } = useGetMe();
+  const { data: meData, isLoading: meLoading, isError: meError } = useGetMe();
   const staffId = meData?.user?.staffId;
 
-  const { data, isLoading } = useListServices(
+  const { data, isLoading, isError, refetch } = useListServices(
     staffId != null ? { staffId, limit: 50 } : {}
   );
 
@@ -28,7 +29,10 @@ export default function ScheduleScreen() {
     );
   }
 
-  // Group jobs by date
+  if (meError || isError) {
+    return <ErrorState onRetry={refetch} />;
+  }
+
   const grouped: Record<string, typeof services> = {};
   const services = (data?.data ?? []).filter(
     (s) => (s.status as string) !== "cancelled" && s.scheduledDate
@@ -71,11 +75,11 @@ export default function ScheduleScreen() {
               {isToday && <Text style={styles.todayBadge}>Today</Text>}
             </View>
             {grouped[date].map((service) => (
-              <TouchableOpacity
+              <Pressable
                 key={service.id}
-                style={styles.card}
+                android_ripple={{ color: "#16a34a22" }}
+                style={({ pressed }) => [styles.card, Platform.OS === "ios" && pressed && { opacity: 0.7 }]}
                 onPress={() => router.push(`/job/${service.id}`)}
-                activeOpacity={0.7}
               >
                 <View style={styles.cardRow}>
                   <Text style={styles.customerName}>{service.customer?.name ?? "—"}</Text>
@@ -89,7 +93,7 @@ export default function ScheduleScreen() {
                 {service.serviceType && (
                   <Text style={styles.type}>{service.serviceType}</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         );
@@ -131,6 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 14,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 6,

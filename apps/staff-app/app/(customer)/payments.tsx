@@ -1,5 +1,6 @@
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
 import { useGetMyPayments } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 const STATUS_COLOR: Record<string, string> = {
   paid: "#16a34a",
@@ -9,7 +10,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function CustomerPaymentsScreen() {
-  const { data, isLoading, refetch, isRefetching } = useGetMyPayments({ limit: 50 });
+  const { data, isLoading, isError, refetch, isRefetching } = useGetMyPayments({ limit: 50 });
 
   if (isLoading) {
     return (
@@ -17,6 +18,10 @@ export default function CustomerPaymentsScreen() {
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (isError) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   const payments = data?.data ?? [];

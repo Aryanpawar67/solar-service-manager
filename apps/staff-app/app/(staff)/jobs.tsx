@@ -2,13 +2,15 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
+  Pressable,
+  Platform,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
 import { useListServices, useGetMe } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#f59e0b",
@@ -18,10 +20,10 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function JobsScreen() {
-  const { data: meData, isLoading: meLoading } = useGetMe();
+  const { data: meData, isLoading: meLoading, isError: meError } = useGetMe();
   const staffId = meData?.user?.staffId;
 
-  const { data, isLoading, refetch, isRefetching } = useListServices(
+  const { data, isLoading, isError, refetch, isRefetching } = useListServices(
     staffId != null ? { staffId } : {}
   );
 
@@ -31,6 +33,10 @@ export default function JobsScreen() {
         <ActivityIndicator size="large" color="#16a34a" />
       </View>
     );
+  }
+
+  if (meError || isError) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   if (staffId == null) {
@@ -49,11 +55,7 @@ export default function JobsScreen() {
       data={data?.data ?? []}
       keyExtractor={(item) => String(item.id)}
       refreshControl={
-        <RefreshControl
-          refreshing={isRefetching}
-          onRefresh={refetch}
-          tintColor="#16a34a"
-        />
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" />
       }
       ListEmptyComponent={
         <View style={styles.center}>
@@ -61,10 +63,13 @@ export default function JobsScreen() {
         </View>
       }
       renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.card}
+        <Pressable
+          android_ripple={{ color: "#16a34a22" }}
+          style={({ pressed }) => [
+            styles.card,
+            Platform.OS === "ios" && pressed && { opacity: 0.7 },
+          ]}
           onPress={() => router.push(`/job/${item.id}`)}
-          activeOpacity={0.7}
         >
           <View style={styles.cardHeader}>
             <Text style={styles.customerName}>{item.customer?.name ?? "—"}</Text>
@@ -94,7 +99,7 @@ export default function JobsScreen() {
               })}
             </Text>
           )}
-        </TouchableOpacity>
+        </Pressable>
       )}
     />
   );
@@ -109,6 +114,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 14,
     padding: 16,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -121,11 +127,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   customerName: { fontSize: 16, fontWeight: "600", color: "#111827", flex: 1 },
-  badge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
+  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
   address: { fontSize: 13, color: "#6b7280", marginBottom: 4 },
   date: { fontSize: 12, color: "#9ca3af" },

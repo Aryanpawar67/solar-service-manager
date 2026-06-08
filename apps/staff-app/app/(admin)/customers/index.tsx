@@ -1,11 +1,12 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, RefreshControl, TextInput } from "react-native";
+import { View, Text, FlatList, Pressable, Platform, StyleSheet, ActivityIndicator, RefreshControl, TextInput } from "react-native";
 import { router } from "expo-router";
 import { useListCustomers } from "@workspace/api-client-react";
+import { ErrorState } from "@/components/ErrorState";
 import { useState } from "react";
 
 export default function AdminCustomersScreen() {
   const [search, setSearch] = useState("");
-  const { data, isLoading, refetch, isRefetching } = useListCustomers({ search: search || undefined, limit: 50 });
+  const { data, isLoading, isError, refetch, isRefetching } = useListCustomers({ search: search || undefined, limit: 50 });
 
   return (
     <View style={styles.container}>
@@ -23,6 +24,8 @@ export default function AdminCustomersScreen() {
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#16a34a" />
         </View>
+      ) : isError ? (
+        <ErrorState onRetry={refetch} />
       ) : (
         <FlatList
           contentContainerStyle={styles.content}
@@ -35,7 +38,11 @@ export default function AdminCustomersScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => router.push(`/(admin)/customers/${item.id}`)} activeOpacity={0.7}>
+            <Pressable
+              android_ripple={{ color: "#16a34a22" }}
+              style={({ pressed }) => [styles.card, Platform.OS === "ios" && pressed && { opacity: 0.7 }]}
+              onPress={() => router.push(`/(admin)/customers/${item.id}`)}
+            >
               <View style={styles.cardRow}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
@@ -49,7 +56,7 @@ export default function AdminCustomersScreen() {
                   <Text style={styles.capacity}>{item.solarCapacity} kW</Text>
                 )}
               </View>
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       )}
@@ -64,7 +71,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 10, flexGrow: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
   empty: { color: "#6b7280", fontSize: 15, textAlign: "center" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 14, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
+  card: { backgroundColor: "#fff", borderRadius: 14, padding: 14, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
   cardRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#16a34a", justifyContent: "center", alignItems: "center" },
   avatarText: { fontSize: 18, fontWeight: "700", color: "#fff" },
