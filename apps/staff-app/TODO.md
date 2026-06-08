@@ -42,10 +42,12 @@
   > 1. console.firebase.google.com → New project "GreenVolt"
   > 2. Add Android app with package `in.greenvolt.staff`
   > 3. Download `google-services.json` → place in `apps/staff-app/`
-  > (googleServicesFile is already wired in app.json)
-- [ ] **Run `pnpm install`** from the repo root to install `expo-updates ~0.30.0`
-- [ ] **Create EAS account** (`eas login`) and link project (`eas init`)
-  > After `eas init`, replace `REPLACE_WITH_EAS_PROJECT_ID` in `app.json` `updates.url`
+  > `app.config.js` auto-includes it once the file exists — no other change needed
+- [x] **`pnpm install`** — expo-updates ~29.0.0 installed ✅
+- [x] **EAS CLI installed** — eas-cli v20.1.0 ✅
+- [ ] **`eas login`** — run `eas login` in terminal (opens browser for Expo account)
+- [ ] **`eas init`** — run `eas init` inside `apps/staff-app/` to link to EAS project
+  > `app.config.js` auto-reads the projectId and builds the correct OTA URL — no manual edit needed
 - [ ] **Generate signing keystore** — `eas credentials` (Android) and save it securely
 
 ---
@@ -216,9 +218,11 @@
 | `StatusBar` green/light-content on Android | ✅ |
 | `ErrorBoundary` on root | ✅ |
 | Offline banner + network hook | ✅ |
-| `expo-updates` OTA config | ✅ (needs `pnpm install` + EAS project ID) |
+| `expo-updates` ~29.0.0 installed | ✅ |
+| `expo-updates` OTA config (app.config.js) | ✅ auto-wired via projectId |
 | `runtimeVersion` policy set | ✅ (appVersion) |
-| `googleServicesFile` wired in app.json | ✅ (file still needed) |
+| `googleServicesFile` wired (conditional) | ✅ app.config.js auto-includes when present |
+| EAS CLI installed | ✅ v20.1.0 |
 | `.gitignore` covers credentials | ✅ |
 | `API_BASE_URL` centralized | ✅ |
 | PDF download URL fixed (customer portal) | ✅ |
@@ -226,9 +230,8 @@
 | API server `.env.example` | ✅ |
 | Staff app `.env.example` | ✅ |
 | `google-services.json` in place | ❌ Needs Firebase setup |
-| `expo-updates` package installed | ❌ Run `pnpm install` |
-| EAS account + `eas init` done | ❌ Needs `eas login` + `eas init` |
-| OTA update URL set in `app.json` | ❌ Update after `eas init` |
+| EAS account logged in | ❌ Run `eas login` |
+| EAS project linked (`eas init`) | ❌ Run `eas init` in apps/staff-app/ |
 | Signing keystore created | ❌ Needs `eas credentials` |
 | Privacy policy URL | ❌ Not yet created |
 | Data Safety form | ❌ Play Console action needed |
