@@ -1,20 +1,23 @@
-import { View, Text, StyleSheet, Animated } from "react-native";
+import { Text, StyleSheet, Animated } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 
 export function OfflineBanner({ visible }: { visible: boolean }) {
-  const translateY = useRef(new Animated.Value(-48)).current;
+  const translateY = useRef(new Animated.Value(-52)).current;
 
   useEffect(() => {
-    Animated.timing(translateY, {
-      toValue: visible ? 0 : -48,
-      duration: 280,
+    Animated.spring(translateY, {
+      toValue: visible ? 0 : -52,
       useNativeDriver: true,
+      tension: 80,
+      friction: 12,
     }).start();
   }, [visible, translateY]);
 
   return (
     <Animated.View style={[styles.banner, { transform: [{ translateY }] }]}>
-      <Text style={styles.text}>⚡ No internet connection</Text>
+      <Ionicons name="wifi-outline" size={15} color="#fff" />
+      <Text style={styles.text}>No internet connection</Text>
     </Animated.View>
   );
 }
@@ -25,10 +28,12 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 48,
+    height: 44,
     backgroundColor: "#dc2626",
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 8,
     zIndex: 1000,
   },
   text: { color: "#fff", fontWeight: "700", fontSize: 13 },
