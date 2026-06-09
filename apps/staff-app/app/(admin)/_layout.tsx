@@ -61,6 +61,7 @@ export default function AdminTabsLayout() {
         headerShadowVisible: false,
       }}
     >
+      {/* ── Visible tabs (4) ─────────────────────────────────────── */}
       <Tabs.Screen
         name="jobs"
         options={{
@@ -80,15 +81,6 @@ export default function AdminTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="staff"
-        options={{
-          title: "Staff",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon="id-card-outline" activeIcon="id-card" color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="analytics"
         options={{
           title: "Analytics",
@@ -100,12 +92,15 @@ export default function AdminTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Account",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon icon="person-outline" activeIcon="person" color={color} focused={focused} />
           ),
         }}
       />
+
+      {/* ── Hidden (accessible via Account → Manage Staff) ───────── */}
+      <Tabs.Screen name="staff" options={{ href: null }} />
     </Tabs>
   );
 }

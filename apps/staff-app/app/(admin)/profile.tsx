@@ -68,6 +68,26 @@ export default function AdminProfileScreen() {
       </View>
       </FadeInView>
 
+      {/* Quick links */}
+      <FadeInView delay={180}>
+      <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.linkRow}
+          onPress={() => router.push("/(admin)/staff")}
+          activeOpacity={0.75}
+        >
+          <View style={styles.linkIconBox}>
+            <Ionicons name="id-card-outline" size={16} color="#16a34a" />
+          </View>
+          <View style={styles.linkContent}>
+            <Text style={styles.linkLabel}>Manage Staff</Text>
+            <Text style={styles.linkSub}>View and toggle technician accounts</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="#d1d5db" />
+        </TouchableOpacity>
+      </View>
+      </FadeInView>
+
       {/* Logout */}
       <FadeInView delay={240}>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
@@ -172,6 +192,15 @@ const styles = StyleSheet.create({
   infoContent: { flex: 1 },
   infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
   infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
+
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12 },
+  linkIconBox: {
+    width: 32, height: 32, borderRadius: 10,
+    backgroundColor: "#f0fdf4", justifyContent: "center", alignItems: "center",
+  },
+  linkContent: { flex: 1 },
+  linkLabel: { fontSize: 14, color: "#111827", fontWeight: "600" },
+  linkSub: { fontSize: 11, color: "#9ca3af", marginTop: 1 },
 
   logoutBtn: {
     flexDirection: "row",

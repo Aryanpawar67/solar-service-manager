@@ -61,6 +61,7 @@ export default function CustomerTabsLayout() {
         headerShadowVisible: false,
       }}
     >
+      {/* ── Visible tabs (4) ─────────────────────────────────────── */}
       <Tabs.Screen
         name="index"
         options={{
@@ -81,15 +82,6 @@ export default function CustomerTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="subscription"
-        options={{
-          title: "Plan",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon="star-outline" activeIcon="star" color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="payments"
         options={{
           title: "Payments",
@@ -101,12 +93,16 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: "Account",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon icon="person-outline" activeIcon="person" color={color} focused={focused} />
           ),
         }}
       />
+
+      {/* ── Hidden routes (no tab bar entry) ─────────────────────── */}
+      <Tabs.Screen name="subscription" options={{ href: null }} />
+      <Tabs.Screen name="book" options={{ href: null }} />
     </Tabs>
   );
 }
