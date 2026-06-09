@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useListCustomers } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 import { useState } from "react";
 
 export default function AdminCustomersScreen() {
@@ -75,7 +76,8 @@ export default function AdminCustomersScreen() {
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <FadeInView delay={Math.min(index * 70, 490)}>
             <Pressable
               android_ripple={{ color: "#16a34a18" }}
               style={({ pressed }) => [
@@ -111,6 +113,7 @@ export default function AdminCustomersScreen() {
                 </View>
               </View>
             </Pressable>
+            </FadeInView>
           )}
         />
       )}

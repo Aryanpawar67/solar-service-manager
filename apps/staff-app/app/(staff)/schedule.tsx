@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { useListServices, useGetMe } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7" },
@@ -72,11 +73,12 @@ export default function ScheduleScreen() {
       contentContainerStyle={styles.content}
       data={sortedDates}
       keyExtractor={(d) => d}
-      renderItem={({ item: date }) => {
+      renderItem={({ item: date, index }) => {
         const d = new Date(date + "T00:00:00");
         const isToday = todayStr === date;
         const isPast = date < todayStr;
         return (
+          <FadeInView delay={Math.min(index * 100, 500)}>
           <View style={styles.dayGroup}>
             {/* Date header */}
             <View style={[styles.dateHeader, isToday && styles.dateHeaderToday, isPast && styles.dateHeaderPast]}>
@@ -135,6 +137,7 @@ export default function ScheduleScreen() {
               })}
             </View>
           </View>
+          </FadeInView>
         );
       }}
     />

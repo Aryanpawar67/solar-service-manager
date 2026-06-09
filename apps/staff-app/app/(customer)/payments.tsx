@@ -9,6 +9,7 @@ import {
 import { useGetMyPayments } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
   paid:     { color: "#16a34a", bg: "#dcfce7", icon: "checkmark-circle-outline" },
@@ -65,9 +66,10 @@ export default function CustomerPaymentsScreen() {
           <Text style={styles.emptyText}>Your payments will appear here once processed.</Text>
         </View>
       }
-      renderItem={({ item }) => {
+      renderItem={({ item, index }) => {
         const cfg = STATUS_CONFIG[item.status as string] ?? STATUS_CONFIG.pending;
         return (
+          <FadeInView delay={Math.min(index * 80, 560)}>
           <View style={styles.card}>
             <View style={styles.cardTop}>
               <View style={[styles.paymentIconBox, { backgroundColor: cfg.bg }]}>
@@ -108,6 +110,7 @@ export default function CustomerPaymentsScreen() {
               </View>
             </View>
           </View>
+          </FadeInView>
         );
       }}
     />

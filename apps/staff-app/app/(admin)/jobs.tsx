@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { useListServices } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 import { useState } from "react";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
@@ -98,10 +99,11 @@ export default function AdminJobsScreen() {
             </Text>
           </View>
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.cancelled;
           const borderColor = STATUS_BORDER[item.status] ?? "#d1d5db";
           return (
+            <FadeInView delay={Math.min(index * 70, 560)}>
             <Pressable
               android_ripple={{ color: "#16a34a18" }}
               style={({ pressed }) => [
@@ -151,6 +153,7 @@ export default function AdminJobsScreen() {
                 <Ionicons name="chevron-forward" size={14} color="#d1d5db" />
               </View>
             </Pressable>
+            </FadeInView>
           );
         }}
       />

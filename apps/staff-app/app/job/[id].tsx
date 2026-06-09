@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   TextInput,
+  Animated,
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetService, useUpdateService, useListStaff, useGetMe } from "@workspace/api-client-react";
@@ -18,7 +19,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { getToken } from "../../src/lib/auth";
 import { API_BASE_URL } from "../../src/lib/constants";
 import { ErrorState } from "../../src/components/ErrorState";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_SEQUENCE = ["pending", "in_progress", "completed"] as const;
 type Status = (typeof STATUS_SEQUENCE)[number];
@@ -55,6 +57,9 @@ export default function JobDetailScreen() {
 
   const [remarksText, setRemarksText] = useState<string | null>(null);
   const [savingRemarks, setSavingRemarks] = useState(false);
+  const ctaScale = useRef(new Animated.Value(1)).current;
+  const onCtaPressIn  = () => Animated.spring(ctaScale, { toValue: 0.96, useNativeDriver: true, speed: 60, bounciness: 0 }).start();
+  const onCtaPressOut = () => Animated.spring(ctaScale, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 4 }).start();
 
   const currentRemarks = remarksText ?? job?.remarks ?? "";
 
@@ -172,6 +177,7 @@ export default function JobDetailScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
         {/* Step Progress */}
+        <FadeInView delay={0}>
         <View style={styles.stepperCard}>
           <View style={styles.stepper}>
             {STEP_CONFIG.map((step, idx) => {
@@ -210,8 +216,10 @@ export default function JobDetailScreen() {
             </Text>
           </View>
         </View>
+        </FadeInView>
 
         {/* Job Info */}
+        <FadeInView delay={80}>
         <View style={styles.card}>
           <SectionHeader icon="information-circle-outline" title="Job Details" />
           <InfoRow label="Customer" value={job.customer?.name ?? "—"} />
@@ -229,8 +237,10 @@ export default function JobDetailScreen() {
           {job.serviceType && <InfoRow label="Type" value={job.serviceType} />}
           {job.notes && <InfoRow label="Notes" value={job.notes} last />}
         </View>
+        </FadeInView>
 
         {/* Photos */}
+        <FadeInView delay={160}>
         <View style={styles.card}>
           <SectionHeader icon="camera-outline" title="Service Photos" />
           <PhotoSlot
@@ -244,8 +254,10 @@ export default function JobDetailScreen() {
             onCapture={() => pickAndUpload("postServiceImage")}
           />
         </View>
+        </FadeInView>
 
         {/* Remarks */}
+        <FadeInView delay={240}>
         <View style={styles.card}>
           <SectionHeader icon="create-outline" title="Post-Service Remarks" />
           <TextInput
@@ -275,12 +287,15 @@ export default function JobDetailScreen() {
             </TouchableOpacity>
           )}
         </View>
+        </FadeInView>
 
         {/* PDF Report */}
+        <FadeInView delay={320}>
         <TouchableOpacity style={styles.reportButton} onPress={openReport} activeOpacity={0.8}>
           <Ionicons name="document-text-outline" size={20} color="#16a34a" />
           <Text style={styles.reportButtonText}>Download Service Report (PDF)</Text>
         </TouchableOpacity>
+        </FadeInView>
 
         {/* Admin: Reassign */}
         {isAdmin && (
@@ -321,27 +336,32 @@ export default function JobDetailScreen() {
 
         {/* CTA Button */}
         {canAdvance && (
+          <FadeInView delay={400}>
           <TouchableOpacity
-            style={[styles.ctaButton, update.isPending && styles.btnDisabled]}
             onPress={advanceStatus}
+            onPressIn={onCtaPressIn}
+            onPressOut={onCtaPressOut}
             disabled={update.isPending}
-            activeOpacity={0.85}
+            activeOpacity={1}
           >
-            {update.isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <Ionicons
-                  name={job.status === "pending" ? "play-circle-outline" : "checkmark-circle-outline"}
-                  size={22}
-                  color="#fff"
-                />
-                <Text style={styles.ctaButtonText}>
-                  {job.status === "pending" ? "Start Job" : "Mark as Completed"}
-                </Text>
-              </>
-            )}
+            <Animated.View style={[styles.ctaButton, update.isPending && styles.btnDisabled, { transform: [{ scale: ctaScale }] }]}>
+              {update.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons
+                    name={job.status === "pending" ? "play-circle-outline" : "checkmark-circle-outline"}
+                    size={22}
+                    color="#fff"
+                  />
+                  <Text style={styles.ctaButtonText}>
+                    {job.status === "pending" ? "Start Job" : "Mark as Completed"}
+                  </Text>
+                </>
+              )}
+            </Animated.View>
           </TouchableOpacity>
+          </FadeInView>
         )}
       </ScrollView>
     </>

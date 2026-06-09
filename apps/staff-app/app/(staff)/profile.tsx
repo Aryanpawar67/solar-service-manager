@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { useGetMe } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { FadeInView } from "@/components/FadeInView";
 
 export default function ProfileScreen() {
   const { data, isLoading } = useGetMe();
@@ -43,6 +44,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {/* Header */}
+      <FadeInView delay={0} fromY={-20}>
       <View style={styles.header}>
         <View style={styles.avatarRing}>
           <View style={styles.avatar}>
@@ -56,8 +58,10 @@ export default function ProfileScreen() {
           <Text style={styles.roleBadgeText}>{(user?.role ?? "staff").toUpperCase()}</Text>
         </View>
       </View>
+      </FadeInView>
 
       {/* Info card */}
+      <FadeInView delay={120}>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Account Details</Text>
         <InfoRow icon="mail-outline" label="Email" value={user?.email ?? "—"} />
@@ -69,12 +73,15 @@ export default function ProfileScreen() {
           last
         />
       </View>
+      </FadeInView>
 
       {/* Logout */}
+      <FadeInView delay={240}>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
         <Ionicons name="log-out-outline" size={18} color="#dc2626" />
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+      </FadeInView>
 
       <Text style={styles.version}>GreenVolt Staff App · v1.0.0</Text>
     </ScrollView>

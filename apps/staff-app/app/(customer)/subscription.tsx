@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useGetMySubscription, useRequestRenewal } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
+import { FadeInView } from "@/components/FadeInView";
 
 export default function CustomerSubscriptionScreen() {
   const { data: subscription, isLoading, refetch, isRefetching } = useGetMySubscription();
@@ -65,6 +66,7 @@ export default function CustomerSubscriptionScreen() {
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />}
     >
       {/* Plan hero card */}
+      <FadeInView delay={0}>
       <View style={[styles.planCard, isExpiringSoon && styles.planCardWarn]}>
         <View style={styles.planIconBox}>
           <Ionicons name="star" size={22} color={isExpiringSoon ? "#b45309" : "#16a34a"} />
@@ -84,8 +86,10 @@ export default function CustomerSubscriptionScreen() {
           </View>
         ) : null}
       </View>
+      </FadeInView>
 
       {/* Plan details */}
+      <FadeInView delay={100}>
       <View style={styles.card}>
         <SectionHeader icon="document-text-outline" title="Plan Details" />
         <InfoRow icon="star-outline" label="Plan" value={subscription.plan} />
@@ -107,8 +111,10 @@ export default function CustomerSubscriptionScreen() {
         ) : null}
         <InfoRow icon="checkmark-circle-outline" label="Status" value={subscription.status} last />
       </View>
+      </FadeInView>
 
       {/* Renewal button */}
+      <FadeInView delay={200}>
       <TouchableOpacity
         style={[styles.renewBtn, renewal.isPending && styles.renewBtnDisabled]}
         onPress={handleRenewal}
@@ -120,6 +126,7 @@ export default function CustomerSubscriptionScreen() {
           {renewal.isPending ? "Submitting…" : "Request Renewal"}
         </Text>
       </TouchableOpacity>
+      </FadeInView>
     </ScrollView>
   );
 }

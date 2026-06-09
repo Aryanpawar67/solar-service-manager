@@ -11,6 +11,7 @@ import {
 import { useListStaff, useUpdateStaff } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 
 export default function AdminStaffScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useListStaff({});
@@ -67,7 +68,8 @@ export default function AdminStaffScreen() {
           <Text style={styles.emptyText}>Staff members will appear here once added.</Text>
         </View>
       }
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
+        <FadeInView delay={Math.min(index * 70, 490)}>
         <View style={[styles.card, { borderLeftColor: item.isActive ? "#16a34a" : "#d1d5db" }]}>
           <View style={styles.cardRow}>
             <View style={[styles.avatar, { backgroundColor: item.isActive ? "#16a34a" : "#9ca3af" }]}>
@@ -108,6 +110,7 @@ export default function AdminStaffScreen() {
             </View>
           </View>
         </View>
+        </FadeInView>
       )}
     />
   );

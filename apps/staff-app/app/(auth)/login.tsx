@@ -8,8 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Animated,
 } from "react-native";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { router } from "expo-router";
 import { setToken, decodeJwtPayload } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/constants";
@@ -20,6 +21,32 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Entrance animations
+  const brandOpacity   = useRef(new Animated.Value(0)).current;
+  const brandTranslate = useRef(new Animated.Value(-24)).current;
+  const cardOpacity    = useRef(new Animated.Value(0)).current;
+  const cardTranslate  = useRef(new Animated.Value(40)).current;
+  const footerOpacity  = useRef(new Animated.Value(0)).current;
+  // Button press animation
+  const btnScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(brandOpacity,   { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(brandTranslate, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ]),
+      Animated.parallel([
+        Animated.timing(cardOpacity,   { toValue: 1, duration: 450, useNativeDriver: true }),
+        Animated.timing(cardTranslate, { toValue: 0, duration: 450, useNativeDriver: true }),
+      ]),
+      Animated.timing(footerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const onBtnPressIn  = () => Animated.spring(btnScale, { toValue: 0.96, useNativeDriver: true, speed: 60, bounciness: 0 }).start();
+  const onBtnPressOut = () => Animated.spring(btnScale, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 4 }).start();
 
   async function handleLogin() {
     setError(null);
@@ -37,10 +64,8 @@ export default function LoginScreen() {
       }
       const token = data.token ?? "";
       await setToken(token);
-
       const payload = decodeJwtPayload(token);
       const role = typeof payload?.role === "string" ? payload.role : "staff";
-
       if (role === "admin") router.replace("/(admin)/jobs");
       else if (role === "customer") router.replace("/(customer)");
       else router.replace("/(staff)/jobs");
@@ -58,22 +83,21 @@ export default function LoginScreen() {
       {/* Decorative background circles */}
       <View style={styles.circleTopRight} />
       <View style={styles.circleBottomLeft} />
+      <View style={styles.circleCenter} />
 
-      {/* Branding */}
-      <View style={styles.brandArea}>
+      {/* Branding — slides down + fades in */}
+      <Animated.View style={[styles.brandArea, { opacity: brandOpacity, transform: [{ translateY: brandTranslate }] }]}>
         <View style={styles.iconBadge}>
           <Text style={styles.iconText}>☀️</Text>
         </View>
         <Text style={styles.brandName}>GreenVolt</Text>
         <Text style={styles.brandTagline}>Solar Service Management</Text>
-      </View>
+        <Text style={styles.brandProvider}>Service Provider: Sun House Solar</Text>
+      </Animated.View>
 
-      {/* Form card */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.cardWrapper}
-      >
-        <View style={styles.card}>
+      {/* Form card — slides up + fades in */}
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.cardWrapper}>
+        <Animated.View style={[styles.card, { opacity: cardOpacity, transform: [{ translateY: cardTranslate }] }]}>
           <Text style={styles.cardTitle}>Sign In</Text>
           <Text style={styles.cardSubtitle}>Enter your credentials to continue</Text>
 
@@ -107,181 +131,99 @@ export default function LoginScreen() {
           </View>
 
           {error && (
-            <View style={styles.errorBox}>
+            <Animated.View style={[styles.errorBox, { opacity: cardOpacity }]}>
               <Text style={styles.errorText}>⚠ {error}</Text>
-            </View>
+            </Animated.View>
           )}
 
           <TouchableOpacity
-            style={[styles.button, isPending && styles.buttonDisabled]}
             onPress={handleLogin}
+            onPressIn={onBtnPressIn}
+            onPressOut={onBtnPressOut}
             disabled={isPending}
-            activeOpacity={0.85}
+            activeOpacity={1}
           >
-            {isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
+            <Animated.View style={[styles.button, isPending && styles.buttonDisabled, { transform: [{ scale: btnScale }] }]}>
+              {isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Sign In →</Text>
+              )}
+            </Animated.View>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
 
-      <Text style={styles.footer}>GreenVolt © 2025 · Solar Service Platform</Text>
+      <Animated.Text style={[styles.footer, { opacity: footerOpacity }]}>
+        GreenVolt © 2025 · Solar Service Platform
+      </Animated.Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#16a34a",
-    justifyContent: "center",
-  },
+  root: { flex: 1, backgroundColor: "#16a34a", justifyContent: "center" },
 
-  // Decorative circles
   circleTopRight: {
-    position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    top: -80,
-    right: -60,
+    position: "absolute", width: 300, height: 300, borderRadius: 150,
+    backgroundColor: "rgba(255,255,255,0.07)", top: -80, right: -70,
   },
   circleBottomLeft: {
-    position: "absolute",
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    bottom: 60,
-    left: -80,
+    position: "absolute", width: 240, height: 240, borderRadius: 120,
+    backgroundColor: "rgba(255,255,255,0.05)", bottom: 60, left: -90,
+  },
+  circleCenter: {
+    position: "absolute", width: 180, height: 180, borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.04)", top: "35%", right: -40,
   },
 
-  // Branding
-  brandArea: {
-    alignItems: "center",
-    marginBottom: 28,
-    paddingHorizontal: 24,
-  },
+  brandArea: { alignItems: "center", marginBottom: 24, paddingHorizontal: 24 },
   iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 68, height: 68, borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center", alignItems: "center", marginBottom: 12,
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.25)",
   },
-  iconText: { fontSize: 32 },
-  brandName: {
-    fontSize: 34,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.5,
-  },
-  brandTagline: {
-    fontSize: 14,
-    color: "#bbf7d0",
-    marginTop: 4,
-    fontWeight: "500",
-  },
+  iconText: { fontSize: 34 },
+  brandName: { fontSize: 36, fontWeight: "800", color: "#fff", letterSpacing: 0.5 },
+  brandTagline: { fontSize: 14, color: "#bbf7d0", marginTop: 4, fontWeight: "500" },
+  brandProvider: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 },
 
-  // Card
-  cardWrapper: {
-    paddingHorizontal: 20,
-  },
+  cardWrapper: { paddingHorizontal: 20 },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 10,
+    backgroundColor: "#fff", borderRadius: 24, padding: 24,
+    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 24, elevation: 12,
   },
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: "#6b7280",
-    marginBottom: 20,
-  },
+  cardTitle: { fontSize: 22, fontWeight: "800", color: "#111827", marginBottom: 4 },
+  cardSubtitle: { fontSize: 13, color: "#6b7280", marginBottom: 20 },
 
-  // Inputs
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 6,
-  },
+  label: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 },
   input: {
-    borderWidth: 1.5,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 15,
-    color: "#111827",
-    backgroundColor: "#f9fafb",
-    marginBottom: 16,
+    borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 13, fontSize: 15,
+    color: "#111827", backgroundColor: "#f9fafb", marginBottom: 16,
   },
-  passwordRow: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  passwordInput: {
-    marginBottom: 0,
-    paddingRight: 50,
-  },
-  eyeBtn: {
-    position: "absolute",
-    right: 12,
-    top: 12,
-    padding: 2,
-  },
+  passwordRow: { position: "relative", marginBottom: 16 },
+  passwordInput: { marginBottom: 0, paddingRight: 50 },
+  eyeBtn: { position: "absolute", right: 12, top: 12, padding: 2 },
   eyeText: { fontSize: 18 },
 
-  // Error
   errorBox: {
-    backgroundColor: "#fef2f2",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#fecaca",
+    backgroundColor: "#fef2f2", borderRadius: 10, padding: 12,
+    marginBottom: 16, borderWidth: 1, borderColor: "#fecaca",
   },
-  errorText: {
-    color: "#dc2626",
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  errorText: { color: "#dc2626", fontSize: 13, fontWeight: "500" },
 
-  // Button
   button: {
-    backgroundColor: "#16a34a",
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 4,
-    shadowColor: "#16a34a",
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: "#16a34a", borderRadius: 12, paddingVertical: 16,
+    alignItems: "center", marginTop: 4,
+    shadowColor: "#16a34a", shadowOpacity: 0.4, shadowRadius: 10, elevation: 5,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  buttonText: { color: "#fff", fontWeight: "800", fontSize: 16 },
 
   footer: {
-    textAlign: "center",
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 11,
-    marginTop: 28,
-    paddingBottom: 16,
+    textAlign: "center", color: "rgba(255,255,255,0.45)",
+    fontSize: 11, marginTop: 24, paddingBottom: 16,
   },
 });

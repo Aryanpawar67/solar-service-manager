@@ -11,6 +11,7 @@ import { router } from "expo-router";
 import { useGetMe } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { FadeInView } from "@/components/FadeInView";
 
 export default function AdminProfileScreen() {
   const { data, isLoading } = useGetMe();
@@ -43,6 +44,7 @@ export default function AdminProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Green header with avatar */}
+      <FadeInView delay={0} fromY={-20}>
       <View style={styles.header}>
         <View style={styles.avatarRing}>
           <View style={styles.avatar}>
@@ -56,18 +58,23 @@ export default function AdminProfileScreen() {
           <Text style={styles.roleBadgeText}>Administrator</Text>
         </View>
       </View>
+      </FadeInView>
 
       {/* Info card */}
+      <FadeInView delay={120}>
       <View style={styles.card}>
         <InfoRow icon="mail-outline" label="Email" value={user?.email ?? "—"} />
         <InfoRow icon="shield-outline" label="Role" value={user?.role ?? "—"} last />
       </View>
+      </FadeInView>
 
       {/* Logout */}
+      <FadeInView delay={240}>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
         <Ionicons name="log-out-outline" size={18} color="#dc2626" />
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+      </FadeInView>
 
       <Text style={styles.version}>GreenVolt Admin · v1.0.0</Text>
     </ScrollView>

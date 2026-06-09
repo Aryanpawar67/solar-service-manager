@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { useListServices, useGetMe } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7", label: "Pending" },
@@ -82,10 +83,11 @@ export default function JobsScreen() {
           <Text style={styles.emptyText}>You have no jobs assigned at the moment.</Text>
         </View>
       }
-      renderItem={({ item }) => {
+      renderItem={({ item, index }) => {
         const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.cancelled;
         const borderColor = STATUS_BORDER[item.status] ?? "#d1d5db";
         return (
+          <FadeInView delay={Math.min(index * 80, 560)}>
           <Pressable
             android_ripple={{ color: "#16a34a18" }}
             style={({ pressed }) => [
@@ -132,6 +134,7 @@ export default function JobsScreen() {
               <Ionicons name="chevron-forward" size={14} color="#d1d5db" />
             </View>
           </Pressable>
+          </FadeInView>
         );
       }}
     />

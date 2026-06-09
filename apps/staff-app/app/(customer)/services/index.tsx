@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { useGetMyServices } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7", border: "#f59e0b" },
@@ -58,9 +59,10 @@ export default function CustomerServicesScreen() {
           <Text style={styles.emptyText}>Your completed and upcoming services will appear here.</Text>
         </View>
       }
-      renderItem={({ item }) => {
+      renderItem={({ item, index }) => {
         const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.cancelled;
         return (
+          <FadeInView delay={Math.min(index * 80, 560)}>
           <Pressable
             android_ripple={{ color: "#16a34a18" }}
             style={({ pressed }) => [
@@ -99,6 +101,7 @@ export default function CustomerServicesScreen() {
               <Ionicons name="chevron-forward" size={14} color="#d1d5db" />
             </View>
           </Pressable>
+          </FadeInView>
         );
       }}
     />

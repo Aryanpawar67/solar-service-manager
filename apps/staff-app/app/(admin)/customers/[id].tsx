@@ -12,6 +12,7 @@ import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetCustomer, useListServices } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7" },
@@ -60,6 +61,7 @@ export default function AdminCustomerDetailScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
         {/* Customer header */}
+        <FadeInView delay={0}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{customer.name.charAt(0).toUpperCase()}</Text>
@@ -75,15 +77,19 @@ export default function AdminCustomerDetailScreen() {
             </View>
           ) : null}
         </View>
+        </FadeInView>
 
         {/* Stats row */}
+        <FadeInView delay={80}>
         <View style={styles.statsRow}>
           <StatCard icon="construct-outline" label="Total Services" value={String(serviceList.length)} color="#3b82f6" />
           <StatCard icon="checkmark-circle-outline" label="Completed" value={String(completedCount)} color="#16a34a" />
           <StatCard icon="flash-outline" label="Capacity" value={customer.solarCapacity ? `${customer.solarCapacity} kW` : "—"} color="#d97706" />
         </View>
+        </FadeInView>
 
         {/* Details */}
+        <FadeInView delay={160}>
         <View style={styles.card}>
           <SectionHeader icon="person-outline" title="Customer Details" />
           <InfoRow icon="call-outline" label="Phone" value={customer.phone} />
@@ -94,8 +100,10 @@ export default function AdminCustomerDetailScreen() {
           )}
           {customer.notes && <InfoRow icon="document-text-outline" label="Notes" value={customer.notes} last />}
         </View>
+        </FadeInView>
 
         {/* Service history */}
+        <FadeInView delay={240}>
         <View style={styles.sectionHeaderRow}>
           <SectionHeader icon="construct-outline" title="Service History" />
           <Text style={styles.sectionCount}>{serviceList.length}</Text>
@@ -107,11 +115,11 @@ export default function AdminCustomerDetailScreen() {
             <Text style={styles.emptyText}>No services recorded yet.</Text>
           </View>
         ) : (
-          serviceList.map((s) => {
+          serviceList.map((s, idx) => {
             const cfg = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.cancelled;
             return (
+              <FadeInView key={s.id} delay={300 + Math.min(idx * 70, 420)}>
               <Pressable
-                key={s.id}
                 android_ripple={{ color: "#16a34a18" }}
                 style={({ pressed }) => [
                   styles.serviceCard,
@@ -149,9 +157,11 @@ export default function AdminCustomerDetailScreen() {
                   </View>
                 </View>
               </Pressable>
+              </FadeInView>
             );
           })
         )}
+        </FadeInView>
       </ScrollView>
     </>
   );

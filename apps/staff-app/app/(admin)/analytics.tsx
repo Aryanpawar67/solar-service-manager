@@ -1,7 +1,20 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Animated } from "react-native";
 import { useGetDashboardAnalytics } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { FadeInView } from "@/components/FadeInView";
+import { useRef, useEffect, useState } from "react";
+
+function AnimatedNumber({ value, color, style }: { value: number; color: string; style?: object }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    anim.addListener(({ value: v }) => setDisplay(Math.floor(v)));
+    Animated.timing(anim, { toValue: value, duration: 1000, delay: 400, useNativeDriver: false }).start();
+    return () => anim.removeAllListeners();
+  }, [value]);
+  return <Text style={[style, { color }]}>{display}</Text>;
+}
 
 export default function AdminAnalyticsScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useGetDashboardAnalytics();
@@ -43,32 +56,42 @@ export default function AdminAnalyticsScreen() {
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />}
     >
       {/* Revenue hero card */}
-      <View style={styles.revenueCard}>
-        <View style={styles.revenueIconBox}>
-          <Ionicons name="cash-outline" size={22} color="#16a34a" />
+      <FadeInView delay={0}>
+        <View style={styles.revenueCard}>
+          <View style={styles.revenueIconBox}>
+            <Ionicons name="cash-outline" size={22} color="#16a34a" />
+          </View>
+          <Text style={styles.revenueLabel}>Total Revenue</Text>
+          <Text style={styles.revenueValue}>₹{revenue.toLocaleString("en-IN")}</Text>
+          <View style={styles.revenueDivider} />
+          <View style={styles.revenueMonthlyRow}>
+            <Ionicons name="trending-up-outline" size={14} color="#bbf7d0" />
+            <Text style={styles.revenueMonthly}>This month: ₹{monthly.toLocaleString("en-IN")}</Text>
+          </View>
         </View>
-        <Text style={styles.revenueLabel}>Total Revenue</Text>
-        <Text style={styles.revenueValue}>₹{revenue.toLocaleString("en-IN")}</Text>
-        <View style={styles.revenueDivider} />
-        <View style={styles.revenueMonthlyRow}>
-          <Ionicons name="trending-up-outline" size={14} color="#bbf7d0" />
-          <Text style={styles.revenueMonthly}>This month: ₹{monthly.toLocaleString("en-IN")}</Text>
-        </View>
-      </View>
+      </FadeInView>
 
       {/* Services section */}
-      <SectionHeader icon="construct-outline" title="Services" />
+      <FadeInView delay={100}>
+        <SectionHeader icon="construct-outline" title="Services" />
+      </FadeInView>
       <View style={styles.grid}>
-        {serviceMetrics.map((m) => (
-          <MetricCard key={m.label} {...m} />
+        {serviceMetrics.map((m, i) => (
+          <FadeInView key={m.label} delay={150 + i * 80}>
+            <MetricCard {...m} animated />
+          </FadeInView>
         ))}
       </View>
 
       {/* People section */}
-      <SectionHeader icon="people-outline" title="People" />
+      <FadeInView delay={500}>
+        <SectionHeader icon="people-outline" title="People" />
+      </FadeInView>
       <View style={styles.grid}>
-        {peopleMetrics.map((m) => (
-          <MetricCard key={m.label} {...m} />
+        {peopleMetrics.map((m, i) => (
+          <FadeInView key={m.label} delay={550 + i * 80}>
+            <MetricCard {...m} animated />
+          </FadeInView>
         ))}
       </View>
     </ScrollView>
@@ -90,19 +113,24 @@ function MetricCard({
   color,
   bg,
   icon,
+  animated: useAnim,
 }: {
   label: string;
   value: number;
   color: string;
   bg: string;
   icon: keyof typeof Ionicons.glyphMap;
+  animated?: boolean;
 }) {
   return (
     <View style={styles.metricCard}>
       <View style={[styles.metricIconBox, { backgroundColor: bg }]}>
         <Ionicons name={icon} size={18} color={color} />
       </View>
-      <Text style={[styles.metricValue, { color }]}>{value}</Text>
+      {useAnim
+        ? <AnimatedNumber value={value} color={color} style={styles.metricValue} />
+        : <Text style={[styles.metricValue, { color }]}>{value}</Text>
+      }
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
   );

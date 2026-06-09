@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useGetMyProfile, useUpdateMyProfile, useUpdateNotificationPrefs } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { FadeInView } from "@/components/FadeInView";
 import { useState } from "react";
 
 export default function CustomerProfileScreen() {
@@ -76,6 +77,7 @@ export default function CustomerProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Green header */}
+      <FadeInView delay={0} fromY={-20}>
       <View style={styles.header}>
         <View style={styles.avatarRing}>
           <View style={styles.avatar}>
@@ -89,9 +91,11 @@ export default function CustomerProfileScreen() {
           <Text style={styles.roleBadgeText}>Customer</Text>
         </View>
       </View>
+      </FadeInView>
 
       {/* Solar info */}
       {(profile.solarCapacity || profile.installationDate) ? (
+        <FadeInView delay={100}>
         <View style={styles.card}>
           <SectionHeader icon="sunny-outline" title="System Info" />
           {profile.solarCapacity ? (
@@ -101,9 +105,11 @@ export default function CustomerProfileScreen() {
             <InfoRow icon="calendar-outline" label="Installed" value={profile.installationDate} last />
           ) : null}
         </View>
+        </FadeInView>
       ) : null}
 
       {/* Contact details */}
+      <FadeInView delay={180}>
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <SectionHeader icon="call-outline" title="Contact Details" />
@@ -156,8 +162,10 @@ export default function CustomerProfileScreen() {
           </>
         )}
       </View>
+      </FadeInView>
 
       {/* Notifications */}
+      <FadeInView delay={260}>
       <View style={styles.card}>
         <SectionHeader icon="notifications-outline" title="Notifications" />
         <View style={styles.toggleRow}>
@@ -179,12 +187,15 @@ export default function CustomerProfileScreen() {
           />
         </View>
       </View>
+      </FadeInView>
 
       {/* Logout */}
+      <FadeInView delay={340}>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
         <Ionicons name="log-out-outline" size={18} color="#dc2626" />
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+      </FadeInView>
 
       <Text style={styles.version}>GreenVolt · v1.0.0</Text>
     </ScrollView>
