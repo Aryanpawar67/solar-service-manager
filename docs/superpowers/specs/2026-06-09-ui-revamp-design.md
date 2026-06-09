@@ -1,43 +1,71 @@
 # GreenVolt Staff App — UI Revamp Design Spec
-**Date:** 2026-06-09  
-**Scope:** Complete visual overhaul of `apps/staff-app` from current ad-hoc inline styles to the Material 3 design system defined by Google Stitch  
-**Source designs:** `stitch_greenvolt_solar_management_system.zip` (8 screens delivered, 15 remaining in progress)
+**Date:** 2026-06-09 (updated 2026-06-10)
+**Scope:** Complete visual overhaul of `apps/staff-app` from current ad-hoc inline styles to the Material 3 design system defined by Google Stitch
+**Source designs:**
+- Batch 1: `stitch_greenvolt_solar_management_system.zip` — 8 screens
+- Batch 2: `stitch_greenvolt_solar_management_system (1).zip` — 11 screens
+- **Total Stitch screens: 19 of 35** (remaining 16 extrapolated from design system)
 
 ---
 
-## Overview
+## All Screens at a Glance
 
-The current app has no design system — colors, spacing, and typography are hardcoded inline across 35 screen files. This revamp migrates to a unified token-based design system matching the Stitch designs, then reskins all 35 screens screen-by-screen.
-
-Work is split into three sequential phases:
-
-| Phase | What | Screens touched | Est. effort |
+| # | Screen file | Stitch design | Phase |
 |---|---|---|---|
-| 1 | Design system foundation | All 35 (token file only) | 1–2 days |
-| 2 | Reskin 8 Stitch-delivered screens | 8 | 3–4 days |
-| 3 | Reskin remaining 27 screens | 27 | 5–7 days |
+| 1 | `(auth)/login.tsx` | ✅ login | 2 |
+| 2 | `(customer)/index.tsx` | ✅ customer_dashboard | 3 |
+| 3 | `(customer)/book/index.tsx` | ✅ service_catalog | 3 |
+| 4 | `(customer)/book/[id].tsx` | ✅ pick_date_time | 3 |
+| 5 | `(customer)/book/review.tsx` | ✅ review_pay | 3 |
+| 6 | `(customer)/book/success.tsx` | ✅ booking_success | 3 |
+| 7 | `(customer)/services/index.tsx` | ✅ services_list | 4 |
+| 8 | `(customer)/services/[id].tsx` | — extrapolated | 4 |
+| 9 | `(customer)/payments.tsx` | ✅ payments | 4 |
+| 10 | `(customer)/subscription.tsx` | ✅ subscription | 4 |
+| 11 | `(customer)/profile.tsx` | ✅ profile | 4 |
+| 12 | `(staff)/jobs.tsx` | ✅ staff_my_jobs | 5 |
+| 13 | `(staff)/schedule.tsx` | ✅ schedule | 5 |
+| 14 | `job/[id].tsx` | ✅ job_details_staff_view | 5 |
+| 15 | `(staff)/profile.tsx` | ✅ staff_profile | 5 |
+| 16 | `(admin)/analytics.tsx` | ✅ admin_analytics | 6 |
+| 17 | `(admin)/jobs.tsx` | ✅ jobs_master_list | 6 |
+| 18 | `(admin)/customers/index.tsx` | ✅ customers_master_list | 6 |
+| 19 | `(admin)/customers/[id].tsx` | ✅ customer_profile_admin_view | 6 |
+| 20 | `(admin)/staff.tsx` | ✅ staff_management | 6 |
+| 21 | `(admin)/profile.tsx` | ✅ admin_settings | 6 |
+| 22 | `(customer)/(solar)` | — new screen | 7 |
+| 23 | `(customer)/(usage)` | — new screen | 7 |
+| 24 | `(admin)/(fleet)` | — new screen | 7 |
+| 25–35 | Role `_layout` files, shared layout | — | 1–6 |
 
-Phases 1 and 2 can begin immediately. Phase 3 begins once the remaining Stitch files are received.
+---
+
+## Phase Overview
+
+| Phase | Name | Screens | Est. effort |
+|---|---|---|---|
+| 1 | Design System Foundation | — (infra only) | 1–2 days |
+| 2 | Auth | 1 | 0.5 days |
+| 3 | Customer Booking Flow | 5 | 2–3 days |
+| 4 | Customer Portal | 5 | 2–3 days |
+| 5 | Staff Portal | 4 | 2–3 days |
+| 6 | Admin Portal | 6 | 3–4 days |
+| 7 | New Feature Screens | 3+ | TBD (needs product definition) |
+| **Total** | | **24+** | **~12–17 days** |
 
 ---
 
 ## Phase 1 — Design System Foundation
 
 ### Goal
-Create a single source of truth for all visual tokens so that every screen in Phases 2 and 3 imports from it rather than using inline hex values. No screen layout changes in this phase — purely infrastructure.
+Build the entire visual infrastructure before touching any screen. Every subsequent phase imports from this foundation. Zero screen layout changes in Phase 1.
 
-### 1.1 Token File
+### 1.1 Token File — `src/theme/index.ts`
 
-**Create:** `apps/staff-app/src/theme/index.ts`
-
-Exports a single `theme` object with the following sections:
-
-#### Colors
-Derived directly from `greenvolt/DESIGN.md`:
-
+#### Colors (full Material 3 palette from Stitch DESIGN.md)
 ```ts
 colors: {
-  // Primary
+  // Primary (Forest Green)
   primary: '#00450d',
   onPrimary: '#ffffff',
   primaryContainer: '#1b5e20',
@@ -46,7 +74,7 @@ colors: {
   primaryFixedDim: '#91d78a',
   inversePrimary: '#91d78a',
 
-  // Secondary (Lime accent)
+  // Secondary (Lime accent — used for success, highlights, CTAs)
   secondary: '#4e6700',
   onSecondary: '#ffffff',
   secondaryContainer: '#bcf200',
@@ -54,13 +82,13 @@ colors: {
   secondaryFixed: '#bef500',
   secondaryFixedDim: '#a6d700',
 
-  // Tertiary (Blue)
+  // Tertiary (Blue — informational, links)
   tertiary: '#243c56',
   onTertiary: '#ffffff',
   tertiaryContainer: '#3c536e',
   onTertiaryContainer: '#aec7e6',
 
-  // Surface scale
+  // Surface scale (all backgrounds)
   background: '#f8fafb',
   surface: '#f8fafb',
   surfaceDim: '#d8dadb',
@@ -73,13 +101,13 @@ colors: {
   surfaceVariant: '#e1e3e4',
   surfaceTint: '#2a6b2c',
 
-  // On-surface
+  // Text
   onSurface: '#191c1d',
   onSurfaceVariant: '#41493e',
   inverseSurface: '#2e3132',
   inverseOnSurface: '#eff1f2',
 
-  // Outline
+  // Borders
   outline: '#717a6d',
   outlineVariant: '#c0c9bb',
 
@@ -89,21 +117,22 @@ colors: {
   errorContainer: '#ffdad6',
   onErrorContainer: '#93000a',
 
-  // Status semantic aliases (used across all status badges)
-  statusPending:    { bg: '#eceeef', text: '#191c1d' },
-  statusInProgress: { bg: '#dbeafe', text: '#1d4ed8' },
-  statusEnRoute:    { bg: '#fffbeb', text: '#b45309' },
-  statusCompleted:  { bg: '#dcfce7', text: '#15803d' },
-  statusCancelled:  { bg: '#f3f4f6', text: '#6b7280' },
+  // Status semantic tokens (used by StatusBadge across all roles)
+  status: {
+    pending:    { bg: '#eceeef', text: '#191c1d', dot: '#717a6d' },
+    enRoute:    { bg: '#fffbeb', text: '#b45309', dot: '#f59e0b' },
+    inProgress: { bg: '#dbeafe', text: '#1d4ed8', dot: '#3b82f6' },
+    completed:  { bg: '#dcfce7', text: '#15803d', dot: '#16a34a' },
+    cancelled:  { bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af' },
+    onLeave:    { bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af' },
+    active:     { bg: '#dcfce7', text: '#15803d', dot: '#16a34a' },
+  },
 }
 ```
 
-#### Typography
-All Inter-based, matching Stitch's type scale. `expo-google-fonts` package needed (see 1.2).
-
+#### Typography (Inter-based, 9 roles)
 ```ts
 typography: {
-  displayLg:   { fontFamily: 'Inter_700Bold',   fontSize: 57, lineHeight: 64, letterSpacing: -0.25 },
   headlineLg:  { fontFamily: 'Inter_600SemiBold', fontSize: 32, lineHeight: 40 },
   headlineMd:  { fontFamily: 'Inter_600SemiBold', fontSize: 28, lineHeight: 36 },
   headlineSm:  { fontFamily: 'Inter_600SemiBold', fontSize: 24, lineHeight: 32 },
@@ -116,468 +145,742 @@ typography: {
 }
 ```
 
-#### Spacing
-8px base grid:
-
+#### Spacing (8px grid)
 ```ts
-spacing: {
-  xs: 4,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  gutter: 24,
-  pagePadding: 16,
-}
+spacing: { xs: 4, sm: 12, md: 16, lg: 24, xl: 32, gutter: 24, pagePadding: 16 }
 ```
 
 #### Border Radius
-
 ```ts
-radius: {
-  sm: 4,
-  default: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  full: 9999,
-}
+radius: { sm: 4, default: 8, md: 12, lg: 16, xl: 24, full: 9999 }
 ```
 
-#### Elevation (shadow presets)
-
+#### Elevation (Material 3 tonal layering via shadows)
 ```ts
 elevation: {
-  card: {
-    shadowColor: '#191c1d',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  modal: {
-    shadowColor: '#191c1d',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+  card:  { shadowColor: '#191c1d', shadowOffset: {width:0, height:1}, shadowOpacity: 0.03, shadowRadius: 4,  elevation: 1 },
+  modal: { shadowColor: '#191c1d', shadowOffset: {width:0, height:2}, shadowOpacity: 0.06, shadowRadius: 8,  elevation: 3 },
 }
 ```
 
 ### 1.2 Font Installation
-
-Install `@expo-google-fonts/inter` and load the 4 weights used (Regular 400, Medium 500, SemiBold 600, Bold 700) in `app/_layout.tsx` via `useFonts`. The app renders a loading screen until fonts are ready — this already exists for Sentry init, so it's a small addition.
-
 ```bash
 pnpm --filter @workspace/staff-app add @expo-google-fonts/inter expo-font
 ```
+Load 4 weights in `app/_layout.tsx` via `useFonts`: Regular 400, Medium 500, SemiBold 600, Bold 700. App shows loading screen until fonts ready (existing Sentry init already gates the render).
 
 ### 1.3 Icon Strategy
+Switch from Ionicons to **MaterialCommunityIcons** (`@expo/vector-icons` — already installed via Expo).
 
-Material Symbols Outlined (used in Stitch's HTML) is a web font — it has no first-class Expo/React Native package. Two options:
+Create `src/theme/icons.ts` — a mapping table of every icon used in the app to its MCIcons name. All screens import icon names from this map, never hardcode strings. This means a future icon swap is one-file change.
 
-| Option | Approach | Trade-off |
+Key mappings:
+| Concept | Current (Ionicons) | New (MCIcons) |
 |---|---|---|
-| A — Keep Ionicons | Map every Stitch Material Symbol to the nearest Ionicons equivalent | Zero new dependency, minor visual mismatch on ~10% of icons |
-| B — MaterialCommunityIcons | Switch to `@expo/vector-icons` MaterialCommunityIcons which covers ~95% of Material Symbols | One extra icon set, cleaner fidelity |
+| solar panel | `sunny` | `solar-power` |
+| jobs | `briefcase-outline` | `briefcase-outline` |
+| schedule | `calendar-outline` | `calendar-today` |
+| profile | `person-outline` | `account-circle-outline` |
+| location | `location-outline` | `map-marker-outline` |
+| clock | `time-outline` | `clock-outline` |
+| navigate | `navigate-outline` | `navigation` |
+| settings | `settings-outline` | `cog-outline` |
+| logout | `log-out-outline` | `logout` |
 
-**Decision: Option B — MaterialCommunityIcons.**  
-Ionicons uses outlined iOS-style icons; Material Symbols are Google's design language. MCIcons matches closer. A mapping table will be maintained in `src/theme/icons.ts` so all icon references go through one place.
-
-### 1.4 Shared Components
-
-Create the following small primitives in `src/components/ui/` that encode the token system, so screens never import from `theme` directly for common patterns:
+### 1.4 Shared UI Primitives — `src/components/ui/`
 
 | Component | Description |
 |---|---|
-| `StatusBadge` | Pill badge for pending/in_progress/en_route/completed/cancelled — reads from `theme.colors.status*` |
-| `MetricCard` | Card with label + large metric value + optional trend indicator |
-| `SectionHeader` | Label-md section title with optional "View All" link |
-| `PrimaryButton` | Full-width green button, loading state, disabled state |
-| `OutlineButton` | Transparent with green border |
-| `Card` | White container with theme elevation + 1px outline border |
-| `AppHeader` | Top header with GreenVolt logo/wordmark + right avatar slot |
-
-### 1.5 Deliverables for Phase 1
-- `src/theme/index.ts` (tokens)
-- `src/theme/icons.ts` (icon name map)
-- `src/components/ui/` (7 primitives above)
-- Font loading wired in `_layout.tsx`
-- No screen files modified
-
----
-
-## Phase 2 — Reskin the 8 Stitch Screens
-
-### Goal
-Replace the visual layer of the 8 screens that have Stitch designs. Logic, API calls, and navigation stay identical — only `StyleSheet` definitions and component markup change.
-
-All screens will:
-- Import from `theme` for all color/spacing/radius/typography values
-- Use the new `src/components/ui/` primitives
-- Use MaterialCommunityIcons instead of Ionicons
-
----
-
-### Screen 2.1 — Customer Dashboard (`(customer)/index.tsx`)
-
-**What changes:**
-- Background: current dark green gradient header → flat `surfaceContainerLowest` (white) header
-- Font: system → Inter, all sizes from `typography` tokens
-- Welcome section: keep greeting + name + capacity pill + city, but remove dense "solar banner" decorative element
-- Next Service card: keep data, new card style with `statusPending`/`statusConfirmed` badge in lime (`secondaryContainer`)
-- Quick Actions row: keep 5 actions, new icon set, new pill style with `surfaceContainerLow` bg
-- System Overview: 2×2 grid of `Card` components, clean label + value layout
-- Subscription card: keep data, remove gradient, use `Card` + green `PrimaryButton`
-- Recent Services: keep list, remove dot indicators, use `StatusBadge` component
-- Remove: Offers & rewards scroll section (not in Stitch design)
-- Bottom tab bar: 4 tabs → Dashboard / Solar / Usage / Profile (labels update, icons update)
-
-**New bottom tab labels (from Stitch):**
-Current: Home, Services, Payments, Account  
-New: Dashboard, Solar, Usage, Profile
-
-> Note: "Solar" and "Usage" tabs are shown in Stitch but their content isn't defined yet — they may map to existing Services/Payments screens or be new screens. Treat as renamed tabs for now, content unchanged.
-
----
-
-### Screen 2.2 — Staff My Jobs (`(staff)/jobs.tsx`)
-
-**What changes:**
-- Background: white cards on white → cards on `background` (#f8fafb)
-- Filter chips: keep All/Pending/In Progress/Completed, new pill style with `primaryContainer` fill for active
-- Job cards: new layout —
-  - Customer name in `titleLg`
-  - Service type in `bodyMd` + `onSurfaceVariant`
-  - Location line with MCIcons `map-marker-outline`
-  - Time line with MCIcons `clock-outline`
-  - `StatusBadge` top-right
-  - Two buttons at bottom: primary `View Details` (or `Start Job`) + square outline navigate button
-- Bottom tab bar: Jobs / Schedule / Account (matches Stitch — remove count badges from tabs)
-
----
-
-### Screen 2.3 — Admin Analytics (`(admin)/analytics.tsx`)
-
-**What changes:**
-- Revenue hero card: keep ₹ total + month trend, new card style, lime `+12%` trend pill
-- Service Status section: 2×2 `MetricCard` grid — Completed / Pending / In Progress / Unread Contacts
-- People Overview section: 2×2 `MetricCard` grid — Total Customers / Active Subs / Total Staff / Active Staff
-- Active Staff card: small green LED dot indicator (8px circle, `primaryContainer` color)
-- Bottom tab bar: Overview / Staff / Fleet / Settings (Stitch labels — map to existing routes)
-
-> "Fleet" tab is a new concept in Stitch not currently in the app. Treat as placeholder pointing to current admin jobs screen until defined.
-
----
-
-### Screen 2.4 — Service Catalog (`(customer)/book/index.tsx`)
-
-**What changes:**
-- Step indicator at top: "STEP 1 OF 4 — Select Service" in `labelMd` + `outline` color
-- Section title: "Our Services" in `headlineSm`, subtitle in `bodyMd`
-- Service cards: new layout —
-  - Category label in `labelMd` uppercase + `onSurfaceVariant`
-  - Service name in `titleLg`
-  - Description in `bodyMd`
-  - Duration + certification row with icons
-  - Price in `headlineSm` bold, "Total with GST" in `labelMd`
-  - `POPULAR` badge: lime (`secondaryContainer`) bg, dark text, top-right corner
-  - `PrimaryButton` "Book Now" right-aligned
-- Remove: horizontal scroll layout — use vertical list
-
----
-
-### Screen 2.5 — Pick Date & Time (`(customer)/book/[id].tsx`)
-
-**What changes:**
-- Step indicator: "Step 2 of 4" with 4-step progress line (circles + connecting lines, green fill for completed)
-- Selected service card: icon + service name + estimated duration, outlined card
-- Calendar: horizontal day scroll (Mon/Tue/Wed...) with date numbers, selected = `primaryContainer` filled circle
-- Month header with prev/next chevrons
-- Time slots: 2×2 grid of outline buttons, selected = `primaryContainer` background + checkmark
-- Notes: outlined `TextInput` with placeholder
-- Sticky bottom: `PrimaryButton` "Proceed to Review →"
-
-**Key difference from current:** current uses a vertical date picker; Stitch uses a compact horizontal date strip. This is a layout rebuild, not just a restyle.
-
----
-
-### Screen 2.6 — Review & Pay (`(customer)/book/review.tsx`)
-
-**What changes:**
-- Step indicator: "Step 3 of 4"
-- Service Summary card: service name + `CONFIRMED` lime badge + date/time
-- Price Breakdown card: line items table (Service Charge / Visit Charge / GST / Discount / **Total**)
-- Offers & Promos card: outlined coupon input + Apply button + hint text
-- Payment Method: radio list with icons — UPI / Credit & Debit Card / Net Banking / Wallet / Cash on Service
-- Sticky bottom: total amount + `PrimaryButton` "Confirm Booking →"
-- Structure nearly identical to current, primarily a restyle
-
----
-
-### Screen 2.7 — Booking Success (`(customer)/book/success.tsx`)
-
-**What changes:**
-- Checkmark circle: current spring-animated green → large lime (`secondaryContainer`) circle with dark green checkmark
-- Booking ID: pill badge with `#` prefix
-- Service Summary card: icon-labeled rows (Service / Schedule / Total Amount)
-- SMS note: gray `surfaceContainerLow` info strip
-- Two buttons: `PrimaryButton` "View My Services" + `OutlineButton` "Back to Home"
-- Minimal layout changes, primarily color/font restyle
-
----
-
-### Screen 2.8 — Job Details — Staff View (`job/[id].tsx`)
-
-**What changes (restyle) + what's new (new features):**
-
-**Restyle:**
-- Header: "Job #GV-XXXX" + service type subtitle
-- Step stepper: Scheduled → En Route → In Progress → Completed (4 steps, not 3)
-- Customer card: avatar + name, `Call` and `Message` action buttons
-- Location card: address text
-- Service Overview card: service name + description
-- Site Documentation: 2-slot photo grid (Before / After) with dashed outline placeholders
-- Technician Remarks: outlined multiline `TextInput`
-- Bottom bar: `OutlineButton` "Pause Job" + lime `PrimaryButton` "Complete Job"
-
-**New features to build:**
-1. **En Route status** — new 2nd step in the stepper. Staff can tap "Start Journey" to move job from Scheduled → En Route before arriving. Requires new status value `en_route` in the job status enum and a new API endpoint (`PATCH /services/:id/status`).
-2. **Customer contact buttons** — Call button triggers `Linking.openURL('tel:...')`. Message button triggers `Linking.openURL('sms:...')`. Phone number comes from existing customer data already fetched on this screen.
-3. **Map view** — Static map image showing job location with a "Navigate" button that opens Google Maps / Apple Maps via deep link. Use `react-native-maps` static snapshot or a Maps Static API image. Navigate button: `Linking.openURL('https://maps.google.com/?q=...')`.
-4. **Pause Job** — New status `paused` (or reuse `pending`). Tapping Pause moves job back to pending with a pause reason prompt. Needs API support.
-5. **Generate Preliminary Report** — Appears mid-job (in_progress state). Generates a partial PDF report with photos + remarks captured so far. Reuses existing PDF generation logic.
-
-> The new status values (`en_route`, `paused`) require a database migration and API changes. These must be coordinated with Phase 2 backend work.
-
----
-
-## Phase 3 — Remaining 27 Screens
-
-### Goal
-Apply the same design system established in Phases 1–2 to every screen not covered by Stitch. Once the remaining Stitch files are received, each screen will be updated to match. Until then, this section documents what each screen needs based on the design language already established.
-
-Phase 3 is subdivided by role group.
-
----
-
-### Group A — Auth (1 screen)
-
-#### `(auth)/login.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation based on design system:
-- `background` fill full screen
-- GreenVolt logo + wordmark centered top third
-- `Card` container with email + password `TextInput` fields (Material 3 outlined style — label floats on border)
-- `PrimaryButton` "Sign In"
-- No sign-up link (admin-only seeded accounts)
-- Error state: `errorContainer` bg strip below inputs
-
----
-
-### Group B — Customer Screens (5 screens)
-
-#### `(customer)/payments.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Total paid summary `Card` at top (large `metricXl` amount + transaction count)
-- Flat list of payment cards: amount / description / `StatusBadge` / payment method icon / transaction ID / date
-- Pull-to-refresh
-- Empty state using `ErrorState` component
-
-#### `(customer)/subscription.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Hero `Card`: plan name, status badge, days remaining countdown
-- Plan details card: visits/month, amount, start/end dates
-- `PrimaryButton` "Request Renewal"
-
-#### `(customer)/profile.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Green header strip with avatar circle (initials), name, city
-- Solar info `Card`: capacity, installation date
-- Contact details `Card` with edit toggle (inline edit mode for phone, address)
-- Notification preferences toggle row
-- `OutlineButton` "Log Out"
-- Version number in `labelMd` + `onSurfaceVariant`
-
-#### `(customer)/services/index.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- `SectionHeader` with service count
-- List of service cards: service type / `StatusBadge` / scheduled date / technician name
-- Tap → service detail
-
-#### `(customer)/services/[id].tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Status `Card`: service type + `StatusBadge`
-- Details card: scheduled date, completed date, technician, notes, remarks
-- Photos section: before/after image grid
-- Download PDF button (completed only) using `OutlineButton`
-
----
-
-### Group C — Staff Screens (2 screens)
-
-#### `(staff)/schedule.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Date section headers (day + date + job count bubble)
-- Job cards matching `(staff)/jobs.tsx` card design
-- Today highlighted with `primaryContainer` date bubble
-- Past jobs: reduced `onSurfaceVariant` opacity
-
-#### `(staff)/profile.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Avatar + name + role badge header
-- Account details `Card`: email, role, staff ID
-- `OutlineButton` "Log Out"
-- Version label
-
----
-
-### Group D — Admin Screens (5 screens)
-
-#### `(admin)/jobs.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Filter chips: All / Pending / In Progress / Completed with counts
-- Job cards: customer name / `StatusBadge` / service type / assigned staff name / address / date
-- Tap → shared `job/[id].tsx` detail screen (admin view shows reassign section)
-
-#### `(admin)/customers/index.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Search bar (outlined, MCIcons search icon)
-- Customer list cards: avatar circle / name / phone / city / capacity badge
-- Tap → customer detail
-
-#### `(admin)/customers/[id].tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Profile `Card`: avatar / name / phone / capacity badge
-- 3-stat row: Total Services / Completed / Capacity
-- Customer details `Card`: phone, address, city, installation date, notes
-- `SectionHeader` "Service History" with count badge
-- Service list cards with status badges
-
-#### `(admin)/staff.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Staff list with member count
-- Cards: avatar / name / role / phone / work area / active status toggle
-- Toggle changes staff active/inactive via existing API
-
-#### `(admin)/profile.tsx`
-**Expected Stitch design:** Yes (requested)
-
-Layout expectation:
-- Green header: avatar / name / email / "Administrator" badge
-- Info `Card`: email, role
-- Quick link row → Manage Staff
-- `OutlineButton` "Log Out"
-- Version label
-
----
-
-## Cross-Cutting Concerns
-
-### Navigation / Tab Bar Alignment
-
-Stitch introduces different tab labels and groupings from what exists today. The mapping is:
-
-| Role | Current tabs | Stitch tabs |
+| `StatusBadge` | Pill badge reading from `theme.colors.status.*`. Props: `status`, optional `size` |
+| `MetricCard` | Label + `metricXl` value + optional trend pill (% up/down). Used on analytics + payments |
+| `SectionHeader` | `labelMd` uppercase title + optional "View All" right link |
+| `PrimaryButton` | Full-width forest green button. Props: `label`, `onPress`, `loading`, `disabled`, `icon` |
+| `OutlineButton` | Transparent + green border. Same props as PrimaryButton |
+| `LimeButton` | `secondaryContainer` (#bcf200) bg + dark text. Used for key CTAs (Complete Job, Confirm Booking) |
+| `Card` | White container with `elevation.card` shadow + 1px `outlineVariant` border + `radius.lg` |
+| `AppHeader` | Top bar: GreenVolt logo left, optional right slot (avatar / notification bell / back button) |
+| `Avatar` | Circular initials avatar. Props: `name`, `size`, `bgColor` |
+| `InfoRow` | Icon + label + value row. Used in profile/detail cards |
+| `EmptyState` | Centered icon + title + subtitle. Used on empty lists |
+
+### 1.5 Tab Bar Config Updates (in role `_layout.tsx` files)
+
+| Role | Current tabs | New tabs (Stitch) |
 |---|---|---|
 | Customer | Home, Services, Payments, Account | Dashboard, Solar, Usage, Profile |
 | Staff | My Jobs, Schedule, Profile | Jobs, Schedule, Account |
-| Admin | Jobs, Customers, Analytics, Account | Overview, Staff, Fleet, Settings |
+| Admin | Jobs, Customers, Analytics, Account | Dashboard (Overview), Staff, Fleet, Settings |
 
-Tab label and icon updates happen in the `_layout.tsx` files for each role group. Route paths do not change — only the displayed labels and icons.
+Tab label + icon changes only in this phase — routes unchanged, content unchanged.
 
-### Status Enum Extension
-
-Phase 2 introduces `en_route` and potentially `paused` as new job status values. This requires:
-1. Database migration adding new enum values to the `services` status column
-2. API: new `PATCH /services/:id/status` endpoint (or update existing)
-3. Frontend: `StatusBadge` and `STATUS_CONFIG` maps updated with new values
-
-This is backend work that must land before the Job Details screen (2.8) goes live.
-
-### Backward Compatibility During Migration
-
-Screens will be migrated one at a time. During Phase 2, some screens will use the new design system and others will not. This is acceptable — the token file is additive and the old inline styles continue to work until replaced.
-
-### Testing
-
-For each reskinned screen, manually verify on a physical Android device:
-- All data still loads and displays correctly
-- Navigation still works (taps, back gestures)
-- Error and empty states render correctly
-- Pull-to-refresh works
-- No layout overflow or clipped content on standard phone sizes (375px, 390px)
+### Phase 1 Deliverables
+- `src/theme/index.ts`
+- `src/theme/icons.ts`
+- `src/components/ui/` (11 primitives)
+- Font loading in `_layout.tsx`
+- Tab bar label/icon updates in 3 role layouts
+- **Zero screen content changes**
 
 ---
 
-## Open Questions
+## Phase 2 — Auth: Login Screen
 
-1. **"Solar" and "Usage" tabs** — Stitch shows these in the customer tab bar but no screen designs exist for them. Are these new screens (energy telemetry from panels?) or renamed versions of existing Services/Payments tabs?
-2. **"Fleet" tab** — Appears in the admin tab bar in Stitch. What does Fleet show? (Vehicles? Staff locations? Equipment?) Needs product decision before Phase 3.
-3. **Map view in Job Details** — Use `react-native-maps` (requires Expo config plugin + native build) or a static Maps API image? Static image is simpler but not interactive. Decision affects Phase 2 build.
-4. **En Route / Pause status** — These need backend changes. Should they land in the same sprint as the UI or be deferred?
-5. **Dark mode** — Stitch's `DESIGN.md` defines `darkMode: "class"`. Is dark mode in scope for this revamp?
+**File:** `app/(auth)/login.tsx`
+**Stitch source:** `login/code.html`
+
+### Layout
+
+Full-screen `background` fill with two decorative blurred circles (top-right `primaryContainer`, bottom-left `secondaryContainer`, 30% opacity) for depth.
+
+**Header section (centered, top third):**
+- `Card` 64×64 with `solar_power` icon — brand mark
+- "GreenVolt" in `headlineLg`, `primary` color
+- Subtitle: "Efficient stewardship of your solar telemetry." in `bodyMd`, `onSurfaceVariant`
+
+**Form card (`Card` component, full width, `pagePadding` margin):**
+- "Welcome Back" in `titleLg`
+- Email field: outlined style, floating `labelMd` label, mail icon prefix
+- Password field: outlined style, lock icon prefix, eye icon toggle suffix
+- "Forgot Password?" right-aligned `labelMd` link in `primary`
+- `PrimaryButton` "Login" with arrow-right icon
+
+**Below card:**
+- "Don't have an account? Sign Up" `bodyMd` centered link
+
+**No bottom navigation bar** (pre-auth screen).
+
+### Notes
+- Error state: `errorContainer` bg strip appears below password field with error message
+- Loading state: PrimaryButton shows spinner, inputs disabled
+- No changes to auth logic or API calls
+
+---
+
+## Phase 3 — Customer Booking Flow
+
+**5 screens. Self-contained flow. Highest user-facing impact.**
+
+### Screen 3.1 — Service Catalog (`(customer)/book/index.tsx`)
+**Stitch source:** `service_catalog`
+
+**Top:**
+- `AppHeader` with back arrow
+- Step indicator: "STEP 1 OF 4" left-aligned `labelMd` `outlineVariant` + "Select Service" right-aligned
+
+**Body:**
+- `headlineSm` "Our Services"
+- `bodyMd` subtitle "Select a maintenance package to keep your system at peak performance."
+
+**Service cards (vertical list):**
+Each `Card`:
+- Category `labelMd` uppercase + `onSurfaceVariant` (e.g. "MAINTENANCE")
+- Service name `titleLg`
+- Description `bodyMd`
+- Duration row: clock icon + "2h" + certified icon + "Certified Pro"
+- Price `headlineSm` bold + "Total with GST" `labelMd` `onSurfaceVariant`
+- `PrimaryButton` "Book Now" right-aligned
+- POPULAR badge: `secondaryContainer` bg, `onSecondaryContainer` text, top-right absolute corner
+
+### Screen 3.2 — Pick Date & Time (`(customer)/book/[id].tsx`)
+**Stitch source:** `pick_date_time`
+
+**Top:**
+- `AppHeader` with back + X close
+- "Step 2 of 4" centered `labelMd`
+- 4-step progress line: filled circles (✓) for completed, numbered for upcoming, connected by lines. Active = `primaryContainer`, complete = `primary`
+
+**Selected service card (outlined `Card`):**
+- Service icon circle + service name `titleLg` + "Est. duration: X hours" `bodyMd`
+
+**Date picker:**
+- Month + year `headlineSm` + prev/next chevrons
+- Horizontal strip of day columns (Mon/Tue/Wed...) — each shows day label `labelMd` + date number `titleLg`
+- Selected date: `primaryContainer` filled rounded square
+- Unavailable dates: `onSurfaceVariant` with strikethrough
+
+**Time slots:**
+- "Available Time Slots" `labelLg`
+- 2×2 grid of outlined buttons (9:00 AM, 11:30 AM, 2:00 PM, 4:30 PM)
+- Selected slot: `primaryContainer` bg + checkmark icon + `primary` text
+
+**Notes:**
+- "Notes for Technician (Optional)" `labelLg`
+- Multi-line outlined `TextInput` with placeholder
+
+**Sticky bottom:**
+- `LimeButton` "Proceed to Review →"
+
+> **Layout note:** This is a rebuild from the current vertical date picker. The horizontal date strip is the key visual difference.
+
+### Screen 3.3 — Review & Pay (`(customer)/book/review.tsx`)
+**Stitch source:** `review_pay`
+
+**Top:**
+- `AppHeader` with back
+- "Review & Pay" `titleLg` + "Step 3 of 4" `labelMd`
+- Step progress indicator (step 3 active)
+
+**Service Summary `Card`:**
+- Service name `titleLg` + `CONFIRMED` lime badge
+- Date + time `bodyMd` with calendar icon
+
+**Price Breakdown `Card`:**
+- Line items table: Service Charge / Visit Charge / GST / Discount (each with amount right-aligned)
+- Divider
+- Total row: `titleLg` bold
+
+**Offers & Promos `Card`:**
+- Outlined coupon input + "Apply" `PrimaryButton`
+- "Hint: Try SOLAR10" `labelMd` `onSurfaceVariant`
+- Applied coupon: lime pill badge with × remove
+
+**Payment Method `Card`:**
+- Radio list, 5 options each with icon:
+  1. UPI — "Google Pay, PhonePe, Paytm"
+  2. Credit / Debit Card — "Visa, Mastercard, RuPay"
+  3. Net Banking — "All major banks"
+  4. Wallet — "Amazon Pay, Mobikwik"
+  5. Cash on Service — "Pay after completion"
+- Selected option row: `surfaceContainerLow` bg highlight + filled radio
+
+**Sticky bottom:**
+- Left: "Total Amount" `labelMd` + amount `titleLg` bold + "View detailed bill" `labelMd` link
+- Right: `LimeButton` "Confirm Booking →"
+
+### Screen 3.4 — Booking Success (`(customer)/book/success.tsx`)
+**Stitch source:** `booking_success`
+
+**Full-screen centered layout:**
+- Large lime (`secondaryContainer`) circle with dark green checkmark — 96px diameter
+- "Booking Confirmed!" `headlineMd`
+- Booking ID pill: `#` icon + "BOOKING ID: GV-XXXXX" `labelMd`, `surfaceContainerHigh` bg
+
+**Service Summary `Card`:**
+- "Service Summary" `titleLg`
+- Divider
+- Service row: solar icon + "Service" label + service name bold
+- Schedule row: calendar icon + "Schedule" label + date + time
+- Divider
+- Total Amount row: `headlineSm` bold right-aligned
+
+**SMS note strip:**
+- `surfaceContainerLow` bg, chat icon + "You will receive an SMS confirmation shortly." `bodyMd`
+
+**Buttons:**
+- `PrimaryButton` "View My Services" with list icon
+- `OutlineButton` "Back to Home"
+
+---
+
+## Phase 4 — Customer Portal
+
+**5 screens. Customer's day-to-day app experience.**
+
+### Screen 4.1 — Customer Dashboard (`(customer)/index.tsx`)
+**Stitch source:** `customer_dashboard`
+
+**`AppHeader`:** GreenVolt logo left, avatar right
+
+**Welcome section:**
+- "Hello, [Name]!" `headlineLg`
+- Location row: map-marker icon + city `bodyMd` `onSurfaceVariant`
+- Capacity pill: flash icon + "5 kW Capacity" `labelMd` `primaryContainer` bg
+
+**Next Service `Card`:**
+- "Next Service" `labelMd` + `CONFIRMED` lime badge
+- Service name `titleLg`
+- Date `bodyMd`
+- Technician row: avatar icon + "Technician: [Name]"
+
+**QUICK ACTIONS section:**
+- `SectionHeader` "Quick Actions"
+- Horizontal scroll row of 5 icon+label pills (Services, Payments, Subscription, Book Now, Support)
+- Each pill: MCIcons icon + `labelMd`, `surfaceContainerLow` bg, `radius.full`
+
+**System Overview `Card`:**
+- "System Overview" `titleLg`
+- 2×2 grid of labeled value cells: Capacity / Installation / Active Plan / Last Service
+
+**Subscription `Card`:**
+- Plan name `titleLg` + "Expires in X days" `labelMd` right
+- Plan description `bodyMd` `onSurfaceVariant`
+- `PrimaryButton` "Renew Subscription"
+
+**Recent Services section:**
+- `SectionHeader` "Recent Services" + "View All" link
+- List of service rows: service name + date left, `StatusBadge` right
+
+**Bottom tab bar:** Dashboard (active) / Solar / Usage / Profile
+
+### Screen 4.2 — My Services (`(customer)/services/index.tsx`)
+**Stitch source:** `services_list`
+
+**`AppHeader`** + "Request Service" `PrimaryButton` top-right
+
+**Active Services section:**
+- `SectionHeader` "Active Services"
+- Service cards with: technician avatar + name + role, service name `titleLg`, date + calendar icon, `StatusBadge`, description `bodyMd`
+
+**Past Services section:**
+- `SectionHeader` "Past Services"
+- Same card layout, `StatusBadge` showing Completed
+
+**Empty state:** `EmptyState` component
+
+**Bottom tab bar:** Usage tab active (maps to Services)
+
+### Screen 4.3 — Service Detail (`(customer)/services/[id].tsx`)
+**Extrapolated from design system — no Stitch screen**
+
+`Card` layout following established patterns:
+- Status `Card`: service type `titleLg` + `StatusBadge`
+- Details `Card`: scheduled date, completed date, technician name (with `Avatar`), notes, remarks — each as `InfoRow`
+- Photos `Card`: 2-slot dashed grid (Before / After) — display only (no camera on customer side)
+- PDF Download: `OutlineButton` "Download Report" (completed jobs only)
+
+### Screen 4.4 — Payments (`(customer)/payments.tsx`)
+**Stitch source:** `payments`
+
+**Summary cards row (2 cards):**
+- Total Paid `MetricCard`: `metricXl` amount + "+12.5%" trend pill
+- Pending Dues `MetricCard`: amount + "Due by [date]" + `PrimaryButton` "Pay Now"
+
+**Transaction History section:**
+- `SectionHeader` "Transaction History"
+- Transaction cards: service name + date left, amount `titleLg` + `StatusBadge` right, payment method icon row
+
+**Load More:** `OutlineButton` "Load More Transactions"
+
+**Bottom tab bar:** Usage tab active
+
+### Screen 4.5 — Subscription (`(customer)/subscription.tsx`)
+**Stitch source:** `subscription`
+
+**Plan `Card` (hero):**
+- "Pro Plan" `headlineMd` + "Active" `StatusBadge`
+- Billing: `metricXl` amount + "/ month" `bodyMd`
+- Next Renewal date
+- Two buttons: `PrimaryButton` "Renew Now" + `OutlineButton` "Change Plan"
+
+**Features `Card`:**
+- "Included Features" `titleLg`
+- List: each feature = icon + name `bodyLg` + description `bodyMd` `onSurfaceVariant`
+
+**Billing History `Card`:**
+- `SectionHeader` "Billing History"
+- Table rows: date / description / amount / "Paid" badge / download icon
+
+**Bottom tab bar:** Profile tab active
+
+### Screen 4.6 — Customer Profile (`(customer)/profile.tsx`)
+**Stitch source:** `profile`
+
+**`AppHeader`** with notification bell right
+
+**Profile header `Card`:**
+- `Avatar` large (initials)
+- Name `headlineSm`
+- Status: green LED dot + "Online" `labelMd`
+
+**Personal Information `Card`:**
+- `InfoRow` x4: Email / Phone / Service City / Status
+- Edit mode: tapping row turns to inline `TextInput`
+
+**System Details `Card`:**
+- `InfoRow` x2: Total Capacity / Install Date
+
+**Notification Preferences `Card`:**
+- Toggle rows: Email Alerts / SMS Notifications / Push Notifications
+- Each: label `bodyLg` + `Switch` component
+
+**`OutlineButton`** "Logout securely" with logout icon
+
+**Bottom tab bar:** Profile tab active
+
+---
+
+## Phase 5 — Staff Portal
+
+**4 screens. Field technician's primary workflow.**
+
+### Screen 5.1 — My Jobs (`(staff)/jobs.tsx`)
+**Stitch source:** `staff_my_jobs`
+
+**`AppHeader`** with refresh icon right
+
+**Filter chips row:**
+- All / Pending / In Progress / Completed
+- Active chip: `primaryContainer` bg, `primary` text, filled
+- Inactive: `surfaceContainerLow` bg, `onSurfaceVariant` text, outlined
+
+**Job cards (`Card` per job):**
+- Customer name `titleLg` + `StatusBadge` top-right
+- Service type `bodyMd` `onSurfaceVariant`
+- Location row: map-marker icon + address `bodyMd`
+- Time row: clock icon + scheduled time `bodyMd`
+- Button row: `PrimaryButton` "View Details" (in_progress) or "Start Job" (pending) + square `OutlineButton` navigation icon
+
+**Empty state:** `EmptyState` "No jobs assigned"
+
+**Bottom tab bar:** Jobs (active) / Schedule / Account
+
+### Screen 5.2 — Schedule (`(staff)/schedule.tsx`)
+**Stitch source:** `schedule`
+
+**`AppHeader`** + month/year `titleLg` centered
+
+**Weekly date strip:**
+- 5 columns (Mon–Fri), each: day label `labelMd` + date number `titleLg`
+- Active day: `primaryContainer` rounded square fill
+- Today: indicator dot below date number
+
+**Timeline (FlatList of time-blocked cards):**
+- Time label `labelMd` `onSurfaceVariant` left margin
+- Job `Card` inline: customer/location name `bodyLg` + location `bodyMd` + type badge
+- Status visual: past jobs = `surfaceContainerLow` bg + reduced opacity; current = `surfaceContainerLowest` white + full opacity
+- Active job card: "Navigate" `PrimaryButton` + "Mark Done" `OutlineButton`
+
+**Bottom tab bar:** Schedule (active) / Jobs / Account
+
+### Screen 5.3 — Job Details (`job/[id].tsx`)
+**Stitch source:** `job_details_staff_view`
+
+**Header:** "Job #GV-XXXX" `titleLg` + service type `bodyMd` subtitle + ⋮ menu
+
+**Status stepper (4 steps, horizontal):**
+Scheduled → En Route → In Progress → Completed
+- Completed steps: filled green circle with checkmark
+- Active step: filled `primaryContainer` circle with step number
+- Future steps: outlined circle
+- Connecting lines fill green as steps complete
+
+**Customer `Card`:**
+- `Avatar` + "CUSTOMER" `labelMd` label + name `titleLg`
+- Two buttons: `OutlineButton` "Call" (phone icon) + `OutlineButton` "Message" (chat icon)
+
+**Location `Card`:**
+- address `bodyLg`
+- Static map image (street-level view via Maps Static API or `react-native-maps` snapshot)
+- `PrimaryButton` "Navigate" — opens `maps.google.com/?q=address`
+
+**Service Overview `Card`:**
+- "SERVICE OVERVIEW" `labelMd` uppercase
+- Service name `bodyLg` bold + description `bodyMd`
+
+**Site Documentation `Card`:**
+- "Site Documentation" `titleLg` + "X/2 Captured" `labelMd` right
+- 2-slot dashed grid: Before Service + After Service
+- Tapping empty slot: opens camera via `expo-image-picker`
+- Tapping captured slot: opens full-screen image preview
+
+**Technician Remarks `Card`:**
+- Outlined multiline `TextInput`
+- Placeholder: "Enter findings, parts used, or client notes..."
+- "Save Remarks" appears as `labelLg` link when text is dirty
+
+**Actions:**
+- `OutlineButton` "Generate Preliminary Report" (mid-job — in_progress only)
+- Bottom fixed bar: `OutlineButton` "Pause Job" left + `LimeButton` "Complete Job" right
+
+#### New features requiring backend work:
+| Feature | Frontend | Backend |
+|---|---|---|
+| En Route status | 4th stepper step + "Start Journey" CTA | Add `en_route` to status enum, migration |
+| Pause Job | Pause CTA + reason prompt modal | Add `paused` to status enum |
+| Call/Message | `Linking.openURL('tel:...')` / `sms:...` | Customer phone already in API response |
+| Map view | Maps Static API image or RN Maps snapshot | No change |
+| Navigate button | `Linking.openURL('https://maps.google.com/?q=...')` | No change |
+| Preliminary Report | Partial PDF with current photos + remarks | Extend existing PDF endpoint |
+
+### Screen 5.4 — Staff Profile (`(staff)/profile.tsx`)
+**Stitch source:** `staff_profile`
+
+**`AppHeader`** with back + edit icon
+
+**Profile header `Card` (with decorative gradient strip):**
+- `Avatar` large + name `headlineSm`
+- ID: "GV-TECH-XXXX" `labelMd` `onSurfaceVariant`
+- "Technician" `StatusBadge`
+- Online indicator: green LED dot + "Online" `labelMd`
+
+**Quick stats row (2 `MetricCard`):**
+- Jobs Completed: number `metricXl`
+- Rating: star icon + "4.8" `metricXl`
+
+> Note: jobs count and rating are new data points not currently in the API response. API enhancement needed.
+
+**Contact Info `Card`:**
+- `InfoRow` x3: Email / Phone / Service Region
+
+**Certifications `Card`:**
+- "Certifications" `titleLg`
+- Each cert: verified-badge icon + cert name `bodyLg` + "Valid thru YYYY" `labelMd` `onSurfaceVariant`
+
+> Note: Certifications are a new data concept. Needs new DB table + API endpoint.
+
+**Account Settings list:**
+- Tappable rows with chevron: Personal Details / Security & Password / Notification Preferences
+
+**Help & Support list:**
+- Help & Support / Company Policies (tappable rows)
+
+**`OutlineButton`** "Logout" with logout icon in `error` color
+
+**Bottom tab bar:** Jobs / Schedule / Account (active)
+
+---
+
+## Phase 6 — Admin Portal
+
+**6 screens. Management and oversight tools.**
+
+### Screen 6.1 — Analytics Overview (`(admin)/analytics.tsx`)
+**Stitch source:** `admin_analytics`
+
+**`AppHeader`** with notification bell
+
+**Revenue `MetricCard` (hero, full width):**
+- "Total Revenue" `labelLg`
+- `metricXl` ₹ amount
+- "+X%" lime trend pill with trending-up arrow
+
+**Service Status section:**
+- `SectionHeader` "Service Status"
+- 2×2 `MetricCard` grid: Completed / Pending / In Progress / Unread Contacts
+- Unread Contacts: `error` color value + envelope icon
+
+**People Overview section:**
+- `SectionHeader` "People Overview"
+- 2×2 `MetricCard` grid: Total Customers / Active Subs / Total Staff / Active Staff
+- Active Staff + Active Subs: small green LED dot in card
+
+**Bottom tab bar:** Dashboard/Overview (active) / Staff / Fleet / Settings
+
+### Screen 6.2 — Jobs Master List (`(admin)/jobs.tsx`)
+**Stitch source:** `jobs_master_list`
+
+**`AppHeader`** with search + notification icons
+
+**Page header:**
+- "Admin Jobs List" `headlineSm`
+- Subtitle: "Master view of all fleet assignments and service records" `bodyMd`
+
+**Search bar:** outlined input + search icon, "Search jobs, customers, techs..."
+
+**Filter chips:** All Jobs / Pending / In Progress / Completed / Cancelled
+
+**Job cards (`Card` per job):**
+- Job ID `labelMd` `onSurfaceVariant` (e.g. JOB-2049)
+- Customer name `titleLg` + `StatusBadge` top-right
+- Technician row: engineering icon + name (or "Unassigned" italic)
+- Service type `bodyMd`
+- Date/location row with icons
+
+**Status-dependent CTA button:**
+- Pending + unassigned → `PrimaryButton` "Assign Technician" (opens staff picker modal)
+- In Progress → `OutlineButton` "View Details"
+- Completed → `OutlineButton` "View Report"
+
+> "Assign Technician" is a new inline action not in the current app. Opens a bottom sheet with a staff list and confirms assignment via existing `PATCH /services/:id` endpoint.
+
+**Bottom tab bar:** Dashboard (active) / Staff / Fleet / Settings
+
+### Screen 6.3 — Customers Master List (`(admin)/customers/index.tsx`)
+**Stitch source:** `customers_master_list`
+
+**`AppHeader`** with search icon
+
+**Filter tabs:**
+- All Customers / Active Solar / Pending Installs / High Usage
+- Active: `primaryContainer` pill; inactive: `surfaceContainerLow`
+
+> "Active Solar", "Pending Installs", "High Usage" are new filter categories. Map to API query params on the customers list endpoint.
+
+**Customer cards (`Card`):**
+- `Avatar` initials circle
+- Name `titleLg` + location `bodyMd` with map-marker icon
+- Services count: wb_sunny icon + "X Solar services"
+- `StatusBadge` (Active / Pending)
+- ⋮ more menu (Edit / View / Deactivate)
+
+**FAB:** `LimeButton` with `+` icon, fixed bottom-right → navigates to Add Customer form
+
+**Bottom tab bar:** Dashboard / Staff (active) / Fleet / Settings
+
+### Screen 6.4 — Customer Profile Admin View (`(admin)/customers/[id].tsx`)
+**Stitch source:** `customer_profile_admin_view`
+
+**`AppHeader`** with back + edit icon
+
+**Profile `Card`:**
+- `Avatar` large (primary-container border)
+- Name `headlineSm` + ID `labelMd`
+- Facility / Phone / Joined — `InfoRow` x3
+- `OutlineButton` "Contact" with mail icon
+
+**Subscription `Card`:**
+- Plan name + bolt icon `titleLg` + `StatusBadge` "Active"
+- "Monthly Allocation: X MWh (Y MWh Used)" `bodyMd`
+- Progress bar: 4px track, `secondaryContainer` fill — shows % used
+
+**Key Metrics row (2 `MetricCard`):**
+- Lifetime Value: `metricXl` amount + trend pill
+- Total Energy Handled: `metricXl`
+
+> Lifetime value and energy data are new metrics not in the current API. Backend enhancement needed.
+
+**Service History `Card`:**
+- `SectionHeader` "Service History" + "Filter" button
+- Table rows: date / service type with icon / `StatusBadge` / chevron-right
+- `OutlineButton` "View All Records"
+
+### Screen 6.5 — Staff Management (`(admin)/staff.tsx`)
+**Stitch source:** `staff_management`
+
+**`AppHeader`** with search + notification icons
+
+**Page header:** "Staff Directory" `headlineSm` + `PrimaryButton` "Add Staff" (person-add icon)
+
+**Search bar:** "Search by name or ID..."
+
+**Staff cards grid (1 col mobile, 2-3 col tablet):**
+Each `Card`:
+- `Avatar` circle (initials) + name `titleLg`
+- ID `labelMd` `onSurfaceVariant`
+- `StatusBadge` (Active / On Leave)
+- Current Assignment box: icon + assignment description `bodyMd`
+  - If assigned: job name and location
+  - If unassigned: "Unassigned — [reason]" italic
+
+> Current assignment is a new display concept. Requires API to return current active job alongside staff record.
+
+### Screen 6.6 — Admin Profile / Settings (`(admin)/profile.tsx`)
+**Stitch source:** `admin_settings`
+
+**`AppHeader`**
+
+**Profile `Card` (left-aligned):**
+- `Avatar` large (`primaryContainer` bg)
+- Name `headlineSm` + "System Admin" badge
+- Email `bodyMd`
+- `OutlineButton` "Edit Profile" with edit icon
+
+**Admin Control cards (2×2 grid):**
+Each `Card` is tappable with hover elevation:
+
+1. **Manage Staff** — group icon + "Add, remove, or modify staff accounts" → navigates to `(admin)/staff`
+2. **System Settings** — settings-applications icon + "Configure global platform thresholds, alerts, and API integrations" → placeholder screen (Phase 7)
+3. **Role Permissions** — admin-panel-settings icon + "Define custom roles and adjust feature access levels" → placeholder screen (Phase 7)
+4. **Logout** — logout icon + "Securely end your administrative session" → `errorContainer` bg card, `error` text
+
+**Bottom tab bar:** Dashboard / Staff / Fleet / Settings (active)
+
+---
+
+## Phase 7 — New Feature Screens
+
+**These screens appear in Stitch tab bars but have no design files yet. They represent entirely new product features requiring both design and backend work. Phase 7 cannot begin until product decisions are made.**
+
+### 7.1 — Solar Tab (`(customer)/solar` + `(admin)/solar`)
+Appears in both customer and admin bottom tab bars as "Solar" (wb_sunny icon).
+
+**Product questions to resolve:**
+- Does this show live solar panel telemetry (panel-by-panel output)?
+- Is this connected to actual hardware/inverter APIs, or just service history?
+- Is it the same screen for admin and customer, or different?
+
+**Likely content (based on Stitch DESIGN.md "data-driven utility platform" language):**
+- Real-time or last-known kWh generation
+- Panel health status grid
+- Generation trend chart (daily/weekly/monthly)
+- Any fault alerts
+
+### 7.2 — Usage Tab (`(customer)/usage` + `(admin)/usage`)
+Appears as "Usage" (electric_bolt icon) in all role tab bars.
+
+**Product questions to resolve:**
+- Is this energy consumption (grid draw) vs generation?
+- Does it pull from an external API (inverter/smart meter)?
+- What time resolutions are shown (day/month/year)?
+
+### 7.3 — Fleet Tab (`(admin)/fleet`)
+Appears in admin tab bar as "Fleet".
+
+**Product questions to resolve:**
+- Is Fleet a map view of staff locations?
+- Is it vehicle/equipment tracking?
+- Or is it a combined staff + job status live view?
+
+### 7.4 — System Settings & Role Permissions
+Referenced in the Admin Settings screen (6.6) as tappable cards. Full-page screens needed for each. Content and permissions model not yet defined.
+
+---
+
+## Backend Changes Required
+
+The following code changes are needed outside the React Native app to support new features introduced by the Stitch designs:
+
+| Feature | File(s) | Change |
+|---|---|---|
+| En Route status | `lib/db/src/schema/services.ts` | Add `en_route` to status enum |
+| Paused status | `lib/db/src/schema/services.ts` | Add `paused` to status enum |
+| DB migration | `lib/db/` | New migration file for enum changes |
+| Assign Technician | `apps/api-server/src/routes/services.ts` | Allow staff_id update on PATCH endpoint |
+| Staff job count + rating | `apps/api-server/src/routes/staff.ts` | Add aggregated fields to staff response |
+| Staff certifications | `lib/db/src/schema/` + API | New `certifications` table + CRUD endpoints |
+| Customer lifetime value | `apps/api-server/src/routes/customers.ts` | Aggregate from payments table |
+| Customer current assignment | `apps/api-server/src/routes/staff.ts` | Include active job in staff list response |
+| Preliminary report | `apps/api-server/src/routes/` | Extend PDF endpoint to accept partial jobs |
+
+---
+
+## Cross-Cutting Notes
+
+### Dark Mode
+Stitch DESIGN.md defines `darkMode: "class"`. **Out of scope for this revamp.** The token system in Phase 1 is structured to support it later (all colors are named semantically, not `dark-something`), but no dark variants will be implemented in Phases 1–6.
+
+### Migration Strategy
+Screens are reskinned one phase at a time. Mixed styling (some screens on new system, others on old) is acceptable during the migration — the token file is purely additive.
+
+### Testing per Screen
+For each reskinned screen, verify on a physical Android device:
+- All data still loads and displays correctly
+- Navigation and back gestures work
+- Error + empty states render
+- Pull-to-refresh works
+- No layout overflow on 375px and 390px width
 
 ---
 
 ## File Change Summary
 
-| File | Phase | Change type |
+| File | Phase | Type |
 |---|---|---|
 | `src/theme/index.ts` | 1 | New |
 | `src/theme/icons.ts` | 1 | New |
-| `src/components/ui/StatusBadge.tsx` | 1 | New |
-| `src/components/ui/MetricCard.tsx` | 1 | New |
-| `src/components/ui/SectionHeader.tsx` | 1 | New |
-| `src/components/ui/PrimaryButton.tsx` | 1 | New |
-| `src/components/ui/OutlineButton.tsx` | 1 | New |
-| `src/components/ui/Card.tsx` | 1 | New |
-| `src/components/ui/AppHeader.tsx` | 1 | New |
-| `app/_layout.tsx` | 1 | Modify (font loading) |
-| `app/(customer)/index.tsx` | 2 | Modify (restyle) |
-| `app/(staff)/jobs.tsx` | 2 | Modify (restyle) |
-| `app/(admin)/analytics.tsx` | 2 | Modify (restyle) |
-| `app/(customer)/book/index.tsx` | 2 | Modify (restyle) |
-| `app/(customer)/book/[id].tsx` | 2 | Modify (layout rebuild) |
-| `app/(customer)/book/review.tsx` | 2 | Modify (restyle) |
-| `app/(customer)/book/success.tsx` | 2 | Modify (restyle) |
-| `app/job/[id].tsx` | 2 | Modify (restyle + new features) |
-| `app/(auth)/login.tsx` | 3 | Modify (restyle) |
-| `app/(customer)/payments.tsx` | 3 | Modify (restyle) |
-| `app/(customer)/subscription.tsx` | 3 | Modify (restyle) |
-| `app/(customer)/profile.tsx` | 3 | Modify (restyle) |
-| `app/(customer)/services/index.tsx` | 3 | Modify (restyle) |
-| `app/(customer)/services/[id].tsx` | 3 | Modify (restyle) |
-| `app/(staff)/schedule.tsx` | 3 | Modify (restyle) |
-| `app/(staff)/profile.tsx` | 3 | Modify (restyle) |
-| `app/(admin)/jobs.tsx` | 3 | Modify (restyle) |
-| `app/(admin)/customers/index.tsx` | 3 | Modify (restyle) |
-| `app/(admin)/customers/[id].tsx` | 3 | Modify (restyle) |
-| `app/(admin)/staff.tsx` | 3 | Modify (restyle) |
-| `app/(admin)/profile.tsx` | 3 | Modify (restyle) |
-| Role `_layout.tsx` files (3) | 3 | Modify (tab labels/icons) |
-| **Total** | | **9 new, 24 modified** |
+| `src/components/ui/` (11 files) | 1 | New |
+| `app/_layout.tsx` | 1 | Modify |
+| Role `_layout.tsx` files (3) | 1 | Modify |
+| `app/(auth)/login.tsx` | 2 | Modify |
+| `app/(customer)/book/index.tsx` | 3 | Modify |
+| `app/(customer)/book/[id].tsx` | 3 | Modify (rebuild) |
+| `app/(customer)/book/review.tsx` | 3 | Modify |
+| `app/(customer)/book/success.tsx` | 3 | Modify |
+| `app/(customer)/index.tsx` | 4 | Modify |
+| `app/(customer)/services/index.tsx` | 4 | Modify |
+| `app/(customer)/services/[id].tsx` | 4 | Modify |
+| `app/(customer)/payments.tsx` | 4 | Modify |
+| `app/(customer)/subscription.tsx` | 4 | Modify |
+| `app/(customer)/profile.tsx` | 4 | Modify |
+| `app/(staff)/jobs.tsx` | 5 | Modify |
+| `app/(staff)/schedule.tsx` | 5 | Modify |
+| `app/job/[id].tsx` | 5 | Modify + new features |
+| `app/(staff)/profile.tsx` | 5 | Modify |
+| `app/(admin)/analytics.tsx` | 6 | Modify |
+| `app/(admin)/jobs.tsx` | 6 | Modify |
+| `app/(admin)/customers/index.tsx` | 6 | Modify |
+| `app/(admin)/customers/[id].tsx` | 6 | Modify |
+| `app/(admin)/staff.tsx` | 6 | Modify |
+| `app/(admin)/profile.tsx` | 6 | Modify |
+| Solar/Usage/Fleet screens | 7 | New |
+| **Total** | | **13 new, 23 modified** |
