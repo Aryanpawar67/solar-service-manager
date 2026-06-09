@@ -118,7 +118,7 @@ export default function BookSuccessScreen() {
 
           <TouchableOpacity
             style={styles.btnSecondary}
-            onPress={() => router.replace("/(customer)/")}
+            onPress={() => router.replace("/(customer)" as never)}
             activeOpacity={0.75}
           >
             <Ionicons name="home-outline" size={18} color="#16a34a" />

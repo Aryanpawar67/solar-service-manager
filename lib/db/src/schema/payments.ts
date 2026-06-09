@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { customersTable } from "./customers";
 import { subscriptionsTable } from "./subscriptions";
+import { servicesTable } from "./services";
 
 export const paymentStatusEnum = pgEnum("payment_status", [
   "pending",
@@ -15,11 +16,15 @@ export const paymentsTable = pgTable("payments", {
   id: serial("id").primaryKey(),
   customerId: integer("customer_id").notNull().references(() => customersTable.id),
   subscriptionId: integer("subscription_id").references(() => subscriptionsTable.id),
+  serviceId: integer("service_id").references(() => servicesTable.id),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
   status: paymentStatusEnum("status").notNull().default("pending"),
   paymentMethod: text("payment_method"),
   transactionId: text("transaction_id"),
   description: text("description"),
+  razorpayOrderId: text("razorpay_order_id"),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  razorpaySignature: text("razorpay_signature"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -24,6 +24,7 @@
     "pdfkit": "^0.18.0",
     "pino": "^9",
     "pino-http": "^10",
+    "razorpay": "^2.9.6",
     "twilio": "^5.13.1"
   },
   "devDependencies": {

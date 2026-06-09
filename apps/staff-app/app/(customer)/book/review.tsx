@@ -18,12 +18,29 @@ import { getToken } from "@/lib/auth";
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
+// Lazily import Razorpay so the app doesn't crash in Expo Go
+let RazorpayCheckout: typeof import("react-native-razorpay").default | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  RazorpayCheckout = require("react-native-razorpay").default;
+} catch {}
+
 type AppliedCoupon = {
   couponId: number;
   code: string;
   description: string;
   discount: number;
 };
+
+const PAYMENT_METHODS = [
+  { id: "upi",        label: "UPI",          icon: "qr-code-outline" as const,   sub: "GPay, PhonePe, Paytm" },
+  { id: "card",       label: "Card",         icon: "card-outline" as const,       sub: "Debit / Credit" },
+  { id: "netbanking", label: "Net Banking",  icon: "business-outline" as const,   sub: "All major banks" },
+  { id: "wallet",     label: "Wallet",       icon: "wallet-outline" as const,     sub: "Paytm, Amazon Pay" },
+  { id: "cash",       label: "Cash",         icon: "cash-outline" as const,       sub: "Pay on service" },
+] as const;
+
+type PaymentMethodId = typeof PAYMENT_METHODS[number]["id"];
 
 export default function BookReviewScreen() {
   const { id, date, slot, notes } = useLocalSearchParams<{
@@ -35,6 +52,7 @@ export default function BookReviewScreen() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>("upi");
 
   const { subtotal, tax, total } = item ? calcPricing(item) : { subtotal: 0, tax: 0, total: 0 };
   const discountAmount = appliedCoupon?.discount ?? 0;
@@ -49,10 +67,7 @@ export default function BookReviewScreen() {
       const token = await getToken();
       const res = await fetch(`${API_URL}/api/me/coupons/validate`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ code, orderAmount: total }),
       });
       const data = await res.json() as { error?: string; couponId?: number; code?: string; description?: string; discount?: number };
@@ -60,12 +75,7 @@ export default function BookReviewScreen() {
         setCouponError(data.error ?? "Invalid coupon code.");
         setAppliedCoupon(null);
       } else {
-        setAppliedCoupon({
-          couponId: data.couponId!,
-          code: data.code!,
-          description: data.description!,
-          discount: data.discount!,
-        });
+        setAppliedCoupon({ couponId: data.couponId!, code: data.code!, description: data.description!, discount: data.discount! });
         setCouponInput("");
       }
     } catch {
@@ -75,20 +85,15 @@ export default function BookReviewScreen() {
     }
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponError("");
-  };
+  const removeCoupon = () => { setAppliedCoupon(null); setCouponError(""); };
 
-  const bookMutation = useMutation({
+  // ── Cash booking ─────────────────────────────────────────────────────────────
+  const cashMutation = useMutation({
     mutationFn: async () => {
       const token = await getToken();
       const res = await fetch(`${API_URL}/api/me/book`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           serviceType: item!.name,
           scheduledDate: date,
@@ -105,22 +110,109 @@ export default function BookReviewScreen() {
       }
       return res.json() as Promise<{ bookingId: number }>;
     },
-    onSuccess: (data) => {
-      router.replace({
-        pathname: "/(customer)/book/success",
-        params: {
-          bookingId: String(data.bookingId),
-          serviceType: item!.name,
-          date: date ?? "",
-          slot: slot ?? "",
-          total: String(finalTotal),
-        },
-      });
-    },
-    onError: (err: Error) => {
-      Alert.alert("Booking Failed", err.message);
-    },
+    onSuccess: (data) => navigateSuccess(data.bookingId),
+    onError: (err: Error) => Alert.alert("Booking Failed", err.message),
   });
+
+  // ── Online payment (Razorpay) ─────────────────────────────────────────────────
+  const onlineMutation = useMutation({
+    mutationFn: async () => {
+      if (!RazorpayCheckout) {
+        throw new Error(
+          "Online payments require a dev build. Please build the app with EAS or use Cash payment."
+        );
+      }
+
+      const token = await getToken();
+
+      // Step 1: create Razorpay order
+      const orderRes = await fetch(`${API_URL}/api/me/razorpay/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: finalTotal }),
+      });
+      if (!orderRes.ok) {
+        const err = await orderRes.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Could not initiate payment.");
+      }
+      const { razorpayOrderId, amount, currency, paymentId, keyId } =
+        await orderRes.json() as {
+          razorpayOrderId: string;
+          amount: number;
+          currency: string;
+          paymentId: number;
+          keyId: string;
+        };
+
+      // Step 2: open Razorpay checkout
+      const checkoutOptions = {
+        description: `GreenVolt – ${item!.name}`,
+        currency,
+        key: keyId,
+        amount,
+        order_id: razorpayOrderId,
+        name: "GreenVolt",
+        theme: { color: "#16a34a" },
+        retry: { enabled: false },
+        ...(paymentMethod !== "cash" && { method: { [paymentMethod]: 1 } }),
+      };
+
+      const paymentData = await RazorpayCheckout.open(checkoutOptions) as {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      };
+
+      // Step 3: verify + create booking
+      const verifyRes = await fetch(`${API_URL}/api/me/razorpay/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          razorpayPaymentId: paymentData.razorpay_payment_id,
+          razorpayOrderId: paymentData.razorpay_order_id,
+          razorpaySignature: paymentData.razorpay_signature,
+          paymentId,
+          serviceType: item!.name,
+          scheduledDate: date,
+          timeSlot: slot,
+          notes: notes || undefined,
+          finalAmount: finalTotal,
+          couponId: appliedCoupon?.couponId,
+          discountApplied: discountAmount > 0 ? discountAmount : undefined,
+        }),
+      });
+      if (!verifyRes.ok) {
+        const err = await verifyRes.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Payment verification failed.");
+      }
+      return verifyRes.json() as Promise<{ bookingId: number }>;
+    },
+    onSuccess: (data) => navigateSuccess(data.bookingId),
+    onError: (err: Error) => Alert.alert("Payment Failed", err.message),
+  });
+
+  const navigateSuccess = (bookingId: number) => {
+    router.replace({
+      pathname: "/(customer)/book/success",
+      params: {
+        bookingId: String(bookingId),
+        serviceType: item!.name,
+        date: date ?? "",
+        slot: slot ?? "",
+        total: String(finalTotal),
+      },
+    });
+  };
+
+  const handleConfirm = () => {
+    if (paymentMethod === "cash") {
+      cashMutation.mutate();
+    } else {
+      onlineMutation.mutate();
+    }
+  };
+
+  const isPending = cashMutation.isPending || onlineMutation.isPending;
 
   if (!item) {
     return (
@@ -187,7 +279,6 @@ export default function BookReviewScreen() {
           {/* Price breakdown */}
           <View style={styles.card}>
             <Text style={styles.cardLabel}>PRICE BREAKDOWN</Text>
-
             <View style={styles.priceRow}>
               <Text style={styles.priceKey}>Service Charge</Text>
               <Text style={styles.priceVal}>₹{item.basePrice}</Text>
@@ -206,7 +297,6 @@ export default function BookReviewScreen() {
               <Text style={styles.priceKey}>GST (18%)</Text>
               <Text style={styles.priceVal}>₹{tax}</Text>
             </View>
-
             {discountAmount > 0 && (
               <View style={styles.priceRow}>
                 <View style={styles.discountLabelRow}>
@@ -216,12 +306,10 @@ export default function BookReviewScreen() {
                 <Text style={styles.discountVal}>−₹{discountAmount}</Text>
               </View>
             )}
-
             <View style={styles.totalRow}>
               <Text style={styles.totalKey}>Total Amount</Text>
               <Text style={styles.totalVal}>₹{finalTotal}</Text>
             </View>
-
             {discountAmount > 0 && (
               <View style={styles.savingsBanner}>
                 <Ionicons name="happy-outline" size={14} color="#16a34a" />
@@ -230,10 +318,9 @@ export default function BookReviewScreen() {
             )}
           </View>
 
-          {/* Coupon section */}
+          {/* Coupon */}
           <View style={styles.card}>
             <Text style={styles.cardLabel}>OFFERS & COUPONS</Text>
-
             {appliedCoupon ? (
               <View style={styles.appliedCoupon}>
                 <View style={styles.appliedCouponLeft}>
@@ -279,12 +366,7 @@ export default function BookReviewScreen() {
                     <Text style={styles.couponErrorText}>{couponError}</Text>
                   </View>
                 ) : null}
-                <LinearGradient
-                  colors={["#1c1917", "#292524"]}
-                  style={styles.offerHint}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
+                <LinearGradient colors={["#1c1917", "#292524"]} style={styles.offerHint} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                   <Ionicons name="gift-outline" size={14} color="#f59e0b" />
                   <Text style={styles.offerHintText}>
                     Try <Text style={styles.offerHintCode}>SOLAR10</Text> or{" "}
@@ -295,13 +377,50 @@ export default function BookReviewScreen() {
             )}
           </View>
 
-          {/* Payment note */}
-          <View style={styles.paymentNote}>
-            <Ionicons name="information-circle-outline" size={14} color="#9ca3af" />
-            <Text style={styles.paymentNoteText}>
-              Payment will be collected by the technician at the time of service visit.
-              Online payment coming soon.
-            </Text>
+          {/* Payment method */}
+          <View style={styles.card}>
+            <Text style={styles.cardLabel}>PAYMENT METHOD</Text>
+            <View style={styles.methodGrid}>
+              {PAYMENT_METHODS.map((m) => {
+                const selected = paymentMethod === m.id;
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={[styles.methodChip, selected && styles.methodChipSelected]}
+                    onPress={() => setPaymentMethod(m.id)}
+                    activeOpacity={0.75}
+                  >
+                    <View style={[styles.methodIconBox, selected && styles.methodIconBoxSelected]}>
+                      <Ionicons name={m.icon} size={18} color={selected ? "#16a34a" : "#6b7280"} />
+                    </View>
+                    <Text style={[styles.methodLabel, selected && styles.methodLabelSelected]}>{m.label}</Text>
+                    <Text style={styles.methodSub}>{m.sub}</Text>
+                    {selected && (
+                      <View style={styles.methodCheck}>
+                        <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {paymentMethod !== "cash" && (
+              <View style={styles.onlineNote}>
+                <Ionicons name="shield-checkmark-outline" size={14} color="#16a34a" />
+                <Text style={styles.onlineNoteText}>
+                  Secured by Razorpay. Supports UPI, cards, wallets and net banking.
+                </Text>
+              </View>
+            )}
+            {paymentMethod === "cash" && (
+              <View style={styles.cashNote}>
+                <Ionicons name="information-circle-outline" size={14} color="#9ca3af" />
+                <Text style={styles.cashNoteText}>
+                  Payment will be collected by the technician at the time of service.
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={{ height: 110 }} />
@@ -313,19 +432,28 @@ export default function BookReviewScreen() {
             <Text style={styles.stickyLabel}>Total payable</Text>
             <Text style={styles.stickyTotal}>₹{finalTotal}</Text>
             {discountAmount > 0 && (
-              <Text style={styles.stickySaved}>You saved ₹{discountAmount}</Text>
+              <Text style={styles.stickySaved}>Saved ₹{discountAmount}</Text>
             )}
           </View>
           <TouchableOpacity
-            style={[styles.ctaBtn, bookMutation.isPending && styles.ctaBtnDisabled]}
-            onPress={() => bookMutation.mutate()}
-            disabled={bookMutation.isPending}
+            style={[styles.ctaBtn, isPending && styles.ctaBtnDisabled]}
+            onPress={handleConfirm}
+            disabled={isPending}
             activeOpacity={0.85}
           >
-            {bookMutation.isPending ? (
+            {isPending ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.ctaBtnText}>Confirm Booking →</Text>
+              <>
+                <Ionicons
+                  name={paymentMethod === "cash" ? "checkmark-circle-outline" : "lock-closed-outline"}
+                  size={16}
+                  color="#fff"
+                />
+                <Text style={styles.ctaBtnText}>
+                  {paymentMethod === "cash" ? "Confirm Booking" : `Pay ₹${finalTotal}`}
+                </Text>
+              </>
             )}
           </TouchableOpacity>
         </View>
@@ -351,22 +479,10 @@ const styles = StyleSheet.create({
     elevation: 1,
     gap: 10,
   },
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#9ca3af",
-    letterSpacing: 0.8,
-    marginBottom: 2,
-  },
+  cardLabel: { fontSize: 11, fontWeight: "800", color: "#9ca3af", letterSpacing: 0.8, marginBottom: 2 },
 
   serviceRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  serviceIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  serviceIcon: { width: 46, height: 46, borderRadius: 14, justifyContent: "center", alignItems: "center" },
   serviceInfo: { flex: 1 },
   serviceName: { fontSize: 15, fontWeight: "800", color: "#111827" },
   serviceTagline: { fontSize: 12, color: "#6b7280", marginTop: 2 },
@@ -383,117 +499,100 @@ const styles = StyleSheet.create({
   discountKey: { fontSize: 13, color: "#16a34a", fontWeight: "600" },
   discountVal: { fontSize: 13, color: "#16a34a", fontWeight: "700" },
   totalRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1.5,
-    borderTopColor: "#f0fdf4",
-    marginTop: 2,
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingTop: 12, borderTopWidth: 1.5, borderTopColor: "#f0fdf4", marginTop: 2,
   },
   totalKey: { fontSize: 15, fontWeight: "700", color: "#111827" },
   totalVal: { fontSize: 18, fontWeight: "800", color: "#111827" },
   savingsBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#f0fdf4",
-    borderRadius: 10,
-    padding: 10,
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10,
   },
   savingsText: { fontSize: 12, color: "#16a34a", fontWeight: "600", flex: 1 },
 
   couponInputRow: { flexDirection: "row", gap: 10 },
   couponInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#111827",
-    backgroundColor: "#f9fafb",
-    letterSpacing: 1,
+    flex: 1, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12,
+    paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: "#111827",
+    backgroundColor: "#f9fafb", letterSpacing: 1,
   },
   applyBtn: {
-    backgroundColor: "#16a34a",
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 72,
+    backgroundColor: "#16a34a", borderRadius: 12, paddingHorizontal: 20,
+    justifyContent: "center", alignItems: "center", minWidth: 72,
   },
   applyBtnDisabled: { backgroundColor: "#d1d5db" },
   applyBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
   couponError: { flexDirection: "row", alignItems: "center", gap: 5 },
   couponErrorText: { fontSize: 12, color: "#ef4444" },
-  offerHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 2,
-  },
+  offerHint: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 12, padding: 12, marginTop: 2 },
   offerHintText: { fontSize: 12, color: "rgba(255,255,255,0.65)", flex: 1 },
   offerHintCode: { color: "#f59e0b", fontWeight: "700" },
   appliedCoupon: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f0fdf4",
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#bbf7d0",
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "#f0fdf4", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#bbf7d0",
   },
   appliedCouponLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   appliedCode: { fontSize: 14, fontWeight: "700", color: "#16a34a" },
   appliedLabel: { fontSize: 11, color: "#16a34a", opacity: 0.8, marginTop: 1 },
 
-  paymentNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: "#fef3c7",
-    borderRadius: 12,
+  // Payment method
+  methodGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  methodChip: {
+    width: "30%",
+    flexGrow: 1,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#f9fafb",
     padding: 12,
-    borderWidth: 1,
-    borderColor: "#fde68a",
+    alignItems: "center",
+    gap: 5,
+    position: "relative",
   },
-  paymentNoteText: { fontSize: 12, color: "#92400e", flex: 1, lineHeight: 17 },
+  methodChipSelected: {
+    borderColor: "#16a34a",
+    backgroundColor: "#f0fdf4",
+  },
+  methodIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  methodIconBoxSelected: { backgroundColor: "#dcfce7" },
+  methodLabel: { fontSize: 13, fontWeight: "700", color: "#374151" },
+  methodLabelSelected: { color: "#16a34a" },
+  methodSub: { fontSize: 9, color: "#9ca3af", textAlign: "center" },
+  methodCheck: { position: "absolute", top: 6, right: 6 },
+
+  onlineNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10,
+  },
+  onlineNoteText: { fontSize: 12, color: "#16a34a", flex: 1, lineHeight: 17 },
+  cashNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#fef3c7", borderRadius: 10, padding: 10,
+    borderWidth: 1, borderColor: "#fde68a",
+  },
+  cashNoteText: { fontSize: 12, color: "#92400e", flex: 1, lineHeight: 17 },
 
   stickyBottom: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#fff",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "#fff", paddingHorizontal: 20, paddingVertical: 14, paddingBottom: 24,
+    borderTopWidth: 1, borderTopColor: "#f3f4f6",
+    shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, elevation: 8,
   },
   stickyLeft: { gap: 2 },
   stickyLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600" },
   stickyTotal: { fontSize: 20, fontWeight: "800", color: "#111827" },
   stickySaved: { fontSize: 10, color: "#16a34a", fontWeight: "700" },
   ctaBtn: {
-    backgroundColor: "#16a34a",
-    borderRadius: 14,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    shadowColor: "#16a34a",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 3,
-    minWidth: 170,
-    alignItems: "center",
+    backgroundColor: "#16a34a", borderRadius: 14, paddingHorizontal: 22, paddingVertical: 14,
+    shadowColor: "#16a34a", shadowOpacity: 0.3, shadowRadius: 8, elevation: 3,
+    minWidth: 160, alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center",
   },
   ctaBtnDisabled: { backgroundColor: "#9ca3af", shadowOpacity: 0 },
   ctaBtnText: { fontSize: 15, fontWeight: "800", color: "#fff" },

@@ -13,6 +13,7 @@ import analyticsRouter from "./analytics";
 import uploadRouter from "./upload";
 import notificationsRouter from "./notifications";
 import meRouter from "./me";
+import { customerRazorpayRouter, razorpayWebhookRouter } from "./razorpay";
 import { requireAuth } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
@@ -76,5 +77,8 @@ router.use("/analytics", analyticsRouter);
 router.use("/upload", uploadRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/me", meRouter);
+router.use("/me/razorpay", customerRazorpayRouter);
+// Public Razorpay webhook — no requireAuth
+router.use("/razorpay", razorpayWebhookRouter);
 
 export default router;
