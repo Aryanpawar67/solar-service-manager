@@ -18,16 +18,12 @@ import { getToken } from "@/lib/auth";
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
-const MOCK_COUPONS: Record<string, { label: string; discount: number; type: "flat" | "percent" }> = {
-  SOLAR10:       { label: "10% off on all services",  discount: 10,  type: "percent" },
-  FIRSTSERVICE:  { label: "₹100 off your first booking", discount: 100, type: "flat" },
-  AMC10:         { label: "10% off AMC plans",        discount: 10,  type: "percent" },
+type AppliedCoupon = {
+  couponId: number;
+  code: string;
+  description: string;
+  discount: number;
 };
-
-function applyDiscount(total: number, coupon: { discount: number; type: "flat" | "percent" }) {
-  if (coupon.type === "flat") return Math.min(coupon.discount, total);
-  return Math.round(total * (coupon.discount / 100));
-}
 
 export default function BookReviewScreen() {
   const { id, date, slot, notes } = useLocalSearchParams<{
@@ -36,20 +32,47 @@ export default function BookReviewScreen() {
   const item = getCatalogItem(id ?? "");
 
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<null | { code: string; label: string; discount: number; type: "flat" | "percent" }>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
-  const applyCoupon = () => {
+  const { subtotal, tax, total } = item ? calcPricing(item) : { subtotal: 0, tax: 0, total: 0 };
+  const discountAmount = appliedCoupon?.discount ?? 0;
+  const finalTotal = total - discountAmount;
+
+  const applyCoupon = async () => {
     const code = couponInput.trim().toUpperCase();
-    const found = MOCK_COUPONS[code];
-    if (!found) {
-      setCouponError("Invalid or expired coupon code.");
-      setAppliedCoupon(null);
-      return;
-    }
-    setAppliedCoupon({ code, ...found });
+    if (!code) return;
+    setCouponLoading(true);
     setCouponError("");
-    setCouponInput("");
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_URL}/api/me/coupons/validate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ code, orderAmount: total }),
+      });
+      const data = await res.json() as { error?: string; couponId?: number; code?: string; description?: string; discount?: number };
+      if (!res.ok) {
+        setCouponError(data.error ?? "Invalid coupon code.");
+        setAppliedCoupon(null);
+      } else {
+        setAppliedCoupon({
+          couponId: data.couponId!,
+          code: data.code!,
+          description: data.description!,
+          discount: data.discount!,
+        });
+        setCouponInput("");
+      }
+    } catch {
+      setCouponError("Could not validate coupon. Check your connection.");
+    } finally {
+      setCouponLoading(false);
+    }
   };
 
   const removeCoupon = () => {
@@ -72,6 +95,8 @@ export default function BookReviewScreen() {
           timeSlot: slot,
           notes: notes || undefined,
           estimatedPrice: finalTotal,
+          couponId: appliedCoupon?.couponId,
+          discountApplied: discountAmount > 0 ? discountAmount : undefined,
         }),
       });
       if (!res.ok) {
@@ -104,10 +129,6 @@ export default function BookReviewScreen() {
       </View>
     );
   }
-
-  const { subtotal, tax, total } = calcPricing(item);
-  const discountAmount = appliedCoupon ? applyDiscount(total, appliedCoupon) : 0;
-  const finalTotal = total - discountAmount;
 
   const displayDate = date
     ? new Date(date + "T00:00:00").toLocaleDateString("en-IN", {
@@ -163,7 +184,7 @@ export default function BookReviewScreen() {
             ) : null}
           </View>
 
-          {/* Price breakdown — Zomato-style */}
+          {/* Price breakdown */}
           <View style={styles.card}>
             <Text style={styles.cardLabel}>PRICE BREAKDOWN</Text>
 
@@ -196,7 +217,7 @@ export default function BookReviewScreen() {
               </View>
             )}
 
-            <View style={[styles.totalRow]}>
+            <View style={styles.totalRow}>
               <Text style={styles.totalKey}>Total Amount</Text>
               <Text style={styles.totalVal}>₹{finalTotal}</Text>
             </View>
@@ -219,7 +240,7 @@ export default function BookReviewScreen() {
                   <Ionicons name="pricetag" size={16} color="#16a34a" />
                   <View>
                     <Text style={styles.appliedCode}>{appliedCoupon.code} applied</Text>
-                    <Text style={styles.appliedLabel}>{appliedCoupon.label}</Text>
+                    <Text style={styles.appliedLabel}>{appliedCoupon.description}</Text>
                   </View>
                 </View>
                 <TouchableOpacity onPress={removeCoupon} hitSlop={8}>
@@ -238,14 +259,18 @@ export default function BookReviewScreen() {
                     autoCapitalize="characters"
                     returnKeyType="done"
                     onSubmitEditing={applyCoupon}
+                    editable={!couponLoading}
                   />
                   <TouchableOpacity
-                    style={[styles.applyBtn, !couponInput.trim() && styles.applyBtnDisabled]}
+                    style={[styles.applyBtn, (!couponInput.trim() || couponLoading) && styles.applyBtnDisabled]}
                     onPress={applyCoupon}
-                    disabled={!couponInput.trim()}
+                    disabled={!couponInput.trim() || couponLoading}
                     activeOpacity={0.75}
                   >
-                    <Text style={styles.applyBtnText}>Apply</Text>
+                    {couponLoading
+                      ? <ActivityIndicator size="small" color="#fff" />
+                      : <Text style={styles.applyBtnText}>Apply</Text>
+                    }
                   </TouchableOpacity>
                 </View>
                 {couponError ? (
@@ -254,7 +279,6 @@ export default function BookReviewScreen() {
                     <Text style={styles.couponErrorText}>{couponError}</Text>
                   </View>
                 ) : null}
-                {/* Available coupons hint */}
                 <LinearGradient
                   colors={["#1c1917", "#292524"]}
                   style={styles.offerHint}
@@ -335,7 +359,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 
-  // Service row
   serviceRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   serviceIcon: {
     width: 46,
@@ -352,7 +375,6 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   metaText: { fontSize: 13, color: "#374151", flex: 1 },
 
-  // Price breakdown
   priceRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   priceRowBorder: { paddingTop: 10, borderTopWidth: 1, borderTopColor: "#f3f4f6" },
   priceKey: { fontSize: 13, color: "#6b7280" },
@@ -381,7 +403,6 @@ const styles = StyleSheet.create({
   },
   savingsText: { fontSize: 12, color: "#16a34a", fontWeight: "600", flex: 1 },
 
-  // Coupon
   couponInputRow: { flexDirection: "row", gap: 10 },
   couponInput: {
     flex: 1,
@@ -401,6 +422,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     justifyContent: "center",
     alignItems: "center",
+    minWidth: 72,
   },
   applyBtnDisabled: { backgroundColor: "#d1d5db" },
   applyBtnText: { fontSize: 14, fontWeight: "700", color: "#fff" },
@@ -430,7 +452,6 @@ const styles = StyleSheet.create({
   appliedCode: { fontSize: 14, fontWeight: "700", color: "#16a34a" },
   appliedLabel: { fontSize: 11, color: "#16a34a", opacity: 0.8, marginTop: 1 },
 
-  // Payment note
   paymentNote: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -443,7 +464,6 @@ const styles = StyleSheet.create({
   },
   paymentNoteText: { fontSize: 12, color: "#92400e", flex: 1, lineHeight: 17 },
 
-  // Sticky bottom
   stickyBottom: {
     flexDirection: "row",
     alignItems: "center",

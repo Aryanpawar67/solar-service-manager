@@ -6,3 +6,4 @@ export * from "./subscriptions";
 export * from "./payments";
 export * from "./contact";
 export * from "./notifications";
+export * from "./coupons";
