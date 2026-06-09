@@ -1,7 +1,18 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput, Alert, Switch } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Switch,
+} from "react-native";
 import { router } from "expo-router";
 import { useGetMyProfile, useUpdateMyProfile, useUpdateNotificationPrefs } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 
 export default function CustomerProfileScreen() {
@@ -60,44 +71,71 @@ export default function CustomerProfileScreen() {
     );
   }
 
-  // pushEnabled is returned alongside customer fields from GET /api/me/profile
   const pushEnabled = (profile as typeof profile & { pushEnabled?: boolean }).pushEnabled ?? true;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Avatar */}
-      <View style={styles.avatarWrapper}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
+      {/* Green header */}
+      <View style={styles.header}>
+        <View style={styles.avatarRing}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
+          </View>
         </View>
         <Text style={styles.name}>{profile.name}</Text>
-        {profile.city && <Text style={styles.city}>{profile.city}</Text>}
+        {profile.city ? <Text style={styles.city}>{profile.city}</Text> : null}
+        <View style={styles.roleBadge}>
+          <Ionicons name="person-outline" size={11} color="#16a34a" />
+          <Text style={styles.roleBadgeText}>Customer</Text>
+        </View>
       </View>
 
       {/* Solar info */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>System Info</Text>
-        {profile.solarCapacity && <Row label="Capacity" value={`${profile.solarCapacity} kW`} />}
-        {profile.installationDate && <Row label="Installed" value={profile.installationDate} />}
-      </View>
+      {(profile.solarCapacity || profile.installationDate) ? (
+        <View style={styles.card}>
+          <SectionHeader icon="sunny-outline" title="System Info" />
+          {profile.solarCapacity ? (
+            <InfoRow icon="flash-outline" label="Capacity" value={`${profile.solarCapacity} kW`} />
+          ) : null}
+          {profile.installationDate ? (
+            <InfoRow icon="calendar-outline" label="Installed" value={profile.installationDate} last />
+          ) : null}
+        </View>
+      ) : null}
 
       {/* Contact details */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.sectionTitle}>Contact Details</Text>
-          {!editing && (
-            <TouchableOpacity onPress={startEdit}>
-              <Text style={styles.editLink}>Edit</Text>
+          <SectionHeader icon="call-outline" title="Contact Details" />
+          {!editing ? (
+            <TouchableOpacity onPress={startEdit} style={styles.editBtn}>
+              <Ionicons name="pencil-outline" size={14} color="#16a34a" />
+              <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
-
         {editing ? (
           <>
-            <Text style={styles.fieldLabel}>Phone</Text>
-            <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-            <Text style={styles.fieldLabel}>Address</Text>
-            <TextInput style={[styles.input, { height: 80 }]} value={address} onChangeText={setAddress} multiline />
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Phone</Text>
+              <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Address</Text>
+              <TextInput
+                style={[styles.input, styles.inputMultiline]}
+                value={address}
+                onChangeText={setAddress}
+                multiline
+                placeholderTextColor="#9ca3af"
+              />
+            </View>
             <View style={styles.editActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditing(false)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -113,77 +151,199 @@ export default function CustomerProfileScreen() {
           </>
         ) : (
           <>
-            <Row label="Phone" value={profile.phone} />
-            <Row label="Address" value={profile.address} />
+            <InfoRow icon="call-outline" label="Phone" value={profile.phone} />
+            <InfoRow icon="location-outline" label="Address" value={profile.address} last />
           </>
         )}
       </View>
 
-      {/* Notification preferences */}
+      {/* Notifications */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
+        <SectionHeader icon="notifications-outline" title="Notifications" />
         <View style={styles.toggleRow}>
+          <View style={styles.toggleIconBox}>
+            <Ionicons name="phone-portrait-outline" size={14} color="#16a34a" />
+          </View>
           <View style={styles.toggleInfo}>
             <Text style={styles.toggleLabel}>Push Notifications</Text>
             <Text style={styles.toggleSub}>
-              {pushEnabled ? "You will receive service updates" : "Push notifications are off"}
+              {pushEnabled ? "Receive service updates" : "Push notifications are off"}
             </Text>
           </View>
           <Switch
             value={pushEnabled}
             onValueChange={togglePush}
             trackColor={{ false: "#d1d5db", true: "#86efac" }}
-            thumbColor={pushEnabled ? "#16a34a" : "#9ca3af"}
+            thumbColor={pushEnabled ? "#16a34a" : "#f3f4f6"}
             disabled={updateNotifs.isPending}
           />
         </View>
       </View>
 
       {/* Logout */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
+        <Ionicons name="log-out-outline" size={18} color="#dc2626" />
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
+
+      <Text style={styles.version}>GreenVolt · v1.0.0</Text>
     </ScrollView>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={styles.sectionHeader}>
+      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+  last,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
+      <View style={styles.infoIcon}>
+        <Ionicons name={icon} size={14} color="#16a34a" />
+      </View>
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 14, paddingBottom: 40 },
+  content: { paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  avatarWrapper: { alignItems: "center", paddingVertical: 16, gap: 6 },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: "#16a34a", justifyContent: "center", alignItems: "center" },
-  avatarText: { fontSize: 36, fontWeight: "700", color: "#fff" },
-  name: { fontSize: 22, fontWeight: "700", color: "#111827" },
-  city: { fontSize: 14, color: "#6b7280" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  editLink: { fontSize: 13, color: "#16a34a", fontWeight: "600" },
-  row: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  rowLabel: { fontSize: 13, color: "#6b7280", width: 100 },
-  rowValue: { fontSize: 14, color: "#111827", flex: 1 },
-  fieldLabel: { fontSize: 12, color: "#6b7280", marginBottom: 4, marginTop: 8 },
-  input: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 8, padding: 10, fontSize: 14, color: "#111827", backgroundColor: "#f9fafb" },
-  editActions: { flexDirection: "row", gap: 10, marginTop: 12 },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 8, padding: 12, alignItems: "center" },
+
+  header: {
+    backgroundColor: "#16a34a",
+    alignItems: "center",
+    paddingTop: 40,
+    paddingBottom: 36,
+    gap: 6,
+  },
+  avatarRing: {
+    width: 90,
+    height: 90,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  avatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: { fontSize: 34, fontWeight: "800", color: "#fff" },
+  name: { fontSize: 20, fontWeight: "800", color: "#fff" },
+  city: { fontSize: 13, color: "rgba(255,255,255,0.75)" },
+  roleBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 4,
+  },
+  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#16a34a" },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    margin: 16,
+    marginBottom: 0,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+    gap: 2,
+  },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
+  editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  editBtnText: { fontSize: 13, color: "#16a34a", fontWeight: "600" },
+
+  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
+  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
+  infoIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#f0fdf4",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoContent: { flex: 1 },
+  infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
+  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
+
+  fieldGroup: { marginBottom: 12 },
+  fieldLabel: { fontSize: 12, color: "#6b7280", fontWeight: "600", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
+  input: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: "#111827",
+    backgroundColor: "#f9fafb",
+  },
+  inputMultiline: { height: 80, textAlignVertical: "top" },
+  editActions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  cancelBtn: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, padding: 12, alignItems: "center" },
   cancelBtnText: { fontSize: 14, color: "#374151", fontWeight: "600" },
-  saveBtn: { flex: 1, backgroundColor: "#16a34a", borderRadius: 8, padding: 12, alignItems: "center" },
+  saveBtn: { flex: 1, backgroundColor: "#16a34a", borderRadius: 10, padding: 12, alignItems: "center" },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "600" },
-  toggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 },
-  toggleInfo: { flex: 1, marginRight: 12 },
+  saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
+
+  toggleRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
+  toggleIconBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#f0fdf4",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  toggleInfo: { flex: 1 },
   toggleLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
   toggleSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  logoutBtn: { backgroundColor: "#fee2e2", borderRadius: 12, padding: 16, alignItems: "center" },
+
+  logoutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#fee2e2",
+    borderRadius: 14,
+    margin: 16,
+    marginBottom: 0,
+    padding: 16,
+  },
   logoutText: { color: "#dc2626", fontWeight: "700", fontSize: 15 },
+
+  version: { textAlign: "center", fontSize: 12, color: "#d1d5db", marginTop: 20 },
 });

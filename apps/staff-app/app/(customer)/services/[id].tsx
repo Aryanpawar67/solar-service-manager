@@ -1,28 +1,32 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Image, Linking, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  Image,
+  Linking,
+  Alert,
+} from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetMyService } from "@workspace/api-client-react";
+import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@/lib/constants";
 import { getToken } from "@/lib/auth";
+import { ErrorState } from "@/components/ErrorState";
 
-const STATUS_COLOR: Record<string, string> = {
-  pending: "#f59e0b",
-  in_progress: "#3b82f6",
-  completed: "#16a34a",
-  cancelled: "#6b7280",
+const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
+  pending:     { color: "#d97706", bg: "#fef3c7" },
+  in_progress: { color: "#2563eb", bg: "#dbeafe" },
+  completed:   { color: "#16a34a", bg: "#dcfce7" },
+  cancelled:   { color: "#6b7280", bg: "#f3f4f6" },
 };
 
 export default function CustomerServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const serviceId = Number(id);
-  const { data: service, isLoading } = useGetMyService(serviceId);
-
-  if (isLoading || !service) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
-      </View>
-    );
-  }
+  const { data: service, isLoading, isError, refetch } = useGetMyService(serviceId);
 
   const downloadReport = async () => {
     const token = await getToken();
@@ -37,77 +41,140 @@ export default function CustomerServiceDetailScreen() {
     ]);
   };
 
+  if (isLoading || (!service && !isError)) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#16a34a" />
+      </View>
+    );
+  }
+
+  if (isError || !service) {
+    return <ErrorState onRetry={refetch} />;
+  }
+
+  const cfg = STATUS_CONFIG[service.status] ?? STATUS_CONFIG.cancelled;
+
   return (
     <>
       <Stack.Screen
         options={{
-          title: "Service Detail",
+          title: service.serviceType ?? "Service Detail",
           headerStyle: { backgroundColor: "#16a34a" },
           headerTintColor: "#fff",
+          headerTitleStyle: { fontWeight: "700" },
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4 }}>
-              <Text style={{ color: "#fff", fontSize: 16 }}>‹ Back</Text>
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
+              <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
           ),
         }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Status */}
-        <View style={styles.card}>
-          <View style={styles.statusRow}>
+        {/* Status header */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusTop}>
             <Text style={styles.serviceType}>{service.serviceType ?? "Maintenance"}</Text>
-            <View style={[styles.badge, { backgroundColor: (STATUS_COLOR[service.status] ?? "#6b7280") + "22" }]}>
-              <Text style={[styles.badgeText, { color: STATUS_COLOR[service.status] ?? "#6b7280" }]}>
+            <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
+              <Text style={[styles.badgeText, { color: cfg.color }]}>
                 {service.status.replace("_", " ")}
               </Text>
             </View>
           </View>
-          <Row label="Date" value={service.scheduledDate
-            ? new Date(service.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-            : "—"} />
-          {service.completedAt && (
-            <Row label="Completed" value={new Date(service.completedAt).toLocaleDateString("en-IN")} />
-          )}
-          {service.staff && <Row label="Technician" value={service.staff.name} />}
-          {service.notes && <Row label="Notes" value={service.notes} />}
-          {service.remarks && <Row label="Remarks" value={service.remarks} />}
+        </View>
+
+        {/* Details */}
+        <View style={styles.card}>
+          <SectionHeader icon="information-circle-outline" title="Service Details" />
+          <InfoRow
+            icon="calendar-outline"
+            label="Scheduled"
+            value={service.scheduledDate
+              ? new Date(service.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
+                  weekday: "long", day: "numeric", month: "long", year: "numeric",
+                })
+              : "—"}
+          />
+          {service.completedAt ? (
+            <InfoRow
+              icon="checkmark-circle-outline"
+              label="Completed"
+              value={new Date(service.completedAt).toLocaleDateString("en-IN", {
+                day: "numeric", month: "short", year: "numeric",
+              })}
+            />
+          ) : null}
+          {service.staff ? (
+            <InfoRow icon="person-outline" label="Technician" value={service.staff.name} />
+          ) : null}
+          {service.notes ? (
+            <InfoRow icon="document-text-outline" label="Notes" value={service.notes} />
+          ) : null}
+          {service.remarks ? (
+            <InfoRow icon="chatbubble-outline" label="Remarks" value={service.remarks} last />
+          ) : null}
         </View>
 
         {/* Photos */}
-        {(service.preServiceImage || service.postServiceImage) && (
+        {(service.preServiceImage || service.postServiceImage) ? (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Photos</Text>
-            {service.preServiceImage && (
+            <SectionHeader icon="images-outline" title="Photos" />
+            {service.preServiceImage ? (
               <View style={styles.photoBlock}>
                 <Text style={styles.photoLabel}>Before Service</Text>
                 <Image source={{ uri: service.preServiceImage }} style={styles.photo} resizeMode="cover" />
               </View>
-            )}
-            {service.postServiceImage && (
-              <View style={styles.photoBlock}>
+            ) : null}
+            {service.postServiceImage ? (
+              <View style={[styles.photoBlock, { marginBottom: 0 }]}>
                 <Text style={styles.photoLabel}>After Service</Text>
                 <Image source={{ uri: service.postServiceImage }} style={styles.photo} resizeMode="cover" />
               </View>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
 
         {/* PDF Report */}
-        {service.status === "completed" && (
-          <TouchableOpacity style={styles.reportBtn} onPress={downloadReport}>
+        {service.status === "completed" ? (
+          <TouchableOpacity style={styles.reportBtn} onPress={downloadReport} activeOpacity={0.8}>
+            <Ionicons name="document-outline" size={18} color="#fff" />
             <Text style={styles.reportBtnText}>Download PDF Report</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </ScrollView>
     </>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={styles.sectionHeader}>
+      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+  last,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
+      <View style={styles.infoIcon}>
+        <Ionicons name={icon} size={14} color="#16a34a" />
+      </View>
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
     </View>
   );
 }
@@ -116,18 +183,62 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
   content: { padding: 16, gap: 14, paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
-  statusRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  serviceType: { fontSize: 17, fontWeight: "700", color: "#111827" },
-  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  badgeText: { fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
-  row: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  rowLabel: { fontSize: 13, color: "#6b7280", width: 100 },
-  rowValue: { fontSize: 14, color: "#111827", flex: 1 },
-  sectionTitle: { fontSize: 14, fontWeight: "600", color: "#374151", marginBottom: 12 },
+
+  statusCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  statusTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
+  serviceType: { fontSize: 18, fontWeight: "800", color: "#111827", flex: 1 },
+  badge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, flexShrink: 0 },
+  badgeText: { fontSize: 12, fontWeight: "700", textTransform: "capitalize" },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
+  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
+  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
+  infoIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#f0fdf4",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoContent: { flex: 1 },
+  infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
+  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
+
   photoBlock: { marginBottom: 12 },
-  photoLabel: { fontSize: 13, color: "#6b7280", marginBottom: 6 },
-  photo: { width: "100%", height: 180, borderRadius: 10 },
-  reportBtn: { backgroundColor: "#16a34a", borderRadius: 12, padding: 16, alignItems: "center" },
+  photoLabel: { fontSize: 12, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 8 },
+  photo: { width: "100%", height: 200, borderRadius: 12 },
+
+  reportBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#16a34a",
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: "#16a34a",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
   reportBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

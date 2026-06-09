@@ -1,13 +1,23 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Pressable, Platform } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  Pressable,
+  Platform,
+} from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetCustomer, useListServices } from "@workspace/api-client-react";
+import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
 
-const STATUS_COLOR: Record<string, string> = {
-  pending: "#f59e0b",
-  in_progress: "#3b82f6",
-  completed: "#16a34a",
-  cancelled: "#6b7280",
+const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
+  pending:     { color: "#d97706", bg: "#fef3c7" },
+  in_progress: { color: "#2563eb", bg: "#dbeafe" },
+  completed:   { color: "#16a34a", bg: "#dcfce7" },
+  cancelled:   { color: "#6b7280", bg: "#f3f4f6" },
 };
 
 export default function AdminCustomerDetailScreen() {
@@ -29,6 +39,9 @@ export default function AdminCustomerDetailScreen() {
     return <ErrorState onRetry={refetch} />;
   }
 
+  const serviceList = services?.data ?? [];
+  const completedCount = serviceList.filter((s) => s.status === "completed").length;
+
   return (
     <>
       <Stack.Screen
@@ -36,82 +49,260 @@ export default function AdminCustomerDetailScreen() {
           title: customer.name,
           headerStyle: { backgroundColor: "#16a34a" },
           headerTintColor: "#fff",
+          headerTitleStyle: { fontWeight: "700" },
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4 }}>
-              <Text style={{ color: "#fff", fontSize: 16 }}>‹ Back</Text>
+            <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
+              <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
           ),
         }}
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Customer Details</Text>
-          <Row label="Phone" value={customer.phone} />
-          <Row label="Address" value={customer.address} />
-          {customer.city && <Row label="City" value={customer.city} />}
-          {customer.solarCapacity && <Row label="Capacity" value={`${customer.solarCapacity} kW`} />}
-          {customer.installationDate && <Row label="Installed" value={customer.installationDate} />}
-          {customer.notes && <Row label="Notes" value={customer.notes} />}
+
+        {/* Customer header */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{customer.name.charAt(0).toUpperCase()}</Text>
+          </View>
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{customer.name}</Text>
+            <Text style={styles.profilePhone}>{customer.phone}</Text>
+          </View>
+          {customer.solarCapacity ? (
+            <View style={styles.capacityBadge}>
+              <Ionicons name="sunny-outline" size={12} color="#16a34a" />
+              <Text style={styles.capacityText}>{customer.solarCapacity} kW</Text>
+            </View>
+          ) : null}
         </View>
 
-        <Text style={styles.sectionHeader}>Service History</Text>
-        {(services?.data ?? []).length === 0 ? (
-          <Text style={styles.empty}>No services recorded.</Text>
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          <StatCard icon="construct-outline" label="Total Services" value={String(serviceList.length)} color="#3b82f6" />
+          <StatCard icon="checkmark-circle-outline" label="Completed" value={String(completedCount)} color="#16a34a" />
+          <StatCard icon="flash-outline" label="Capacity" value={customer.solarCapacity ? `${customer.solarCapacity} kW` : "—"} color="#d97706" />
+        </View>
+
+        {/* Details */}
+        <View style={styles.card}>
+          <SectionHeader icon="person-outline" title="Customer Details" />
+          <InfoRow icon="call-outline" label="Phone" value={customer.phone} />
+          <InfoRow icon="location-outline" label="Address" value={customer.address} />
+          {customer.city && <InfoRow icon="map-outline" label="City" value={customer.city} />}
+          {customer.installationDate && (
+            <InfoRow icon="calendar-outline" label="Installed" value={customer.installationDate} />
+          )}
+          {customer.notes && <InfoRow icon="document-text-outline" label="Notes" value={customer.notes} last />}
+        </View>
+
+        {/* Service history */}
+        <View style={styles.sectionHeaderRow}>
+          <SectionHeader icon="construct-outline" title="Service History" />
+          <Text style={styles.sectionCount}>{serviceList.length}</Text>
+        </View>
+
+        {serviceList.length === 0 ? (
+          <View style={styles.emptyServices}>
+            <Ionicons name="construct-outline" size={32} color="#d1d5db" />
+            <Text style={styles.emptyText}>No services recorded yet.</Text>
+          </View>
         ) : (
-          (services?.data ?? []).map((s) => (
-            <Pressable
-              key={s.id}
-              android_ripple={{ color: "#16a34a22" }}
-              style={({ pressed }) => [styles.serviceCard, Platform.OS === "ios" && pressed && { opacity: 0.7 }]}
-              onPress={() => router.push(`/job/${s.id}`)}
-            >
-              <View style={styles.serviceRow}>
-                <Text style={styles.serviceType}>{s.serviceType ?? "Maintenance"}</Text>
-                <View style={[styles.badge, { backgroundColor: (STATUS_COLOR[s.status] ?? "#6b7280") + "22" }]}>
-                  <Text style={[styles.badgeText, { color: STATUS_COLOR[s.status] ?? "#6b7280" }]}>
-                    {s.status.replace("_", " ")}
-                  </Text>
+          serviceList.map((s) => {
+            const cfg = STATUS_CONFIG[s.status] ?? STATUS_CONFIG.cancelled;
+            return (
+              <Pressable
+                key={s.id}
+                android_ripple={{ color: "#16a34a18" }}
+                style={({ pressed }) => [
+                  styles.serviceCard,
+                  Platform.OS === "ios" && pressed && { opacity: 0.75 },
+                ]}
+                onPress={() => router.push(`/job/${s.id}`)}
+              >
+                <View style={styles.serviceTop}>
+                  <View style={styles.serviceLeft}>
+                    <Text style={styles.serviceType}>{s.serviceType ?? "Maintenance"}</Text>
+                    {s.scheduledDate && (
+                      <View style={styles.serviceDateRow}>
+                        <Ionicons name="calendar-outline" size={12} color="#9ca3af" />
+                        <Text style={styles.serviceDate}>
+                          {new Date(s.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
+                            day: "numeric", month: "short", year: "numeric",
+                          })}
+                        </Text>
+                      </View>
+                    )}
+                    {s.staff && (
+                      <View style={styles.serviceDateRow}>
+                        <Ionicons name="person-outline" size={12} color="#9ca3af" />
+                        <Text style={styles.serviceDate}>{s.staff.name}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.serviceRight}>
+                    <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
+                      <Text style={[styles.badgeText, { color: cfg.color }]}>
+                        {s.status.replace("_", " ")}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={14} color="#d1d5db" />
+                  </View>
                 </View>
-              </View>
-              {s.scheduledDate && (
-                <Text style={styles.serviceDate}>
-                  {new Date(s.scheduledDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                </Text>
-              )}
-              {s.staff && <Text style={styles.serviceStaff}>Technician: {s.staff.name}</Text>}
-            </Pressable>
-          ))
+              </Pressable>
+            );
+          })
         )}
       </ScrollView>
     </>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text style={styles.rowValue}>{value}</Text>
+    <View style={styles.sectionHeaderInner}>
+      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+  last,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
+      <View style={styles.infoIcon}>
+        <Ionicons name={icon} size={14} color="#16a34a" />
+      </View>
+      <View style={styles.infoContent}>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+function StatCard({ icon, label, value, color }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Ionicons name={icon} size={18} color={color} />
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 12, paddingBottom: 40 },
+  content: { padding: 16, gap: 14, paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  card: { backgroundColor: "#fff", borderRadius: 14, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
-  sectionTitle: { fontSize: 15, fontWeight: "600", color: "#374151", marginBottom: 12 },
-  sectionHeader: { fontSize: 15, fontWeight: "700", color: "#374151", marginTop: 4 },
-  row: { flexDirection: "row", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  rowLabel: { fontSize: 13, color: "#6b7280", width: 110 },
-  rowValue: { fontSize: 14, color: "#111827", flex: 1 },
-  empty: { color: "#9ca3af", fontSize: 14, textAlign: "center", marginTop: 8 },
-  serviceCard: { backgroundColor: "#fff", borderRadius: 12, padding: 14, overflow: "hidden", shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
-  serviceRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  serviceType: { fontSize: 14, fontWeight: "600", color: "#111827" },
+
+  profileCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: "#16a34a",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: { fontSize: 24, fontWeight: "800", color: "#fff" },
+  profileInfo: { flex: 1 },
+  profileName: { fontSize: 17, fontWeight: "800", color: "#111827" },
+  profilePhone: { fontSize: 13, color: "#6b7280", marginTop: 2 },
+  capacityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  capacityText: { fontSize: 13, fontWeight: "700", color: "#16a34a" },
+
+  statsRow: { flexDirection: "row", gap: 10 },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+    gap: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  statValue: { fontSize: 20, fontWeight: "800" },
+  statLabel: { fontSize: 11, color: "#9ca3af", textAlign: "center", fontWeight: "500" },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  sectionHeaderInner: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  sectionCount: { fontSize: 12, fontWeight: "700", color: "#9ca3af", backgroundColor: "#f3f4f6", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+
+  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
+  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
+  infoIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#f0fdf4", justifyContent: "center", alignItems: "center" },
+  infoContent: { flex: 1 },
+  infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
+  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
+
+  emptyServices: { alignItems: "center", padding: 24, gap: 8, backgroundColor: "#fff", borderRadius: 14 },
+  emptyText: { fontSize: 13, color: "#9ca3af" },
+
+  serviceCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 14,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  serviceTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  serviceLeft: { flex: 1, gap: 4 },
+  serviceType: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  serviceDateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  serviceDate: { fontSize: 12, color: "#9ca3af" },
+  serviceRight: { alignItems: "flex-end", gap: 6 },
   badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
-  badgeText: { fontSize: 12, fontWeight: "600", textTransform: "capitalize" },
-  serviceDate: { fontSize: 13, color: "#6b7280" },
-  serviceStaff: { fontSize: 12, color: "#3b82f6", marginTop: 2 },
+  badgeText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
 });
