@@ -29,7 +29,7 @@ const QUICK_ACTIONS = [
   { icon: "construct-outline" as const, label: "Services",     color: "#3b82f6", bg: "#eff6ff", route: "/(customer)/services" },
   { icon: "card-outline" as const,      label: "Payments",     color: "#8b5cf6", bg: "#f5f3ff", route: "/(customer)/payments" },
   { icon: "star-outline" as const,      label: "Subscription", color: "#d97706", bg: "#fffbeb", route: "/(customer)/subscription" },
-  { icon: "document-text-outline" as const, label: "Reports",  color: "#06b6d4", bg: "#ecfeff", route: null },
+  { icon: "calendar-outline" as const,       label: "Book Now",  color: "#16a34a", bg: "#f0fdf4", route: "/(customer)/book" },
   { icon: "headset-outline" as const,   label: "Support",      color: "#ef4444", bg: "#fef2f2", route: null },
 ];
 

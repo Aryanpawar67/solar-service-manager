@@ -11,6 +11,7 @@ import {
 } from "@workspace/db/schema";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import { requireRole } from "../middleware/requireAuth";
+import { notify } from "../lib/notifications";
 
 const router = Router();
 
@@ -170,6 +171,64 @@ router.put("/notifications", async (req, res) => {
     .where(eq(usersTable.id, req.user!.userId));
 
   return res.json({ ok: true, pushEnabled });
+});
+
+/** POST /api/me/book — customer-initiated service booking */
+router.post("/book", async (req, res) => {
+  const customerId = req.user!.customerId;
+  if (!customerId) return res.status(404).json({ error: "No customer linked to this account" });
+
+  const { serviceType, scheduledDate, timeSlot, notes, estimatedPrice } = req.body as {
+    serviceType: string;
+    scheduledDate: string;
+    timeSlot?: string;
+    notes?: string;
+    estimatedPrice?: number;
+  };
+
+  if (!serviceType || !scheduledDate) {
+    return res.status(400).json({ error: "serviceType and scheduledDate are required" });
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)) {
+    return res.status(400).json({ error: "scheduledDate must be YYYY-MM-DD" });
+  }
+
+  const [customer] = await db
+    .select({ name: customersTable.name, phone: customersTable.phone })
+    .from(customersTable)
+    .where(eq(customersTable.id, customerId));
+
+  if (!customer) return res.status(404).json({ error: "Customer not found" });
+
+  const bookingMeta = [
+    timeSlot ? `Time: ${timeSlot}` : null,
+    estimatedPrice ? `Est. price: ₹${estimatedPrice}` : null,
+    notes || null,
+    "Source: customer app",
+  ].filter(Boolean).join(" | ");
+
+  const [service] = await db
+    .insert(servicesTable)
+    .values({ customerId, serviceType, scheduledDate, notes: bookingMeta, status: "pending" })
+    .returning();
+
+  // Fire SMS confirmation (non-blocking)
+  notify({
+    type: "service_scheduled",
+    to: customer.phone,
+    recipientName: customer.name,
+    message:
+      `Hi ${customer.name}, your ${serviceType} service has been booked for ${scheduledDate}` +
+      `${timeSlot ? ` (${timeSlot})` : ""}. Booking ID: #SVC-${service.id}. ` +
+      `Our team will confirm shortly. – GreenVolt / Sun House Solar`,
+    serviceId: service.id,
+  }).catch(() => {});
+
+  return res.status(201).json({
+    bookingId: service.id,
+    service,
+    message: "Booking confirmed. You'll receive an SMS shortly.",
+  });
 });
 
 /** PUT /api/me/push-token — register or update the customer's Expo push token */
