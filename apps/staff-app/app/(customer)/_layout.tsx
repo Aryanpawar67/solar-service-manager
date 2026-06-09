@@ -102,7 +102,12 @@ export default function CustomerTabsLayout() {
 
       {/* ── Hidden routes (no tab bar entry) ─────────────────────── */}
       <Tabs.Screen name="subscription" options={{ href: null }} />
+      {/* book folder — entire nested Stack is hidden */}
       <Tabs.Screen name="book" options={{ href: null }} />
+      <Tabs.Screen name="book/index" options={{ href: null }} />
+      <Tabs.Screen name="book/review" options={{ href: null }} />
+      <Tabs.Screen name="book/success" options={{ href: null }} />
+      <Tabs.Screen name="book/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

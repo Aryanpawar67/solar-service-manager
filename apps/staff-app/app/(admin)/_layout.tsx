@@ -101,6 +101,7 @@ export default function AdminTabsLayout() {
 
       {/* ── Hidden (accessible via Account → Manage Staff) ───────── */}
       <Tabs.Screen name="staff" options={{ href: null }} />
+      <Tabs.Screen name="customers/[id]" options={{ href: null }} />
     </Tabs>
   );
 }
