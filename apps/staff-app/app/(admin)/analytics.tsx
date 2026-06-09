@@ -77,7 +77,7 @@ export default function AdminAnalyticsScreen() {
       </FadeInView>
       <View style={styles.grid}>
         {serviceMetrics.map((m, i) => (
-          <FadeInView key={m.label} delay={150 + i * 80}>
+          <FadeInView key={m.label} delay={150 + i * 80} style={styles.cardWrapper}>
             <MetricCard {...m} animated />
           </FadeInView>
         ))}
@@ -89,7 +89,7 @@ export default function AdminAnalyticsScreen() {
       </FadeInView>
       <View style={styles.grid}>
         {peopleMetrics.map((m, i) => (
-          <FadeInView key={m.label} delay={550 + i * 80}>
+          <FadeInView key={m.label} delay={550 + i * 80} style={styles.cardWrapper}>
             <MetricCard {...m} animated />
           </FadeInView>
         ))}
@@ -177,12 +177,13 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, fontWeight: "700", color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 },
 
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  cardWrapper: { width: "47%" },
   metricCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     alignItems: "center",
-    width: "47%",
+    width: "100%",
     shadowColor: "#000",
     shadowOpacity: 0.05,
     shadowRadius: 6,
