@@ -17,7 +17,10 @@
     "@workspace/api-zod": "workspace:*",
     "expo": "catalog:",
     "expo-camera": "~17.0.10",
+    "expo-dev-client": "~6.0.21",
+    "expo-image": "~3.0.11",
     "expo-image-picker": "~17.0.10",
+    "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.11",
     "expo-notifications": "~0.32.16",
     "expo-router": "~6.0.23",
@@ -26,9 +29,9 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-native": "catalog:",
-    "react-native-web": "~0.21.0",
     "react-native-safe-area-context": "catalog:",
     "react-native-screens": "~4.16.0",
+    "react-native-web": "~0.21.0",
     "zod": "catalog:"
   },
   "devDependencies": {
