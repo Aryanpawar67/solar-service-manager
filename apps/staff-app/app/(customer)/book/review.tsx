@@ -232,13 +232,13 @@ export default function BookReviewScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Review Order",
-          headerStyle: { backgroundColor: "#00450d" },
-          headerTintColor: "#fff",
-          headerTitleStyle: { fontWeight: "700" },
+          title: "Review & Pay",
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#00450d",
+          headerTitleStyle: { fontWeight: "700", color: "#111827" },
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+              <Ionicons name="arrow-back" size={22} color="#00450d" />
             </TouchableOpacity>
           ),
         }}

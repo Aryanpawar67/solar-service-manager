@@ -1,52 +1,33 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Animated } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from "react-native";
 import { useGetDashboardAnalytics } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
-import { FadeInView } from "@/components/FadeInView";
-import { useRef, useEffect, useState } from "react";
-
-function AnimatedNumber({ value, color, style }: { value: number; color: string; style?: object }) {
-  const anim = useRef(new Animated.Value(0)).current;
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    anim.addListener(({ value: v }) => setDisplay(Math.floor(v)));
-    Animated.timing(anim, { toValue: value, duration: 1000, delay: 400, useNativeDriver: false }).start();
-    return () => anim.removeAllListeners();
-  }, [value]);
-  return <Text style={[style, { color }]}>{display}</Text>;
-}
 
 export default function AdminAnalyticsScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useGetDashboardAnalytics();
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00450d" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
-
-  if (isError) {
-    return <ErrorState onRetry={refetch} />;
-  }
+  if (isError) return <ErrorState onRetry={refetch} />;
 
   const d = data as Record<string, number> | undefined;
   const revenue = d?.totalRevenue ?? 0;
   const monthly = d?.monthlyRevenue ?? 0;
+  const monthlyPct = revenue > 0 ? ((monthly / revenue) * 100).toFixed(0) : "0";
 
-  const serviceMetrics = [
-    { label: "Completed",   value: d?.completedServices  ?? 0, color: "#00450d", bg: "#f0fdf4", icon: "checkmark-circle-outline" as const },
-    { label: "Pending",     value: d?.pendingServices    ?? 0, color: "#d97706", bg: "#fffbeb", icon: "time-outline" as const },
-    { label: "In Progress", value: d?.inProgressServices ?? 0, color: "#2563eb", bg: "#eff6ff", icon: "construct-outline" as const },
-    { label: "Unread",      value: d?.unreadContacts     ?? 0, color: "#ef4444", bg: "#fef2f2", icon: "mail-unread-outline" as const },
+  const serviceStats = [
+    { label: "Completed",        value: d?.completedServices  ?? 0, icon: "checkmark-circle-outline" as const, color: "#00450d" },
+    { label: "Pending",          value: d?.pendingServices    ?? 0, icon: "time-outline" as const,             color: "#9ca3af" },
+    { label: "In Progress",      value: d?.inProgressServices ?? 0, icon: "sync-outline" as const,             color: "#9ca3af" },
+    { label: "Unread Contacts",  value: d?.unreadContacts     ?? 0, icon: "mail-unread-outline" as const,      color: "#ef4444" },
   ];
 
-  const peopleMetrics = [
-    { label: "Customers",     value: d?.totalCustomers       ?? 0, color: "#8b5cf6", bg: "#f5f3ff", icon: "people-outline" as const },
-    { label: "Subscriptions", value: d?.activeSubscriptions  ?? 0, color: "#06b6d4", bg: "#ecfeff", icon: "card-outline" as const },
-    { label: "Total Staff",   value: d?.totalStaff           ?? 0, color: "#374151", bg: "#f9fafb", icon: "id-card-outline" as const },
-    { label: "Active Staff",  value: d?.activeStaff          ?? 0, color: "#00450d", bg: "#f0fdf4", icon: "person-outline" as const },
+  const peopleStats = [
+    { label: "Total Customers",  value: d?.totalCustomers      ?? 0, dot: false, color: "#9ca3af" },
+    { label: "Active Subs",      value: d?.activeSubscriptions ?? 0, dot: true,  color: "#bcf200" },
+    { label: "Total Staff",      value: d?.totalStaff          ?? 0, dot: false, color: "#9ca3af" },
+    { label: "Active Staff",     value: d?.activeStaff         ?? 0, dot: true,  color: "#00450d" },
   ];
 
   return (
@@ -55,148 +36,104 @@ export default function AdminAnalyticsScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />}
     >
-      {/* Revenue hero card */}
-      <FadeInView delay={0}>
-        <View style={styles.revenueCard}>
-          <View style={styles.revenueIconBox}>
-            <Ionicons name="cash-outline" size={22} color="#00450d" />
-          </View>
+      {/* Revenue card */}
+      <View style={styles.revenueCard}>
+        <View style={styles.revenueTop}>
           <Text style={styles.revenueLabel}>Total Revenue</Text>
-          <Text style={styles.revenueValue}>₹{revenue.toLocaleString("en-IN")}</Text>
-          <View style={styles.revenueDivider} />
-          <View style={styles.revenueMonthlyRow}>
-            <Ionicons name="trending-up-outline" size={14} color="#bbf7d0" />
-            <Text style={styles.revenueMonthly}>This month: ₹{monthly.toLocaleString("en-IN")}</Text>
+          <View style={styles.exportBtn}>
+            <Ionicons name="download-outline" size={16} color="#6b7280" />
           </View>
         </View>
-      </FadeInView>
+        <Text style={styles.revenueValue}>₹{revenue.toLocaleString("en-IN")}</Text>
+        <View style={styles.revenueTrend}>
+          <Ionicons name="trending-up-outline" size={14} color="#00450d" />
+          <View style={styles.revenuePctBadge}>
+            <Text style={styles.revenuePctText}>+{monthlyPct}%</Text>
+          </View>
+          <Text style={styles.revenueTrendText}>this month</Text>
+        </View>
+      </View>
 
-      {/* Services section */}
-      <FadeInView delay={100}>
-        <SectionHeader icon="construct-outline" title="Services" />
-      </FadeInView>
+      {/* Service Status */}
+      <Text style={styles.sectionTitle}>Service Status</Text>
       <View style={styles.grid}>
-        {serviceMetrics.map((m, i) => (
-          <FadeInView key={m.label} delay={150 + i * 80} style={styles.cardWrapper}>
-            <MetricCard {...m} animated />
-          </FadeInView>
+        {serviceStats.map((s) => (
+          <View key={s.label} style={styles.statCard}>
+            <Text style={styles.statCardLabel}>{s.label}</Text>
+            <Text style={styles.statCardValue}>{s.value}</Text>
+            <View style={styles.statCardIcon}>
+              <Ionicons name={s.icon} size={22} color={s.color} />
+            </View>
+          </View>
         ))}
       </View>
 
-      {/* People section */}
-      <FadeInView delay={500}>
-        <SectionHeader icon="people-outline" title="People" />
-      </FadeInView>
+      {/* People Overview */}
+      <Text style={styles.sectionTitle}>People Overview</Text>
       <View style={styles.grid}>
-        {peopleMetrics.map((m, i) => (
-          <FadeInView key={m.label} delay={550 + i * 80} style={styles.cardWrapper}>
-            <MetricCard {...m} animated />
-          </FadeInView>
+        {peopleStats.map((s) => (
+          <View key={s.label} style={styles.statCard}>
+            <Text style={styles.statCardLabel}>{s.label}</Text>
+            <Text style={styles.statCardValue}>{s.value}</Text>
+            {s.dot && (
+              <View style={[styles.liveDot, { backgroundColor: s.color }]} />
+            )}
+            {!s.dot && (
+              <View style={styles.statCardIconGray}>
+                <Ionicons name="people-outline" size={20} color="#d1d5db" />
+              </View>
+            )}
+          </View>
         ))}
       </View>
     </ScrollView>
   );
 }
 
-function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={14} color="#00450d" />
-      <Text style={styles.sectionTitle}>{title}</Text>
-    </View>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  color,
-  bg,
-  icon,
-  animated: useAnim,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  bg: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  animated?: boolean;
-}) {
-  return (
-    <View style={styles.metricCard}>
-      <View style={[styles.metricIconBox, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-      {useAnim
-        ? <AnimatedNumber value={value} color={color} style={styles.metricValue} />
-        : <Text style={[styles.metricValue, { color }]}>{value}</Text>
-      }
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 12, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: "#f8fafb" },
+  content: { padding: 16, gap: 14, paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   revenueCard: {
-    backgroundColor: "#00450d",
-    borderRadius: 20,
-    padding: 24,
-    alignItems: "center",
-    shadowColor: "#00450d",
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 6,
-    gap: 4,
-    marginBottom: 4,
-  },
-  revenueIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  revenueLabel: { fontSize: 13, color: "#dcfce7", fontWeight: "600" },
-  revenueValue: { fontSize: 40, fontWeight: "800", color: "#fff", letterSpacing: -1 },
-  revenueDivider: { width: 40, height: 1, backgroundColor: "rgba(255,255,255,0.25)", marginVertical: 8 },
-  revenueMonthlyRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  revenueMonthly: { fontSize: 13, color: "#bbf7d0" },
-
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 4,
-  },
-  sectionTitle: { fontSize: 13, fontWeight: "700", color: "#374151", textTransform: "uppercase", letterSpacing: 0.5 },
-
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  cardWrapper: { width: "47%" },
-  metricCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    width: "100%",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 1,
+    borderRadius: 16, padding: 20,
+    borderWidth: 1, borderColor: "#f0f0f0",
     gap: 6,
   },
-  metricIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+  revenueTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  revenueLabel: { fontSize: 11, fontWeight: "700", color: "#9ca3af", letterSpacing: 0.5 },
+  exportBtn: {
+    width: 32, height: 32, borderRadius: 8,
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center", alignItems: "center",
   },
-  metricValue: { fontSize: 28, fontWeight: "800" },
-  metricLabel: { fontSize: 12, color: "#6b7280", textAlign: "center", fontWeight: "500" },
+  revenueValue: { fontSize: 38, fontWeight: "800", color: "#111827", letterSpacing: -1 },
+  revenueTrend: { flexDirection: "row", alignItems: "center", gap: 6 },
+  revenuePctBadge: {
+    backgroundColor: "#dcfce7", borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  revenuePctText: { fontSize: 11, fontWeight: "700", color: "#00450d" },
+  revenueTrendText: { fontSize: 12, color: "#9ca3af" },
+
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginTop: 4 },
+
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  statCard: {
+    width: "47.5%",
+    backgroundColor: "#fff",
+    borderRadius: 12, padding: 16,
+    borderWidth: 1, borderColor: "#f0f0f0",
+    gap: 4, position: "relative", overflow: "hidden",
+  },
+  statCardLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "500" },
+  statCardValue: { fontSize: 32, fontWeight: "800", color: "#111827", marginTop: 4 },
+  statCardIcon: { position: "absolute", bottom: 12, right: 12 },
+  statCardIconGray: { position: "absolute", bottom: 12, right: 12 },
+  liveDot: {
+    position: "absolute", bottom: 14, right: 14,
+    width: 12, height: 12, borderRadius: 6,
+    borderWidth: 2, borderColor: "#fff",
+  },
 });

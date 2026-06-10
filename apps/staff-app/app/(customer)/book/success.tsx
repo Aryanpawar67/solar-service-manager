@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  ScrollView,
 } from "react-native";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,33 +20,29 @@ export default function BookSuccessScreen() {
     total: string;
   }>();
 
-  // Entrance animations
   const checkScale   = useRef(new Animated.Value(0)).current;
   const checkOpacity = useRef(new Animated.Value(0)).current;
-  const cardSlide    = useRef(new Animated.Value(40)).current;
+  const cardSlide    = useRef(new Animated.Value(30)).current;
   const cardOpacity  = useRef(new Animated.Value(0)).current;
   const btnsOpacity  = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.sequence([
-      // 1 — checkmark pops in
       Animated.parallel([
-        Animated.spring(checkScale, { toValue: 1, useNativeDriver: true, bounciness: 14, speed: 12 }),
+        Animated.spring(checkScale,  { toValue: 1, useNativeDriver: true, bounciness: 14, speed: 12 }),
         Animated.timing(checkOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
       ]),
-      // 2 — detail card slides up
       Animated.parallel([
-        Animated.timing(cardSlide,   { toValue: 0,  duration: 380, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(cardOpacity, { toValue: 1,  duration: 380, useNativeDriver: true }),
+        Animated.timing(cardSlide,   { toValue: 0, duration: 360, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(cardOpacity, { toValue: 1, duration: 360, useNativeDriver: true }),
       ]),
-      // 3 — buttons fade in
-      Animated.timing(btnsOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
+      Animated.timing(btnsOpacity, { toValue: 1, duration: 260, useNativeDriver: true }),
     ]).start();
   }, []);
 
   const displayDate = date
     ? new Date(date + "T00:00:00").toLocaleDateString("en-IN", {
-        weekday: "long", day: "numeric", month: "long", year: "numeric",
+        day: "numeric", month: "short", year: "numeric",
       })
     : "—";
 
@@ -53,66 +50,71 @@ export default function BookSuccessScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Top green section */}
-        <View style={styles.topSection}>
-          {/* Animated checkmark */}
-          <Animated.View style={[styles.checkCircle, { transform: [{ scale: checkScale }], opacity: checkOpacity }]}>
-            <View style={styles.checkInner}>
-              <Ionicons name="checkmark" size={44} color="#fff" />
-            </View>
-          </Animated.View>
-
-          <Animated.View style={{ opacity: checkOpacity, alignItems: "center", gap: 6 }}>
-            <Text style={styles.successTitle}>Booking Confirmed!</Text>
-            <Text style={styles.successSub}>Your service has been scheduled</Text>
-          </Animated.View>
-
-          <Animated.View style={[styles.bookingIdBadge, { opacity: checkOpacity }]}>
-            <Ionicons name="receipt-outline" size={13} color="#bbf7d0" />
-            <Text style={styles.bookingIdText}>Booking ID: #SVC-{bookingId}</Text>
-          </Animated.View>
-        </View>
-
-        {/* Detail card */}
-        <Animated.View
-          style={[
-            styles.detailCard,
-            { transform: [{ translateY: cardSlide }], opacity: cardOpacity },
-          ]}
-        >
-          <Text style={styles.detailLabel}>BOOKING SUMMARY</Text>
-
-          <DetailRow icon="construct-outline" label="Service" value={serviceType ?? "—"} />
-          <View style={styles.rowDivider} />
-          <DetailRow icon="calendar-outline" label="Date" value={displayDate} />
-          <View style={styles.rowDivider} />
-          <DetailRow icon="time-outline" label="Time Slot" value={slot ?? "—"} />
-          <View style={styles.rowDivider} />
-          <DetailRow
-            icon="cash-outline"
-            label="Est. Amount"
-            value={total ? `₹${total}` : "—"}
-            valueColor="#00450d"
-          />
-
-          <View style={styles.smsNote}>
-            <Ionicons name="chatbubble-ellipses-outline" size={14} color="#00450d" />
-            <Text style={styles.smsNoteText}>
-              SMS confirmation sent to your registered number. A technician will be assigned soon.
-            </Text>
+        {/* Checkmark */}
+        <Animated.View style={[styles.checkWrap, { transform: [{ scale: checkScale }], opacity: checkOpacity }]}>
+          <View style={styles.checkCircle}>
+            <Ionicons name="checkmark" size={44} color="#00450d" />
           </View>
         </Animated.View>
 
-        {/* Action buttons */}
+        <Animated.View style={[styles.titleBlock, { opacity: checkOpacity }]}>
+          <Text style={styles.successTitle}>Booking Confirmed!</Text>
+          <View style={styles.bookingIdBadge}>
+            <Ionicons name="hash" size={13} color="#6b7280" />
+            <Text style={styles.bookingIdText}>BOOKING ID: GV-{String(bookingId ?? "0").padStart(5, "0")}</Text>
+          </View>
+        </Animated.View>
+
+        {/* Summary card */}
+        <Animated.View
+          style={[styles.summaryCard, { transform: [{ translateY: cardSlide }], opacity: cardOpacity }]}
+        >
+          <Text style={styles.summaryTitle}>Service Summary</Text>
+          <View style={styles.divider} />
+
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryLeft}>
+              <Ionicons name="flash-outline" size={16} color="#00450d" />
+              <Text style={styles.summaryLabel}>Service</Text>
+            </View>
+            <Text style={styles.summaryValue}>{serviceType ?? "—"}</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryLeft}>
+              <Ionicons name="calendar-outline" size={16} color="#00450d" />
+              <Text style={styles.summaryLabel}>Schedule</Text>
+            </View>
+            <View style={styles.summaryRight}>
+              <Text style={styles.summaryValue}>{displayDate}</Text>
+              <Text style={styles.summarySlot}>{slot ?? "—"}</Text>
+            </View>
+          </View>
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalValue}>₹{total ? Number(total).toLocaleString("en-IN") : "—"}</Text>
+          </View>
+        </Animated.View>
+
+        {/* SMS note */}
+        <Animated.View style={[styles.smsNote, { opacity: cardOpacity }]}>
+          <Ionicons name="chatbubble-ellipses-outline" size={18} color="#6b7280" />
+          <Text style={styles.smsNoteText}>You will receive an SMS confirmation shortly.</Text>
+        </Animated.View>
+
+        {/* Buttons */}
         <Animated.View style={[styles.btnGroup, { opacity: btnsOpacity }]}>
           <TouchableOpacity
             style={styles.btnPrimary}
             onPress={() => router.replace("/(customer)/services")}
             activeOpacity={0.85}
           >
-            <Ionicons name="construct-outline" size={18} color="#fff" />
+            <Ionicons name="list-outline" size={18} color="#fff" />
             <Text style={styles.btnPrimaryText}>View My Services</Text>
           </TouchableOpacity>
 
@@ -121,156 +123,74 @@ export default function BookSuccessScreen() {
             onPress={() => router.replace("/(customer)" as never)}
             activeOpacity={0.75}
           >
-            <Ionicons name="home-outline" size={18} color="#00450d" />
             <Text style={styles.btnSecondaryText}>Back to Home</Text>
           </TouchableOpacity>
         </Animated.View>
 
-      </View>
+      </ScrollView>
     </>
   );
 }
 
-function DetailRow({
-  icon,
-  label,
-  value,
-  valueColor,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  valueColor?: string;
-}) {
-  return (
-    <View style={styles.detailRow}>
-      <View style={styles.detailIconBox}>
-        <Ionicons name={icon} size={15} color="#00450d" />
-      </View>
-      <View style={styles.detailRowContent}>
-        <Text style={styles.detailRowLabel}>{label}</Text>
-        <Text style={[styles.detailRowValue, valueColor ? { color: valueColor } : null]}>
-          {value}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f0fdf4" },
+  container: { flex: 1, backgroundColor: "#f0f2f5" },
+  content: { padding: 24, paddingTop: 64, alignItems: "center", gap: 20, paddingBottom: 40 },
 
-  topSection: {
-    backgroundColor: "#00450d",
-    alignItems: "center",
-    paddingTop: 80,
-    paddingBottom: 48,
-    gap: 16,
-  },
-
+  checkWrap: { alignItems: "center", marginBottom: 4 },
   checkCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkInner: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: "#bcf200",
+    justifyContent: "center", alignItems: "center",
   },
 
-  successTitle: { fontSize: 26, fontWeight: "800", color: "#fff", letterSpacing: -0.5 },
-  successSub: { fontSize: 14, color: "rgba(255,255,255,0.75)" },
-
+  titleBlock: { alignItems: "center", gap: 12 },
+  successTitle: { fontSize: 26, fontWeight: "800", color: "#111827", letterSpacing: -0.5 },
   bookingIdBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: "#fff", borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 7,
+    borderWidth: 1, borderColor: "#e5e7eb",
   },
-  bookingIdText: { fontSize: 13, color: "#bbf7d0", fontWeight: "700", letterSpacing: 0.3 },
+  bookingIdText: { fontSize: 12, fontWeight: "700", color: "#374151", letterSpacing: 0.4 },
 
-  // Detail card
-  detailCard: {
-    backgroundColor: "#fff",
-    margin: 16,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-    elevation: 4,
-    gap: 4,
-    marginTop: -24,
+  summaryCard: {
+    backgroundColor: "#fff", borderRadius: 18, padding: 20,
+    width: "100%", gap: 14,
+    borderWidth: 1, borderColor: "#f0f0f0",
   },
-  detailLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: "#9ca3af",
-    letterSpacing: 0.8,
-    marginBottom: 6,
+  summaryTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
+  divider: { height: 1, backgroundColor: "#f4f4f5" },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  summaryLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  summaryLabel: { fontSize: 14, color: "#374151" },
+  summaryRight: { alignItems: "flex-end", gap: 2 },
+  summaryValue: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  summarySlot: { fontSize: 12, color: "#9ca3af" },
+
+  totalRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingTop: 10, borderTopWidth: 1, borderTopColor: "#f4f4f5", marginTop: -4,
   },
-  detailRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, gap: 12 },
-  detailIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: "#f0fdf4",
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  detailRowContent: { flex: 1 },
-  detailRowLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
-  detailRowValue: { fontSize: 14, color: "#111827", fontWeight: "600", marginTop: 1 },
-  rowDivider: { height: 1, backgroundColor: "#f9fafb", marginLeft: 44 },
+  totalLabel: { fontSize: 14, color: "#374151" },
+  totalValue: { fontSize: 22, fontWeight: "800", color: "#00450d" },
 
   smsNote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: "#f0fdf4",
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: "#f3f4f6", borderRadius: 14, padding: 16,
+    width: "100%",
   },
-  smsNoteText: { fontSize: 12, color: "#00450d", flex: 1, lineHeight: 17 },
+  smsNoteText: { fontSize: 13, color: "#6b7280", flex: 1, textAlign: "center" },
 
-  // Buttons
-  btnGroup: { paddingHorizontal: 16, gap: 10, marginTop: 8 },
+  btnGroup: { width: "100%", gap: 10, marginTop: 4 },
   btnPrimary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#00450d",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#00450d",
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#00450d", borderRadius: 14, paddingVertical: 16,
   },
   btnPrimaryText: { fontSize: 15, fontWeight: "700", color: "#fff" },
   btnSecondary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: "#bbf7d0",
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "#fff", borderRadius: 14, paddingVertical: 16,
+    borderWidth: 1.5, borderColor: "#e5e7eb",
   },
-  btnSecondaryText: { fontSize: 15, fontWeight: "700", color: "#00450d" },
+  btnSecondaryText: { fontSize: 15, fontWeight: "700", color: "#374151" },
 });

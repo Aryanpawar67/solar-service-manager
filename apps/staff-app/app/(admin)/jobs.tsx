@@ -2,85 +2,96 @@ import {
   View,
   Text,
   FlatList,
-  Pressable,
-  Platform,
+  TouchableOpacity,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
-  ScrollView,
-  TouchableOpacity,
+  TextInput,
 } from "react-native";
 import { router } from "expo-router";
 import { useListServices } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
-import { FadeInView } from "@/components/FadeInView";
 import { useState } from "react";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  pending:     { color: "#d97706", bg: "#fef3c7", label: "Pending" },
-  in_progress: { color: "#2563eb", bg: "#dbeafe", label: "In Progress" },
-  completed:   { color: "#00450d", bg: "#dcfce7", label: "Completed" },
-  cancelled:   { color: "#6b7280", bg: "#f3f4f6", label: "Cancelled" },
+  pending:     { color: "#6b7280", bg: "#f3f4f6",  label: "PENDING" },
+  in_progress: { color: "#2563eb", bg: "#dbeafe",  label: "IN PROGRESS" },
+  completed:   { color: "#00450d", bg: "#dcfce7",  label: "COMPLETED" },
+  cancelled:   { color: "#ef4444", bg: "#fef2f2",  label: "CANCELLED" },
 };
 
-const STATUS_BORDER: Record<string, string> = {
-  pending:     "#f59e0b",
-  in_progress: "#3b82f6",
-  completed:   "#00450d",
-  cancelled:   "#d1d5db",
-};
+const FILTERS = ["All Jobs", "Pending", "In Progress", "Completed"] as const;
+type Filter = (typeof FILTERS)[number];
 
-const FILTERS = [
-  { key: "all",         label: "All" },
-  { key: "pending",     label: "Pending" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "completed",   label: "Completed" },
-];
+function filterKey(f: Filter): string | null {
+  if (f === "Pending") return "pending";
+  if (f === "In Progress") return "in_progress";
+  if (f === "Completed") return "completed";
+  return null;
+}
 
 export default function AdminJobsScreen() {
-  const [filter, setFilter] = useState("all");
-  const { data, isLoading, isError, refetch, isRefetching } = useListServices({ limit: 100 });
-
-  const allJobs = data?.data ?? [];
-  const filtered = filter === "all" ? allJobs : allJobs.filter((j) => j.status === filter);
+  const [activeFilter, setActiveFilter] = useState<Filter>("All Jobs");
+  const [search, setSearch] = useState("");
+  const { data, isLoading, isError, refetch, isRefetching } = useListServices({ limit: 200 });
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00450d" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
+  if (isError) return <ErrorState onRetry={refetch} />;
 
-  if (isError) {
-    return <ErrorState onRetry={refetch} />;
-  }
+  const allJobs = data?.data ?? [];
+  const key = filterKey(activeFilter);
+  const filtered = (key ? allJobs.filter((j) => j.status === key) : allJobs).filter((j) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (j.customer?.name ?? "").toLowerCase().includes(q) ||
+      (j.staff?.name ?? "").toLowerCase().includes(q) ||
+      (j.serviceType ?? "").toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <View style={styles.root}>
-      {/* Filter tabs */}
-      <View style={styles.filterBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {FILTERS.map((f) => {
-            const count = f.key === "all" ? allJobs.length : allJobs.filter((j) => j.status === f.key).length;
-            const active = filter === f.key;
-            return (
-              <TouchableOpacity
-                key={f.key}
-                style={[styles.filterChip, active && styles.filterChipActive]}
-                onPress={() => setFilter(f.key)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.filterLabel, active && styles.filterLabelActive]}>{f.label}</Text>
-                <View style={[styles.filterCount, active && styles.filterCountActive]}>
-                  <Text style={[styles.filterCountText, active && styles.filterCountTextActive]}>{count}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+    <View style={styles.container}>
+      {/* Page header */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>Admin Jobs List</Text>
+        <Text style={styles.pageSub}>Master view of all fleet assignments and service records.</Text>
       </View>
+
+      {/* Search */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search-outline" size={16} color="#9ca3af" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search jobs, customers, techs..."
+          placeholderTextColor="#9ca3af"
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch("")}>
+            <Ionicons name="close-circle" size={16} color="#9ca3af" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Filter chips */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+        {FILTERS.map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
+            onPress={() => setActiveFilter(f)}
+            activeOpacity={0.75}
+          >
+            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       <FlatList
         style={styles.list}
@@ -94,42 +105,36 @@ export default function AdminJobsScreen() {
           <View style={styles.center}>
             <Ionicons name="briefcase-outline" size={52} color="#d1d5db" />
             <Text style={styles.emptyTitle}>No jobs found</Text>
-            <Text style={styles.emptyText}>
-              {filter === "all" ? "No jobs have been created yet." : `No ${filter.replace("_", " ")} jobs.`}
-            </Text>
+            <Text style={styles.emptyText}>Try adjusting your filters.</Text>
           </View>
         }
-        renderItem={({ item, index }) => {
+        renderItem={({ item }) => {
           const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.cancelled;
-          const borderColor = STATUS_BORDER[item.status] ?? "#d1d5db";
+          const jobNum = `JOB-${String(item.id).padStart(4, "0")}`;
+          const isPending = item.status === "pending";
+          const isCompleted = item.status === "completed";
           return (
-            <FadeInView delay={Math.min(index * 70, 560)}>
-            <Pressable
-              android_ripple={{ color: "#00450d18" }}
-              style={({ pressed }) => [
-                styles.card,
-                { borderLeftColor: borderColor },
-                Platform.OS === "ios" && pressed && { opacity: 0.75 },
-              ]}
-              onPress={() => router.push(`/job/${item.id}`)}
-            >
+            <View style={styles.card}>
               <View style={styles.cardTop}>
-                <Text style={styles.customerName} numberOfLines={1}>{item.customer?.name ?? "—"}</Text>
+                <Text style={styles.jobNum}>{jobNum}</Text>
                 <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
                   <Text style={[styles.badgeText, { color: cfg.color }]}>{cfg.label}</Text>
                 </View>
               </View>
 
-              {item.serviceType && (
-                <Text style={styles.serviceType}>{item.serviceType}</Text>
-              )}
+              <Text style={styles.customerName} numberOfLines={1}>{item.customer?.name ?? "—"}</Text>
 
-              <View style={styles.staffRow}>
-                <Ionicons name="person-outline" size={13} color="#9ca3af" />
-                <Text style={styles.staffText}>{item.staff?.name ?? "Unassigned"}</Text>
-              </View>
-
-              <View style={styles.cardMeta}>
+              <View style={styles.metaBlock}>
+                <View style={styles.metaRow}>
+                  <Ionicons name="person-outline" size={13} color="#9ca3af" />
+                  <Text style={styles.metaText}>{item.staff?.name ?? "Unassigned"}</Text>
+                </View>
+                {item.serviceType ? (
+                  <View style={styles.metaRow}>
+                    <Ionicons name="construct-outline" size={13} color="#9ca3af" />
+                    <Text style={styles.metaText}>{item.serviceType}</Text>
+                  </View>
+                ) : null}
                 {item.customer?.address ? (
                   <View style={styles.metaRow}>
                     <Ionicons name="location-outline" size={13} color="#9ca3af" />
@@ -140,20 +145,24 @@ export default function AdminJobsScreen() {
                   <View style={styles.metaRow}>
                     <Ionicons name="calendar-outline" size={13} color="#9ca3af" />
                     <Text style={styles.metaText}>
-                      {new Date(item.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
-                        weekday: "short", day: "numeric", month: "short",
+                      Scheduled: {new Date(item.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
+                        day: "numeric", month: "short", year: "numeric",
                       })}
                     </Text>
                   </View>
                 ) : null}
               </View>
 
-              <View style={styles.cardFooter}>
-                <Text style={styles.tapHint}>Tap to manage</Text>
-                <Ionicons name="chevron-forward" size={14} color="#d1d5db" />
-              </View>
-            </Pressable>
-            </FadeInView>
+              <TouchableOpacity
+                style={[styles.actionBtn, isPending && styles.actionBtnOutline]}
+                onPress={() => router.push(`/job/${item.id}`)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.actionBtnText, isPending && styles.actionBtnTextOutline]}>
+                  {isPending ? "Assign Technician" : isCompleted ? "View Report" : "View Details"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           );
         }}
       />
@@ -162,7 +171,7 @@ export default function AdminJobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: "#f8fafb" },
   list: { flex: 1 },
   content: { padding: 16, gap: 12, paddingBottom: 24 },
   contentEmpty: { flex: 1 },
@@ -170,54 +179,47 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: "700", color: "#374151" },
   emptyText: { fontSize: 13, color: "#9ca3af", textAlign: "center" },
 
-  filterBar: {
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-    paddingVertical: 10,
+  pageHeader: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  pageTitle: { fontSize: 22, fontWeight: "800", color: "#111827" },
+  pageSub: { fontSize: 13, color: "#9ca3af", marginTop: 3, lineHeight: 18 },
+
+  searchBar: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    marginHorizontal: 16, marginBottom: 10,
+    borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 12,
+    paddingHorizontal: 14, height: 44, backgroundColor: "#fff",
   },
-  filterScroll: { paddingHorizontal: 16, gap: 8 },
+  searchInput: { flex: 1, fontSize: 14, color: "#111827" },
+
+  filterRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
   filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: "#f3f4f6",
-    borderWidth: 1,
-    borderColor: "transparent",
+    borderRadius: 20, paddingHorizontal: 16, paddingVertical: 7,
+    backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#e5e7eb",
   },
-  filterChipActive: { backgroundColor: "#f0fdf4", borderColor: "#00450d" },
-  filterLabel: { fontSize: 13, fontWeight: "600", color: "#6b7280" },
-  filterLabelActive: { color: "#00450d" },
-  filterCount: { backgroundColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
-  filterCountActive: { backgroundColor: "#dcfce7" },
-  filterCountText: { fontSize: 11, fontWeight: "700", color: "#6b7280" },
-  filterCountTextActive: { color: "#00450d" },
+  filterChipActive: { backgroundColor: "#00450d", borderColor: "#00450d" },
+  filterText: { fontSize: 12, fontWeight: "600", color: "#6b7280" },
+  filterTextActive: { color: "#fff" },
 
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 16,
-    overflow: "hidden",
-    borderLeftWidth: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 5,
+    backgroundColor: "#fff", borderRadius: 14, padding: 16,
+    gap: 8, borderWidth: 1, borderColor: "#f0f0f0",
+    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
   },
-  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  customerName: { fontSize: 16, fontWeight: "700", color: "#111827", flex: 1 },
-  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
-  badgeText: { fontSize: 11, fontWeight: "700" },
-  serviceType: { fontSize: 13, color: "#6b7280" },
-  staffRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  staffText: { fontSize: 13, color: "#3b82f6", fontWeight: "600" },
-  cardMeta: { gap: 3 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  metaText: { fontSize: 12, color: "#9ca3af", flex: 1 },
-  cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#f9fafb" },
-  tapHint: { fontSize: 11, color: "#d1d5db", fontStyle: "italic" },
+  cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  jobNum: { fontSize: 11, fontWeight: "700", color: "#9ca3af", letterSpacing: 0.5 },
+  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeText: { fontSize: 10, fontWeight: "700", letterSpacing: 0.2 },
+  customerName: { fontSize: 18, fontWeight: "800", color: "#111827" },
+
+  metaBlock: { gap: 5 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  metaText: { fontSize: 12, color: "#6b7280", flex: 1 },
+
+  actionBtn: {
+    backgroundColor: "#00450d", borderRadius: 10,
+    paddingVertical: 12, alignItems: "center",
+  },
+  actionBtnOutline: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: "#00450d" },
+  actionBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  actionBtnTextOutline: { color: "#00450d" },
 });

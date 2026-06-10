@@ -11,7 +11,6 @@ import { router } from "expo-router";
 import { useGetMe } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { FadeInView } from "@/components/FadeInView";
 
 export default function AdminProfileScreen() {
   const { data, isLoading } = useGetMe();
@@ -32,192 +31,157 @@ export default function AdminProfileScreen() {
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00450d" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
 
-  const initial = user?.name?.charAt(0).toUpperCase() ?? "A";
+  const initials = user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) ?? "A";
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Green header with avatar */}
-      <FadeInView delay={0} fromY={-20}>
-      <View style={styles.header}>
-        <View style={styles.avatarRing}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {/* Page title */}
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>Admin Profile</Text>
+        <Text style={styles.pageSub}>Manage your personal settings and administrative controls.</Text>
+      </View>
+
+      {/* Identity card */}
+      <View style={styles.identityCard}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
         </View>
         <Text style={styles.name}>{user?.name ?? "—"}</Text>
-        <Text style={styles.email}>{user?.email ?? "—"}</Text>
-        <View style={styles.roleBadge}>
-          <Ionicons name="shield-checkmark-outline" size={12} color="#00450d" />
-          <Text style={styles.roleBadgeText}>Administrator</Text>
+        <View style={styles.adminBadge}>
+          <Text style={styles.adminBadgeText}>SYSTEM ADMIN</Text>
         </View>
-      </View>
-      </FadeInView>
-
-      {/* Info card */}
-      <FadeInView delay={120}>
-      <View style={styles.card}>
-        <InfoRow icon="mail-outline" label="Email" value={user?.email ?? "—"} />
-        <InfoRow icon="shield-outline" label="Role" value={user?.role ?? "—"} last />
-      </View>
-      </FadeInView>
-
-      {/* Quick links */}
-      <FadeInView delay={180}>
-      <View style={styles.card}>
-        <TouchableOpacity
-          style={styles.linkRow}
-          onPress={() => router.push("/(admin)/staff")}
-          activeOpacity={0.75}
-        >
-          <View style={styles.linkIconBox}>
-            <Ionicons name="id-card-outline" size={16} color="#00450d" />
-          </View>
-          <View style={styles.linkContent}>
-            <Text style={styles.linkLabel}>Manage Staff</Text>
-            <Text style={styles.linkSub}>View and toggle technician accounts</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color="#d1d5db" />
+        <Text style={styles.email}>{user?.email ?? "—"}</Text>
+        <TouchableOpacity style={styles.editBtn} activeOpacity={0.8}>
+          <Ionicons name="pencil-outline" size={14} color="#374151" />
+          <Text style={styles.editBtnText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
-      </FadeInView>
 
-      {/* Logout */}
-      <FadeInView delay={240}>
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-        <Ionicons name="log-out-outline" size={18} color="#dc2626" />
-        <Text style={styles.logoutText}>Log Out</Text>
+      {/* Section cards */}
+      <TouchableOpacity
+        style={styles.sectionCard}
+        onPress={() => router.push("/(admin)/staff")}
+        activeOpacity={0.85}
+      >
+        <View style={styles.sectionCardLeft}>
+          <View style={styles.sectionIcon}>
+            <Ionicons name="people-outline" size={22} color="#00450d" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionCardTitle}>Manage Staff</Text>
+            <Text style={styles.sectionCardSub}>Add, remove, or modify staff accounts and assign regional access.</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
       </TouchableOpacity>
-      </FadeInView>
 
-      <Text style={styles.version}>GreenVolt Admin · v1.0.0</Text>
+      <TouchableOpacity style={styles.sectionCard} activeOpacity={0.85}>
+        <View style={styles.sectionCardLeft}>
+          <View style={styles.sectionIcon}>
+            <Ionicons name="settings-outline" size={22} color="#00450d" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionCardTitle}>System Settings</Text>
+            <Text style={styles.sectionCardSub}>Configure global platform thresholds, alerts, and API integrations.</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.sectionCard} activeOpacity={0.85}>
+        <View style={styles.sectionCardLeft}>
+          <View style={styles.sectionIcon}>
+            <Ionicons name="shield-outline" size={22} color="#00450d" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionCardTitle}>Role Permissions</Text>
+            <Text style={styles.sectionCardSub}>Define custom roles and adjust feature access levels for user groups.</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
+      </TouchableOpacity>
+
+      {/* Logout card */}
+      <TouchableOpacity style={styles.logoutCard} onPress={handleLogout} activeOpacity={0.85}>
+        <View style={styles.sectionCardLeft}>
+          <View style={[styles.sectionIcon, styles.logoutIcon]}>
+            <Ionicons name="log-out-outline" size={22} color="#dc2626" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.logoutTitle}>Logout</Text>
+            <Text style={styles.logoutSub}>Securely end your current administrative session.</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
     </ScrollView>
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-  last,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
-      <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#00450d" />
-      </View>
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: "#f8fafb" },
+  content: { padding: 16, gap: 12, paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  header: {
-    backgroundColor: "#00450d",
-    alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 36,
-    gap: 6,
-  },
-  avatarRing: {
-    width: 90,
-    height: 90,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
+  pageHeader: { paddingVertical: 8 },
+  pageTitle: { fontSize: 22, fontWeight: "800", color: "#111827" },
+  pageSub: { fontSize: 13, color: "#9ca3af", marginTop: 4, lineHeight: 18 },
+
+  identityCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16, padding: 24,
+    alignItems: "center", gap: 8,
+    borderWidth: 1, borderColor: "#f0f0f0",
   },
   avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: "#e5e7eb",
+    justifyContent: "center", alignItems: "center",
+    marginBottom: 4,
   },
-  avatarText: { fontSize: 34, fontWeight: "800", color: "#fff" },
-  name: { fontSize: 20, fontWeight: "800", color: "#fff" },
-  email: { fontSize: 13, color: "rgba(255,255,255,0.75)" },
-  roleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#fff",
+  avatarText: { fontSize: 28, fontWeight: "800", color: "#374151" },
+  name: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  adminBadge: {
+    backgroundColor: "#bcf200",
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 14, paddingVertical: 5,
+  },
+  adminBadgeText: { fontSize: 11, fontWeight: "800", color: "#1a3a00", letterSpacing: 0.5 },
+  email: { fontSize: 13, color: "#9ca3af" },
+  editBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    borderWidth: 1.5, borderColor: "#e5e7eb",
+    borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8,
     marginTop: 4,
   },
-  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#00450d" },
+  editBtnText: { fontSize: 13, fontWeight: "600", color: "#374151" },
 
-  card: {
+  sectionCard: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    margin: 16,
-    padding: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
+    borderRadius: 16, padding: 18,
+    flexDirection: "row", alignItems: "center",
+    borderWidth: 1, borderColor: "#f0f0f0",
+    gap: 12,
   },
-  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 12, gap: 12 },
-  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
-  infoIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  sectionCardLeft: { flexDirection: "row", alignItems: "flex-start", gap: 14, flex: 1 },
+  sectionIcon: {
+    width: 44, height: 44, borderRadius: 12,
     backgroundColor: "#f0fdf4",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center", alignItems: "center",
+    flexShrink: 0,
   },
-  infoContent: { flex: 1 },
-  infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
-  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
+  sectionCardTitle: { fontSize: 16, fontWeight: "700", color: "#111827", marginBottom: 3 },
+  sectionCardSub: { fontSize: 12, color: "#9ca3af", lineHeight: 17 },
 
-  linkRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12 },
-  linkIconBox: {
-    width: 32, height: 32, borderRadius: 10,
-    backgroundColor: "#f0fdf4", justifyContent: "center", alignItems: "center",
+  logoutCard: {
+    backgroundColor: "#fef2f2",
+    borderRadius: 16, padding: 18,
+    borderWidth: 1, borderColor: "#fecaca",
   },
-  linkContent: { flex: 1 },
-  linkLabel: { fontSize: 14, color: "#111827", fontWeight: "600" },
-  linkSub: { fontSize: 11, color: "#9ca3af", marginTop: 1 },
-
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#fee2e2",
-    borderRadius: 14,
-    marginHorizontal: 16,
-    padding: 16,
-  },
-  logoutText: { color: "#dc2626", fontWeight: "700", fontSize: 15 },
-
-  version: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#d1d5db",
-    marginTop: 24,
-  },
+  logoutIcon: { backgroundColor: "#fef2f2" },
+  logoutTitle: { fontSize: 16, fontWeight: "700", color: "#dc2626", marginBottom: 3 },
+  logoutSub: { fontSize: 12, color: "#f87171", lineHeight: 17 },
 });

@@ -13,7 +13,6 @@ import { router } from "expo-router";
 import { useGetMyProfile, useUpdateMyProfile, useUpdateNotificationPrefs } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { FadeInView } from "@/components/FadeInView";
 import { useState } from "react";
 
 export default function CustomerProfileScreen() {
@@ -23,17 +22,20 @@ export default function CustomerProfileScreen() {
 
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+
+  const [emailAlerts, setEmailAlerts] = useState(true);
+  const [smsNotifs, setSmsNotifs] = useState(true);
 
   const startEdit = () => {
     setPhone(profile?.phone ?? "");
-    setAddress(profile?.address ?? "");
+    setCity((profile as typeof profile & { city?: string })?.city ?? profile?.address ?? "");
     setEditing(true);
   };
 
   const saveEdit = () => {
     update.mutate(
-      { phone, address },
+      { phone, address: city },
       {
         onSuccess: () => {
           setEditing(false);
@@ -65,80 +67,60 @@ export default function CustomerProfileScreen() {
   };
 
   if (isLoading || !profile) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00450d" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
 
   const pushEnabled = (profile as typeof profile & { pushEnabled?: boolean }).pushEnabled ?? true;
+  const customerId = `GV-${String(profile.id ?? "0000").padStart(4, "0")}-X`;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Green header */}
-      <FadeInView delay={0} fromY={-20}>
-      <View style={styles.header}>
-        <View style={styles.avatarRing}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{profile.name.charAt(0).toUpperCase()}</Text>
-          </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+      {/* Identity card */}
+      <View style={styles.identityCard}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {profile.name.charAt(0).toUpperCase()}
+          </Text>
         </View>
-        <Text style={styles.name}>{profile.name}</Text>
-        {profile.city ? <Text style={styles.city}>{profile.city}</Text> : null}
-        <View style={styles.roleBadge}>
-          <Ionicons name="person-outline" size={11} color="#00450d" />
-          <Text style={styles.roleBadgeText}>Customer</Text>
+        <View style={styles.identityInfo}>
+          <Text style={styles.identityName}>{profile.name}</Text>
+          <Text style={styles.identityId}>CUSTOMER ID: {customerId}</Text>
         </View>
       </View>
-      </FadeInView>
 
-      {/* Solar info */}
-      {(profile.solarCapacity || profile.installationDate) ? (
-        <FadeInView delay={100}>
-        <View style={styles.card}>
-          <SectionHeader icon="sunny-outline" title="System Info" />
-          {profile.solarCapacity ? (
-            <InfoRow icon="flash-outline" label="Capacity" value={`${profile.solarCapacity} kW`} />
-          ) : null}
-          {profile.installationDate ? (
-            <InfoRow icon="calendar-outline" label="Installed" value={profile.installationDate} last />
-          ) : null}
+      {/* Personal Information */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="id-card-outline" size={18} color="#111827" />
+          <Text style={styles.sectionTitle}>Personal Information</Text>
         </View>
-        </FadeInView>
-      ) : null}
 
-      {/* Contact details */}
-      <FadeInView delay={180}>
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <SectionHeader icon="call-outline" title="Contact Details" />
-          {!editing ? (
-            <TouchableOpacity onPress={startEdit} style={styles.editBtn}>
-              <Ionicons name="pencil-outline" size={14} color="#00450d" />
-              <Text style={styles.editBtnText}>Edit</Text>
-            </TouchableOpacity>
-          ) : null}
+        <View style={styles.fieldBlock}>
+          <Text style={styles.fieldLabel}>Email Address</Text>
+          <View style={[styles.inputBox, styles.inputBoxReadonly]}>
+            <Text style={styles.inputText}>{(profile as typeof profile & { email?: string })?.email ?? "—"}</Text>
+          </View>
         </View>
+
         {editing ? (
           <>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Phone</Text>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Phone Number</Text>
               <TextInput
-                style={styles.input}
+                style={styles.inputBox}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 placeholderTextColor="#9ca3af"
               />
             </View>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Address</Text>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Service City</Text>
               <TextInput
-                style={[styles.input, styles.inputMultiline]}
-                value={address}
-                onChangeText={setAddress}
-                multiline
+                style={styles.inputBox}
+                value={city}
+                onChangeText={setCity}
                 placeholderTextColor="#9ca3af"
               />
             </View>
@@ -157,26 +139,95 @@ export default function CustomerProfileScreen() {
           </>
         ) : (
           <>
-            <InfoRow icon="call-outline" label="Phone" value={profile.phone} />
-            <InfoRow icon="location-outline" label="Address" value={profile.address} last />
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Phone Number</Text>
+              <TouchableOpacity style={styles.inputBox} onPress={startEdit} activeOpacity={0.7}>
+                <Text style={styles.inputText}>{profile.phone || "—"}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Service City</Text>
+              <TouchableOpacity style={styles.inputBox} onPress={startEdit} activeOpacity={0.7}>
+                <Text style={styles.inputText}>
+                  {(profile as typeof profile & { city?: string })?.city || profile.address || "—"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
       </View>
-      </FadeInView>
 
-      {/* Notifications */}
-      <FadeInView delay={260}>
-      <View style={styles.card}>
-        <SectionHeader icon="notifications-outline" title="Notifications" />
-        <View style={styles.toggleRow}>
-          <View style={styles.toggleIconBox}>
-            <Ionicons name="phone-portrait-outline" size={14} color="#00450d" />
+      {/* System Details */}
+      {(profile.solarCapacity || profile.installationDate) ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="flash-outline" size={18} color="#111827" />
+            <Text style={styles.sectionTitle}>System Details</Text>
           </View>
-          <View style={styles.toggleInfo}>
-            <Text style={styles.toggleLabel}>Push Notifications</Text>
-            <Text style={styles.toggleSub}>
-              {pushEnabled ? "Receive service updates" : "Push notifications are off"}
-            </Text>
+
+          {profile.solarCapacity ? (
+            <View style={styles.capacityCard}>
+              <Text style={styles.capacityLabel}>TOTAL CAPACITY</Text>
+              <View style={styles.capacityRow}>
+                <Text style={styles.capacityValue}>{profile.solarCapacity}</Text>
+                <Text style={styles.capacityUnit}> kW</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Status</Text>
+            <View style={styles.onlineBadge}>
+              <Text style={styles.onlineBadgeText}>ONLINE</Text>
+            </View>
+          </View>
+
+          {profile.installationDate ? (
+            <View style={[styles.detailRow, styles.detailRowBorder]}>
+              <Text style={styles.detailLabel}>Install Date</Text>
+              <Text style={styles.detailValue}>{profile.installationDate}</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      {/* Notification Preferences */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="options-outline" size={18} color="#111827" />
+          <Text style={styles.sectionTitle}>Notification Preferences</Text>
+        </View>
+
+        <View style={styles.toggleCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleTitle}>Email Alerts</Text>
+            <Text style={styles.toggleSub}>Weekly summaries and critical system faults.</Text>
+          </View>
+          <Switch
+            value={emailAlerts}
+            onValueChange={setEmailAlerts}
+            trackColor={{ false: "#d1d5db", true: "#86efac" }}
+            thumbColor={emailAlerts ? "#00450d" : "#f3f4f6"}
+          />
+        </View>
+
+        <View style={[styles.toggleCard, styles.toggleCardBorder]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleTitle}>SMS Notifications</Text>
+            <Text style={styles.toggleSub}>Real-time alerts for grid disconnects.</Text>
+          </View>
+          <Switch
+            value={smsNotifs}
+            onValueChange={setSmsNotifs}
+            trackColor={{ false: "#d1d5db", true: "#86efac" }}
+            thumbColor={smsNotifs ? "#00450d" : "#f3f4f6"}
+          />
+        </View>
+
+        <View style={[styles.toggleCard, styles.toggleCardBorder]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toggleTitle}>Push Notifications</Text>
+            <Text style={styles.toggleSub}>Daily production milestones on mobile app.</Text>
           </View>
           <Switch
             value={pushEnabled}
@@ -187,174 +238,92 @@ export default function CustomerProfileScreen() {
           />
         </View>
       </View>
-      </FadeInView>
 
       {/* Logout */}
-      <FadeInView delay={340}>
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
         <Ionicons name="log-out-outline" size={18} color="#dc2626" />
-        <Text style={styles.logoutText}>Log Out</Text>
+        <Text style={styles.logoutText}>Logout securely</Text>
       </TouchableOpacity>
-      </FadeInView>
 
-      <Text style={styles.version}>GreenVolt · v1.0.0</Text>
     </ScrollView>
   );
 }
 
-function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={15} color="#00450d" />
-      <Text style={styles.sectionTitle}>{title}</Text>
-    </View>
-  );
-}
-
-function InfoRow({
-  icon,
-  label,
-  value,
-  last,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
-      <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#00450d" />
-      </View>
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: "#f8fafb" },
+  content: { padding: 16, gap: 14, paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  header: {
-    backgroundColor: "#00450d",
-    alignItems: "center",
-    paddingTop: 40,
-    paddingBottom: 36,
-    gap: 6,
-  },
-  avatarRing: {
-    width: 90,
-    height: 90,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
+  identityCard: {
+    backgroundColor: "#fff", borderRadius: 16, padding: 18,
+    flexDirection: "row", alignItems: "center", gap: 16,
+    borderWidth: 1, borderColor: "#f0f0f0",
   },
   avatar: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: "#e5e7eb",
+    justifyContent: "center", alignItems: "center", flexShrink: 0,
   },
-  avatarText: { fontSize: 34, fontWeight: "800", color: "#fff" },
-  name: { fontSize: 20, fontWeight: "800", color: "#fff" },
-  city: { fontSize: 13, color: "rgba(255,255,255,0.75)" },
-  roleBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginTop: 4,
-  },
-  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#00450d" },
+  avatarText: { fontSize: 26, fontWeight: "800", color: "#374151" },
+  identityInfo: { flex: 1 },
+  identityName: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  identityId: { fontSize: 12, color: "#9ca3af", marginTop: 3 },
 
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    margin: 16,
-    marginBottom: 0,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
-    gap: 2,
+  section: {
+    backgroundColor: "#fff", borderRadius: 16, padding: 18,
+    borderWidth: 1, borderColor: "#f0f0f0", gap: 12,
   },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
-  editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  editBtnText: { fontSize: 13, color: "#00450d", fontWeight: "600" },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
 
-  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
-  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
-  infoIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: "#f0fdf4",
-    justifyContent: "center",
-    alignItems: "center",
+  fieldBlock: { gap: 6 },
+  fieldLabel: { fontSize: 13, color: "#6b7280", fontWeight: "500" },
+  inputBox: {
+    borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 14, color: "#111827", backgroundColor: "#fff",
   },
-  infoContent: { flex: 1 },
-  infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
-  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
-
-  fieldGroup: { marginBottom: 12 },
-  fieldLabel: { fontSize: 12, color: "#6b7280", fontWeight: "600", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    color: "#111827",
-    backgroundColor: "#f9fafb",
+  inputBoxReadonly: { backgroundColor: "#f9fafb" },
+  inputText: { fontSize: 14, color: "#111827" },
+  editActions: { flexDirection: "row", gap: 10 },
+  cancelBtn: {
+    flex: 1, borderWidth: 1.5, borderColor: "#d1d5db",
+    borderRadius: 10, padding: 12, alignItems: "center",
   },
-  inputMultiline: { height: 80, textAlignVertical: "top" },
-  editActions: { flexDirection: "row", gap: 10, marginTop: 4 },
-  cancelBtn: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, padding: 12, alignItems: "center" },
   cancelBtnText: { fontSize: 14, color: "#374151", fontWeight: "600" },
   saveBtn: { flex: 1, backgroundColor: "#00450d", borderRadius: 10, padding: 12, alignItems: "center" },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
 
-  toggleRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
-  toggleIconBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: "#f0fdf4",
-    justifyContent: "center",
-    alignItems: "center",
+  capacityCard: {
+    backgroundColor: "#f8fafb", borderRadius: 10, padding: 16, gap: 4,
   },
-  toggleInfo: { flex: 1 },
-  toggleLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  toggleSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  capacityLabel: { fontSize: 10, fontWeight: "700", color: "#9ca3af", letterSpacing: 0.5 },
+  capacityRow: { flexDirection: "row", alignItems: "baseline" },
+  capacityValue: { fontSize: 36, fontWeight: "800", color: "#00450d" },
+  capacityUnit: { fontSize: 18, fontWeight: "700", color: "#00450d" },
+
+  detailRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingVertical: 8,
+  },
+  detailRowBorder: { borderTopWidth: 1, borderTopColor: "#f4f4f5" },
+  detailLabel: { fontSize: 14, color: "#374151" },
+  detailValue: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  onlineBadge: {
+    backgroundColor: "#dcfce7", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 3,
+  },
+  onlineBadgeText: { fontSize: 11, fontWeight: "700", color: "#00450d" },
+
+  toggleCard: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 12 },
+  toggleCardBorder: { borderTopWidth: 1, borderTopColor: "#f4f4f5" },
+  toggleTitle: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  toggleSub: { fontSize: 12, color: "#9ca3af", marginTop: 2, lineHeight: 17 },
 
   logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#fee2e2",
-    borderRadius: 14,
-    margin: 16,
-    marginBottom: 0,
-    padding: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    borderWidth: 1.5, borderColor: "#fca5a5", borderRadius: 12,
+    paddingVertical: 15, backgroundColor: "#fff",
   },
   logoutText: { color: "#dc2626", fontWeight: "700", fontSize: 15 },
-
-  version: { textAlign: "center", fontSize: 12, color: "#d1d5db", marginTop: 20 },
 });
