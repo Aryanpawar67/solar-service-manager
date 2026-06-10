@@ -8,42 +8,42 @@ import {
   Alert,
   Image,
   TextInput,
-  Animated,
+  Linking,
+  SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetService, useUpdateService, useListStaff, useGetMe } from "@workspace/api-client-react";
 import { uploadFile } from "@workspace/api-client-react";
 import * as ImagePicker from "expo-image-picker";
-import * as Linking from "expo-linking";
 import { Ionicons } from "@expo/vector-icons";
 import { getToken } from "../../src/lib/auth";
 import { API_BASE_URL } from "../../src/lib/constants";
 import { ErrorState } from "../../src/components/ErrorState";
-import { useState, useRef } from "react";
-import { FadeInView } from "@/components/FadeInView";
+import { useState } from "react";
 
 const STATUS_SEQUENCE = ["pending", "in_progress", "completed"] as const;
 type Status = (typeof STATUS_SEQUENCE)[number];
 
-const STEP_CONFIG = [
-  { key: "pending",     label: "Pending",     short: "Pending" },
-  { key: "in_progress", label: "In Progress", short: "In Prog." },
-  { key: "completed",   label: "Completed",   short: "Done" },
+// Visual-only 4-step mapping (en_route is a display step, not a DB status)
+const STEPS = [
+  { label: "Scheduled",   short: "Scheduled" },
+  { label: "En Route",    short: "En Route" },
+  { label: "In Progress", short: "In Progress" },
+  { label: "Completed",   short: "Completed" },
 ];
 
-const STATUS_COLOR: Record<string, string> = {
-  pending:     "#d97706",
-  in_progress: "#2563eb",
-  completed:   "#16a34a",
-  cancelled:   "#6b7280",
-};
+function getVisualStep(status: string): number {
+  if (status === "completed") return 4;
+  if (status === "in_progress") return 2; // active on step index 2
+  return 0; // pending = active on step 0
+}
 
-const STATUS_BG: Record<string, string> = {
-  pending:     "#fef3c7",
-  in_progress: "#dbeafe",
-  completed:   "#dcfce7",
-  cancelled:   "#f3f4f6",
-};
+function isStepDone(stepIdx: number, activeStep: number): boolean {
+  return stepIdx < activeStep;
+}
+function isStepActive(stepIdx: number, activeStep: number): boolean {
+  return stepIdx === activeStep;
+}
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,32 +57,25 @@ export default function JobDetailScreen() {
 
   const [remarksText, setRemarksText] = useState<string | null>(null);
   const [savingRemarks, setSavingRemarks] = useState(false);
-  const ctaScale = useRef(new Animated.Value(1)).current;
-  const onCtaPressIn  = () => Animated.spring(ctaScale, { toValue: 0.96, useNativeDriver: true, speed: 60, bounciness: 0 }).start();
-  const onCtaPressOut = () => Animated.spring(ctaScale, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 4 }).start();
 
   const currentRemarks = remarksText ?? job?.remarks ?? "";
 
-  const advanceStatus = () => {
+  const advanceStatus = (targetStatus: "in_progress" | "completed") => {
     if (!job) return;
-    const current = job.status as Status;
-    const idx = STATUS_SEQUENCE.indexOf(current);
-    if (idx === -1 || idx === STATUS_SEQUENCE.length - 1) return;
-    const next = STATUS_SEQUENCE[idx + 1];
     const labels: Record<string, string> = {
       in_progress: "Start Job",
-      completed: "Mark as Completed",
+      completed: "Complete Job",
     };
     Alert.alert(
-      labels[next] ?? "Update Status",
-      `Are you sure you want to mark this job as "${next.replace("_", " ")}"?`,
+      labels[targetStatus],
+      `Mark this job as "${targetStatus.replace("_", " ")}"?`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Confirm",
           onPress: () =>
             update.mutate(
-              { id: jobId, data: { status: next } },
+              { id: jobId, data: { status: targetStatus } },
               { onSuccess: () => refetch() }
             ),
         },
@@ -93,20 +86,13 @@ export default function JobDetailScreen() {
   const pickAndUpload = async (field: "preServiceImage" | "postServiceImage") => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Camera permission required", "Please enable camera access in Settings to upload photos.");
+      Alert.alert("Camera permission required", "Please enable camera access in Settings.");
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      quality: 0.6,
-    });
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.6 });
     if (result.canceled) return;
     const asset = result.assets[0];
-    const file = {
-      uri: asset.uri,
-      name: asset.fileName ?? "photo.jpg",
-      type: asset.mimeType ?? "image/jpeg",
-    } as unknown as File;
+    const file = { uri: asset.uri, name: asset.fileName ?? "photo.jpg", type: asset.mimeType ?? "image/jpeg" } as unknown as File;
     try {
       const { url } = await uploadFile(file);
       await update.mutateAsync({ id: jobId, data: { [field]: url } });
@@ -131,138 +117,162 @@ export default function JobDetailScreen() {
 
   const openReport = async () => {
     const token = await getToken();
-    if (!token) {
-      Alert.alert("Not logged in", "Please log in again.");
-      return;
-    }
+    if (!token) { Alert.alert("Not logged in"); return; }
     const url = `${API_BASE_URL}/api/services/${jobId}/report?token=${encodeURIComponent(token)}`;
-    const canOpen = await Linking.canOpenURL(url);
-    if (canOpen) {
-      await Linking.openURL(url);
-    } else {
-      Alert.alert("Cannot open report", "No app available to open PDF files.");
-    }
+    Linking.openURL(url).catch(() => Alert.alert("Cannot open report", "No app available to open PDF files."));
   };
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
+  if (isError || !job) return <ErrorState onRetry={refetch} />;
 
-  if (isError || !job) {
-    return <ErrorState onRetry={refetch} />;
-  }
-
+  const activeStep = getVisualStep(job.status);
   const canAdvance = job.status === "pending" || job.status === "in_progress";
-  const currentIdx = STATUS_SEQUENCE.indexOf(job.status as Status);
+  const capturedCount = (job.preServiceImage ? 1 : 0) + (job.postServiceImage ? 1 : 0);
 
   return (
-    <>
+    <SafeAreaView style={styles.safe}>
       <Stack.Screen
         options={{
-          title: job.customer?.name ?? "Job Detail",
-          headerStyle: { backgroundColor: "#16a34a" },
-          headerTintColor: "#fff",
-          headerTitleStyle: { fontWeight: "700" },
+          title: `Job #GV-${String(jobId).padStart(4, "0")}`,
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#111827",
+          headerTitleStyle: { fontWeight: "700", fontSize: 15 },
+          headerShadowVisible: false,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+              <Ionicons name="arrow-back" size={22} color="#111827" />
             </TouchableOpacity>
           ),
         }}
       />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-        {/* Step Progress */}
-        <FadeInView delay={0}>
-        <View style={styles.stepperCard}>
+      {/* Service type subtitle under header */}
+      {job.serviceType ? (
+        <View style={styles.subHeader}>
+          <Text style={styles.subHeaderText}>{job.serviceType.toUpperCase()}</Text>
+        </View>
+      ) : null}
+
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* 4-Step Progress Bar */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Job Status</Text>
           <View style={styles.stepper}>
-            {STEP_CONFIG.map((step, idx) => {
-              const isDone = idx < currentIdx;
-              const isActive = idx === currentIdx;
+            {STEPS.map((step, idx) => {
+              const done   = isStepDone(idx, activeStep);
+              const active = isStepActive(idx, activeStep);
               return (
-                <View key={step.key} style={styles.stepperItem}>
-                  <View style={styles.stepperRow}>
+                <View key={step.label} style={styles.stepItem}>
+                  <View style={styles.stepTrack}>
                     {idx > 0 && (
-                      <View style={[styles.stepLine, isDone && styles.stepLineDone, isActive && styles.stepLineActive]} />
+                      <View style={[styles.stepLine, done && styles.stepLineFilled, active && styles.stepLinePartial]} />
                     )}
-                    <View style={[
-                      styles.stepCircle,
-                      isDone && styles.stepCircleDone,
-                      isActive && styles.stepCircleActive,
-                    ]}>
-                      {isDone
-                        ? <Ionicons name="checkmark" size={13} color="#fff" />
-                        : <View style={[styles.stepDot, isActive && styles.stepDotActive]} />
+                    <View style={[styles.stepCircle, done && styles.stepCircleDone, active && styles.stepCircleActive]}>
+                      {done
+                        ? <Ionicons name="checkmark" size={11} color="#fff" />
+                        : <View style={[styles.stepInnerDot, active && styles.stepInnerDotActive]} />
                       }
                     </View>
                   </View>
-                  <Text style={[
-                    styles.stepLabel,
-                    isDone && styles.stepLabelDone,
-                    isActive && styles.stepLabelActive,
-                  ]}>{step.short}</Text>
+                  <Text style={[styles.stepLabel, done && styles.stepLabelDone, active && styles.stepLabelActive]}>
+                    {step.short}
+                  </Text>
                 </View>
               );
             })}
           </View>
-          <View style={[styles.statusPill, { backgroundColor: STATUS_BG[job.status] ?? "#f3f4f6" }]}>
-            <View style={[styles.statusDot, { backgroundColor: STATUS_COLOR[job.status] ?? "#6b7280" }]} />
-            <Text style={[styles.statusPillText, { color: STATUS_COLOR[job.status] ?? "#6b7280" }]}>
-              {job.status.replace("_", " ").toUpperCase()}
-            </Text>
+        </View>
+
+        {/* Customer */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>CUSTOMER</Text>
+          <Text style={styles.customerName}>{job.customer?.name ?? "—"}</Text>
+          <View style={styles.contactRow}>
+            <TouchableOpacity
+              style={styles.contactBtn}
+              onPress={() => job.customer?.phone && Linking.openURL(`tel:${job.customer.phone}`)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="call-outline" size={15} color="#374151" />
+              <Text style={styles.contactBtnText}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.contactBtn}
+              onPress={() => job.customer?.phone && Linking.openURL(`sms:${job.customer.phone}`)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="chatbubble-outline" size={15} color="#374151" />
+              <Text style={styles.contactBtnText}>Message</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        </FadeInView>
 
-        {/* Job Info */}
-        <FadeInView delay={80}>
+        {/* Location */}
         <View style={styles.card}>
-          <SectionHeader icon="information-circle-outline" title="Job Details" />
-          <InfoRow label="Customer" value={job.customer?.name ?? "—"} />
-          <InfoRow label="Address" value={job.customer?.address ?? "—"} />
-          <InfoRow
-            label="Scheduled"
-            value={
-              job.scheduledDate
-                ? new Date(job.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
+          <Text style={styles.cardLabel}>LOCATION</Text>
+          <Text style={styles.locationText}>{job.customer?.address ?? "—"}</Text>
+          <TouchableOpacity
+            style={styles.navigateBtn}
+            onPress={() => {
+              if (job.customer?.address) {
+                const encoded = encodeURIComponent(job.customer.address);
+                Linking.openURL(`https://maps.google.com/?q=${encoded}`);
+              }
+            }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="navigate-outline" size={16} color="#fff" />
+            <Text style={styles.navigateBtnText}>Navigate</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Service Overview */}
+        {job.serviceType ? (
+          <View style={styles.card}>
+            <Text style={styles.cardLabel}>SERVICE OVERVIEW</Text>
+            <View style={styles.serviceRow}>
+              <View style={styles.serviceIconBox}>
+                <Ionicons name="flash-outline" size={18} color="#00450d" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.serviceTitle}>{job.serviceType}</Text>
+                {job.notes ? <Text style={styles.serviceNotes}>{job.notes}</Text> : null}
+              </View>
+            </View>
+            {job.scheduledDate ? (
+              <View style={styles.metaRow}>
+                <Ionicons name="calendar-outline" size={13} color="#9ca3af" />
+                <Text style={styles.metaText}>
+                  {new Date(job.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
                     weekday: "long", day: "numeric", month: "long", year: "numeric",
-                  })
-                : "—"
-            }
-          />
-          {job.serviceType && <InfoRow label="Type" value={job.serviceType} />}
-          {job.notes && <InfoRow label="Notes" value={job.notes} last />}
-        </View>
-        </FadeInView>
+                  })}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
-        {/* Photos */}
-        <FadeInView delay={160}>
+        {/* Site Documentation */}
         <View style={styles.card}>
-          <SectionHeader icon="camera-outline" title="Service Photos" />
-          <PhotoSlot
-            label="Before Service"
-            uri={job.preServiceImage ?? null}
-            onCapture={() => pickAndUpload("preServiceImage")}
-          />
-          <PhotoSlot
-            label="After Service"
-            uri={job.postServiceImage ?? null}
-            onCapture={() => pickAndUpload("postServiceImage")}
-          />
+          <View style={styles.docHeader}>
+            <Text style={styles.cardLabel}>Site Documentation</Text>
+            <Text style={styles.docCount}>{capturedCount}/2 Captured</Text>
+          </View>
+          <View style={styles.photoRow}>
+            <PhotoSlot label="Before Service" uri={job.preServiceImage ?? null} onCapture={() => pickAndUpload("preServiceImage")} />
+            <PhotoSlot label="After Service"  uri={job.postServiceImage ?? null} onCapture={() => pickAndUpload("postServiceImage")} />
+          </View>
         </View>
-        </FadeInView>
 
         {/* Remarks */}
-        <FadeInView delay={240}>
         <View style={styles.card}>
-          <SectionHeader icon="create-outline" title="Post-Service Remarks" />
+          <Text style={styles.cardLabel}>Technician Remarks</Text>
           <TextInput
             style={styles.remarksInput}
-            placeholder="Add remarks about the service…"
+            placeholder="Enter findings, parts used, or client notes..."
             placeholderTextColor="#9ca3af"
             multiline
             numberOfLines={4}
@@ -272,328 +282,268 @@ export default function JobDetailScreen() {
           />
           {remarksText !== null && remarksText !== (job.remarks ?? "") && (
             <TouchableOpacity
-              style={[styles.saveRemarksBtn, savingRemarks && styles.btnDisabled]}
+              style={[styles.saveBtn, savingRemarks && styles.btnDisabled]}
               onPress={saveRemarks}
               disabled={savingRemarks}
             >
-              {savingRemarks ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-                  <Text style={styles.saveRemarksBtnText}>Save Remarks</Text>
-                </>
-              )}
+              {savingRemarks
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.saveBtnText}>Save Remarks</Text>
+              }
             </TouchableOpacity>
           )}
         </View>
-        </FadeInView>
 
-        {/* PDF Report */}
-        <FadeInView delay={320}>
-        <TouchableOpacity style={styles.reportButton} onPress={openReport} activeOpacity={0.8}>
-          <Ionicons name="document-text-outline" size={20} color="#16a34a" />
-          <Text style={styles.reportButtonText}>Download Service Report (PDF)</Text>
+        {/* Report */}
+        <TouchableOpacity style={styles.reportBtn} onPress={openReport} activeOpacity={0.8}>
+          <Ionicons name="document-text-outline" size={18} color="#374151" />
+          <Text style={styles.reportBtnText}>Generate Preliminary Report</Text>
         </TouchableOpacity>
-        </FadeInView>
 
         {/* Admin: Reassign */}
         {isAdmin && (
           <View style={styles.card}>
-            <SectionHeader icon="people-outline" title="Reassign Technician" />
-            <Text style={styles.currentStaff}>
-              Current: {job.staff?.name ?? "Unassigned"}
-            </Text>
+            <Text style={styles.cardLabel}>Reassign Technician</Text>
+            <Text style={styles.currentStaff}>Current: {job.staff?.name ?? "Unassigned"}</Text>
             <View style={{ gap: 8, marginTop: 10 }}>
               {(staffList?.data ?? []).map((s) => (
                 <TouchableOpacity
                   key={s.id}
-                  style={[styles.reassignBtn, job.staffId === s.id && styles.reassignBtnActive]}
+                  style={[styles.reassignItem, job.staffId === s.id && styles.reassignItemActive]}
                   onPress={() => {
                     if (job.staffId === s.id) return;
-                    Alert.alert("Reassign", `Assign this job to ${s.name}?`, [
+                    Alert.alert("Reassign", `Assign to ${s.name}?`, [
                       { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Assign",
-                        onPress: () =>
-                          update.mutate({ id: jobId, data: { staffId: s.id } }, { onSuccess: () => refetch() }),
-                      },
+                      { text: "Assign", onPress: () => update.mutate({ id: jobId, data: { staffId: s.id } }, { onSuccess: () => refetch() }) },
                     ]);
                   }}
                 >
-                  <View style={styles.reassignRow}>
-                    <Text style={[styles.reassignName, job.staffId === s.id && styles.reassignNameActive]}>
-                      {s.name}
-                    </Text>
-                    {job.staffId === s.id && <Ionicons name="checkmark-circle" size={16} color="#16a34a" />}
-                  </View>
-                  <Text style={styles.reassignRole}>{s.role}</Text>
+                  <Text style={[styles.reassignName, job.staffId === s.id && { color: "#00450d" }]}>{s.name}</Text>
+                  {job.staffId === s.id && <Ionicons name="checkmark-circle" size={16} color="#00450d" />}
                 </TouchableOpacity>
               ))}
             </View>
           </View>
         )}
 
-        {/* CTA Button */}
-        {canAdvance && (
-          <FadeInView delay={400}>
+        <View style={{ height: canAdvance ? 90 : 16 }} />
+      </ScrollView>
+
+      {/* Sticky bottom CTAs */}
+      {canAdvance && (
+        <View style={styles.stickyBar}>
+          {job.status === "in_progress" ? (
+            <TouchableOpacity
+              style={styles.pauseBtn}
+              onPress={() => advanceStatus("pending" as any)}
+              activeOpacity={0.85}
+              disabled={update.isPending}
+            >
+              <Ionicons name="pause-outline" size={18} color="#374151" />
+              <Text style={styles.pauseBtnText}>Pause Job</Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity
-            onPress={advanceStatus}
-            onPressIn={onCtaPressIn}
-            onPressOut={onCtaPressOut}
+            style={[styles.completeBtn, update.isPending && styles.btnDisabled, job.status === "pending" && { flex: 1 }]}
+            onPress={() => advanceStatus(job.status === "pending" ? "in_progress" : "completed")}
+            activeOpacity={0.9}
             disabled={update.isPending}
-            activeOpacity={1}
           >
-            <Animated.View style={[styles.ctaButton, update.isPending && styles.btnDisabled, { transform: [{ scale: ctaScale }] }]}>
-              {update.isPending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons
-                    name={job.status === "pending" ? "play-circle-outline" : "checkmark-circle-outline"}
-                    size={22}
-                    color="#fff"
-                  />
-                  <Text style={styles.ctaButtonText}>
-                    {job.status === "pending" ? "Start Job" : "Mark as Completed"}
+            {update.isPending
+              ? <ActivityIndicator color="#00450d" />
+              : <>
+                  <Ionicons name={job.status === "pending" ? "play-circle-outline" : "checkmark-circle-outline"} size={20} color="#00450d" />
+                  <Text style={styles.completeBtnText}>
+                    {job.status === "pending" ? "Start Job" : "Complete Job"}
                   </Text>
                 </>
-              )}
-            </Animated.View>
+            }
           </TouchableOpacity>
-          </FadeInView>
-        )}
-      </ScrollView>
-    </>
-  );
-}
-
-function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={16} color="#16a34a" />
-      <Text style={styles.sectionTitle}>{title}</Text>
-    </View>
-  );
-}
-
-function InfoRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
-  return (
-    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
-
-function PhotoSlot({
-  label,
-  uri,
-  onCapture,
-}: {
-  label: string;
-  uri: string | null;
-  onCapture: () => void;
-}) {
-  return (
-    <View style={styles.photoSlot}>
-      <Text style={styles.photoLabel}>{label}</Text>
-      {uri ? (
-        <TouchableOpacity onPress={onCapture} activeOpacity={0.9}>
-          <Image source={{ uri }} style={styles.photo} resizeMode="cover" />
-          <View style={styles.photoRetakeOverlay}>
-            <Ionicons name="camera-outline" size={18} color="#fff" />
-            <Text style={styles.photoRetakeText}>Tap to retake</Text>
-          </View>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={styles.photoPlaceholder} onPress={onCapture} activeOpacity={0.8}>
-          <View style={styles.photoPlaceholderIcon}>
-            <Ionicons name="camera-outline" size={32} color="#9ca3af" />
-          </View>
-          <Text style={styles.photoPlaceholderText}>Tap to capture photo</Text>
-          <Text style={styles.photoPlaceholderSub}>Required for service report</Text>
-        </TouchableOpacity>
+        </View>
       )}
-    </View>
+    </SafeAreaView>
+  );
+}
+
+function PhotoSlot({ label, uri, onCapture }: { label: string; uri: string | null; onCapture: () => void }) {
+  return (
+    <TouchableOpacity style={styles.photoSlot} onPress={onCapture} activeOpacity={0.8}>
+      {uri ? (
+        <Image source={{ uri }} style={styles.photoImg} resizeMode="cover" />
+      ) : (
+        <View style={styles.photoEmpty}>
+          <Ionicons name="camera-add-outline" size={26} color="#9ca3af" />
+        </View>
+      )}
+      <Text style={styles.photoLabel}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 14, paddingBottom: 48 },
+  safe: { flex: 1, backgroundColor: "#f8fafb" },
+  scroll: { flex: 1 },
+  content: { padding: 16, gap: 12 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  // Stepper
-  stepperCard: {
+  subHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+    paddingTop: 4,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 16,
-    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
   },
-  stepper: { flexDirection: "row", alignItems: "flex-start", width: "100%", paddingHorizontal: 4 },
-  stepperItem: { flex: 1, alignItems: "center", gap: 6 },
-  stepperRow: { flexDirection: "row", alignItems: "center", width: "100%" },
-  stepLine: { flex: 1, height: 2, backgroundColor: "#e5e7eb" },
-  stepLineDone: { backgroundColor: "#16a34a" },
-  stepLineActive: { backgroundColor: "#bbf7d0" },
-  stepCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#e5e7eb",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#e5e7eb",
-  },
-  stepCircleDone: { backgroundColor: "#16a34a", borderColor: "#16a34a" },
-  stepCircleActive: { backgroundColor: "#fff", borderColor: "#16a34a" },
-  stepDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#d1d5db" },
-  stepDotActive: { backgroundColor: "#16a34a" },
-  stepLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textAlign: "center" },
-  stepLabelDone: { color: "#16a34a" },
-  stepLabelActive: { color: "#16a34a", fontWeight: "700" },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  statusPillText: { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+  subHeaderText: { fontSize: 11, fontWeight: "700", color: "#9ca3af", letterSpacing: 1 },
 
-  // Card
   card: {
     backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
-    gap: 2,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    gap: 10,
   },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
-  infoRow: { flexDirection: "row", paddingVertical: 10, gap: 12 },
-  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
-  infoLabel: { fontSize: 13, color: "#9ca3af", width: 90, fontWeight: "500" },
-  infoValue: { fontSize: 14, color: "#111827", flex: 1, fontWeight: "500" },
+  cardLabel: { fontSize: 11, fontWeight: "700", color: "#9ca3af", letterSpacing: 0.5, marginBottom: 2 },
 
-  // Photos
-  photoSlot: { marginBottom: 14 },
-  photoLabel: { fontSize: 13, color: "#6b7280", fontWeight: "600", marginBottom: 8 },
-  photo: { width: "100%", height: 200, borderRadius: 12 },
-  photoRetakeOverlay: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
+  // Stepper
+  stepper: { flexDirection: "row", alignItems: "flex-start" },
+  stepItem: { flex: 1, alignItems: "center", gap: 6 },
+  stepTrack: { flexDirection: "row", alignItems: "center", width: "100%" },
+  stepLine: { flex: 1, height: 2, backgroundColor: "#e5e7eb" },
+  stepLineFilled: { backgroundColor: "#00450d" },
+  stepLinePartial: { backgroundColor: "#bbf7d0" },
+  stepCircle: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: "#e5e7eb",
+    justifyContent: "center", alignItems: "center",
+    borderWidth: 2, borderColor: "#e5e7eb",
+  },
+  stepCircleDone: { backgroundColor: "#00450d", borderColor: "#00450d" },
+  stepCircleActive: { backgroundColor: "#fff", borderColor: "#00450d" },
+  stepInnerDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#d1d5db" },
+  stepInnerDotActive: { backgroundColor: "#00450d" },
+  stepLabel: { fontSize: 10, color: "#9ca3af", fontWeight: "600", textAlign: "center" },
+  stepLabelDone: { color: "#00450d" },
+  stepLabelActive: { color: "#00450d", fontWeight: "700" },
+
+  // Customer
+  customerName: { fontSize: 18, fontWeight: "800", color: "#111827" },
+  contactRow: { flexDirection: "row", gap: 10 },
+  contactBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  photoRetakeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  photoPlaceholder: {
-    height: 130,
-    borderRadius: 12,
-    borderWidth: 2,
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1.5,
     borderColor: "#e5e7eb",
-    borderStyle: "dashed",
-    justifyContent: "center",
-    alignItems: "center",
+    borderRadius: 10,
+    paddingVertical: 10,
     backgroundColor: "#fafafa",
-    gap: 4,
   },
-  photoPlaceholderIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#f3f4f6",
-    justifyContent: "center",
+  contactBtnText: { fontSize: 14, fontWeight: "600", color: "#374151" },
+
+  // Location
+  locationText: { fontSize: 15, color: "#111827", fontWeight: "500", lineHeight: 22 },
+  navigateBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 4,
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#00450d",
+    borderRadius: 10,
+    paddingVertical: 11,
   },
-  photoPlaceholderText: { fontSize: 14, color: "#6b7280", fontWeight: "600" },
-  photoPlaceholderSub: { fontSize: 11, color: "#9ca3af" },
+  navigateBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+
+  // Service
+  serviceRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  serviceIconBox: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: "#f0fdf4",
+    justifyContent: "center", alignItems: "center",
+  },
+  serviceTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  serviceNotes: { fontSize: 13, color: "#6b7280", marginTop: 3, lineHeight: 19 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  metaText: { fontSize: 13, color: "#6b7280" },
+
+  // Photos
+  docHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  docCount: { fontSize: 12, color: "#9ca3af", fontWeight: "600" },
+  photoRow: { flexDirection: "row", gap: 10 },
+  photoSlot: { flex: 1, alignItems: "center", gap: 6 },
+  photoImg: { width: "100%", height: 110, borderRadius: 10 },
+  photoEmpty: {
+    width: "100%", height: 110, borderRadius: 10,
+    borderWidth: 1.5, borderColor: "#e5e7eb", borderStyle: "dashed",
+    backgroundColor: "#fafafa",
+    justifyContent: "center", alignItems: "center",
+  },
+  photoLabel: { fontSize: 11, color: "#6b7280", fontWeight: "600", textAlign: "center" },
 
   // Remarks
   remarksInput: {
-    borderWidth: 1.5,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 14,
-    color: "#111827",
-    minHeight: 100,
+    borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 10,
+    padding: 12, fontSize: 14, color: "#111827", minHeight: 90,
     backgroundColor: "#fafafa",
   },
-  saveRemarksBtn: {
+  saveBtn: {
+    backgroundColor: "#00450d", borderRadius: 10,
+    padding: 12, alignItems: "center", marginTop: 4,
+  },
+  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+
+  // Report
+  reportBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, borderWidth: 1.5, borderColor: "#e5e7eb",
+    borderRadius: 12, padding: 14, backgroundColor: "#fff",
+  },
+  reportBtnText: { color: "#374151", fontWeight: "600", fontSize: 14 },
+
+  // Reassign
+  currentStaff: { fontSize: 13, color: "#6b7280" },
+  reassignItem: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10,
+    padding: 12, backgroundColor: "#fafafa",
+  },
+  reassignItemActive: { borderColor: "#00450d", backgroundColor: "#f0fdf4" },
+  reassignName: { fontSize: 14, fontWeight: "600", color: "#374151" },
+
+  // Sticky CTAs
+  stickyBar: {
+    flexDirection: "row",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  pauseBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#16a34a",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 10,
-  },
-  saveRemarksBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-
-  // Report
-  reportButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: "#16a34a",
-    borderRadius: 14,
-    padding: 16,
-    backgroundColor: "#f0fdf4",
-  },
-  reportButtonText: { color: "#16a34a", fontWeight: "700", fontSize: 15 },
-
-  // Reassign
-  currentStaff: { fontSize: 13, color: "#6b7280", marginBottom: 4 },
-  reassignBtn: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    backgroundColor: "#f3f4f6",
     borderRadius: 12,
-    padding: 12,
-    backgroundColor: "#fafafa",
+    paddingVertical: 14,
   },
-  reassignBtnActive: { borderColor: "#16a34a", backgroundColor: "#f0fdf4" },
-  reassignRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  reassignName: { fontSize: 14, fontWeight: "600", color: "#374151" },
-  reassignNameActive: { color: "#16a34a" },
-  reassignRole: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
-
-  // CTA
-  ctaButton: {
+  pauseBtnText: { color: "#374151", fontWeight: "700", fontSize: 14 },
+  completeBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#16a34a",
-    borderRadius: 14,
-    paddingVertical: 18,
-    shadowColor: "#16a34a",
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 4,
+    gap: 6,
+    backgroundColor: "#bcf200",
+    borderRadius: 12,
+    paddingVertical: 14,
   },
-  ctaButtonText: { color: "#fff", fontWeight: "800", fontSize: 16 },
-  btnDisabled: { opacity: 0.6 },
+  completeBtnText: { color: "#00450d", fontWeight: "800", fontSize: 14 },
+  btnDisabled: { opacity: 0.55 },
 });

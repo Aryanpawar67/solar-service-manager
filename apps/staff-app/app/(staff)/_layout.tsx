@@ -1,33 +1,39 @@
 import { Tabs } from "expo-router";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 function TabIcon({
   icon,
   activeIcon,
+  label,
   focused,
-  color,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   activeIcon: keyof typeof Ionicons.glyphMap;
+  label: string;
   focused: boolean;
-  color: string;
 }) {
+  if (focused) {
+    return (
+      <View style={{ alignItems: "center", gap: 3, marginTop: 4 }}>
+        <View style={{
+          backgroundColor: "#bcf200",
+          borderRadius: 20,
+          paddingHorizontal: 16,
+          paddingVertical: 5,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 5,
+        }}>
+          <Ionicons name={activeIcon} size={18} color="#00450d" />
+          <Text style={{ fontSize: 11, fontWeight: "700", color: "#00450d" }}>{label}</Text>
+        </View>
+      </View>
+    );
+  }
   return (
-    <View style={{ alignItems: "center", justifyContent: "center", height: 30 }}>
-      <Ionicons name={focused ? activeIcon : icon} size={22} color={color} />
-      {focused && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            width: 18,
-            height: 3,
-            backgroundColor: "#16a34a",
-            borderRadius: 2,
-          }}
-        />
-      )}
+    <View style={{ alignItems: "center", gap: 3, marginTop: 4 }}>
+      <Ionicons name={icon} size={22} color="#9ca3af" />
     </View>
   );
 }
@@ -36,28 +42,22 @@ export default function StaffTabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#16a34a",
+        tabBarActiveTintColor: "#00450d",
         tabBarInactiveTintColor: "#9ca3af",
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: "#fff",
           borderTopWidth: 1,
-          borderTopColor: "#f3f4f6",
-          elevation: 10,
+          borderTopColor: "#f0f0f0",
+          elevation: 8,
           shadowColor: "#000",
-          shadowOpacity: 0.08,
+          shadowOpacity: 0.06,
           shadowRadius: 12,
-          height: 62,
-          paddingBottom: 8,
-          paddingTop: 6,
+          height: 64,
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
-          marginTop: 2,
-        },
-        headerStyle: { backgroundColor: "#16a34a" },
-        headerTintColor: "#fff",
-        headerTitleStyle: { fontWeight: "700", fontSize: 17 },
+        headerStyle: { backgroundColor: "#fff" },
+        headerTintColor: "#00450d",
+        headerTitleStyle: { fontWeight: "700", fontSize: 17, color: "#111827" },
         headerShadowVisible: false,
       }}
     >
@@ -65,8 +65,8 @@ export default function StaffTabsLayout() {
         name="jobs"
         options={{
           title: "My Jobs",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon="briefcase-outline" activeIcon="briefcase" color={color} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="briefcase-outline" activeIcon="briefcase" label="Jobs" focused={focused} />
           ),
         }}
       />
@@ -74,8 +74,8 @@ export default function StaffTabsLayout() {
         name="schedule"
         options={{
           title: "Schedule",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon="calendar-outline" activeIcon="calendar" color={color} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="calendar-outline" activeIcon="calendar" label="Schedule" focused={focused} />
           ),
         }}
       />
@@ -83,8 +83,8 @@ export default function StaffTabsLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon icon="person-outline" activeIcon="person" color={color} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabIcon icon="person-outline" activeIcon="person" label="Profile" focused={focused} />
           ),
         }}
       />

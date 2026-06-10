@@ -106,7 +106,7 @@ function RootLayoutInner() {
 
   return (
     <View style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#16a34a" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#00450d" translucent={false} />
       <OfflineBanner visible={!isOnline} />
       <Stack screenOptions={{ headerShown: false }} />
     </View>

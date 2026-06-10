@@ -17,7 +17,7 @@ export default function BookServiceScreen() {
       <Stack.Screen
         options={{
           title: "Book a Service",
-          headerStyle: { backgroundColor: "#16a34a" },
+          headerStyle: { backgroundColor: "#00450d" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "700" },
           headerLeft: () => (
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 12, paddingBottom: 40 },
 
   banner: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 16,
     padding: 18,
     flexDirection: "row",

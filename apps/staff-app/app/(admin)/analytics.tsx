@@ -22,7 +22,7 @@ export default function AdminAnalyticsScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -36,7 +36,7 @@ export default function AdminAnalyticsScreen() {
   const monthly = d?.monthlyRevenue ?? 0;
 
   const serviceMetrics = [
-    { label: "Completed",   value: d?.completedServices  ?? 0, color: "#16a34a", bg: "#f0fdf4", icon: "checkmark-circle-outline" as const },
+    { label: "Completed",   value: d?.completedServices  ?? 0, color: "#00450d", bg: "#f0fdf4", icon: "checkmark-circle-outline" as const },
     { label: "Pending",     value: d?.pendingServices    ?? 0, color: "#d97706", bg: "#fffbeb", icon: "time-outline" as const },
     { label: "In Progress", value: d?.inProgressServices ?? 0, color: "#2563eb", bg: "#eff6ff", icon: "construct-outline" as const },
     { label: "Unread",      value: d?.unreadContacts     ?? 0, color: "#ef4444", bg: "#fef2f2", icon: "mail-unread-outline" as const },
@@ -46,20 +46,20 @@ export default function AdminAnalyticsScreen() {
     { label: "Customers",     value: d?.totalCustomers       ?? 0, color: "#8b5cf6", bg: "#f5f3ff", icon: "people-outline" as const },
     { label: "Subscriptions", value: d?.activeSubscriptions  ?? 0, color: "#06b6d4", bg: "#ecfeff", icon: "card-outline" as const },
     { label: "Total Staff",   value: d?.totalStaff           ?? 0, color: "#374151", bg: "#f9fafb", icon: "id-card-outline" as const },
-    { label: "Active Staff",  value: d?.activeStaff          ?? 0, color: "#16a34a", bg: "#f0fdf4", icon: "person-outline" as const },
+    { label: "Active Staff",  value: d?.activeStaff          ?? 0, color: "#00450d", bg: "#f0fdf4", icon: "person-outline" as const },
   ];
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />}
     >
       {/* Revenue hero card */}
       <FadeInView delay={0}>
         <View style={styles.revenueCard}>
           <View style={styles.revenueIconBox}>
-            <Ionicons name="cash-outline" size={22} color="#16a34a" />
+            <Ionicons name="cash-outline" size={22} color="#00450d" />
           </View>
           <Text style={styles.revenueLabel}>Total Revenue</Text>
           <Text style={styles.revenueValue}>₹{revenue.toLocaleString("en-IN")}</Text>
@@ -101,7 +101,7 @@ export default function AdminAnalyticsScreen() {
 function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
     <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={14} color="#16a34a" />
+      <Ionicons name={icon} size={14} color="#00450d" />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -142,11 +142,11 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   revenueCard: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 20,
     padding: 24,
     alignItems: "center",
-    shadowColor: "#16a34a",
+    shadowColor: "#00450d",
     shadowOpacity: 0.35,
     shadowRadius: 16,
     elevation: 6,

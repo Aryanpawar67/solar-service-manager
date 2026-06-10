@@ -62,7 +62,7 @@ export default function BookDetailScreen() {
       <Stack.Screen
         options={{
           title: item.name,
-          headerStyle: { backgroundColor: "#16a34a" },
+          headerStyle: { backgroundColor: "#00450d" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "700", fontSize: 15 },
           headerLeft: () => (
@@ -100,7 +100,7 @@ export default function BookDetailScreen() {
               {item.includes.map((inc) => (
                 <View key={inc} style={styles.includeRow}>
                   <View style={styles.includeDot}>
-                    <Ionicons name="checkmark" size={12} color="#16a34a" />
+                    <Ionicons name="checkmark" size={12} color="#00450d" />
                   </View>
                   <Text style={styles.includeText}>{inc}</Text>
                 </View>
@@ -156,7 +156,7 @@ export default function BookDetailScreen() {
                     <Ionicons
                       name="time-outline"
                       size={13}
-                      color={isSelected ? "#16a34a" : "#9ca3af"}
+                      color={isSelected ? "#00450d" : "#9ca3af"}
                     />
                     <Text style={[styles.slotText, isSelected && styles.slotTextSelected]}>
                       {slot}
@@ -288,14 +288,14 @@ const styles = StyleSheet.create({
   },
   dateChipSelected: {
     backgroundColor: "#f0fdf4",
-    borderColor: "#16a34a",
+    borderColor: "#00450d",
   },
   dateDayName: { fontSize: 10, fontWeight: "600", color: "#9ca3af", textTransform: "uppercase" },
-  dateDayNameSelected: { color: "#16a34a" },
+  dateDayNameSelected: { color: "#00450d" },
   dateDayNum: { fontSize: 22, fontWeight: "800", color: "#374151" },
-  dateDayNumSelected: { color: "#16a34a" },
+  dateDayNumSelected: { color: "#00450d" },
   dateMonth: { fontSize: 10, color: "#9ca3af" },
-  dateMonthSelected: { color: "#16a34a" },
+  dateMonthSelected: { color: "#00450d" },
 
   // Time slots
   slotsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -316,10 +316,10 @@ const styles = StyleSheet.create({
   },
   slotChipSelected: {
     backgroundColor: "#f0fdf4",
-    borderColor: "#16a34a",
+    borderColor: "#00450d",
   },
   slotText: { fontSize: 13, color: "#6b7280", fontWeight: "600" },
-  slotTextSelected: { color: "#16a34a" },
+  slotTextSelected: { color: "#00450d" },
 
   // Notes
   notesInput: {
@@ -353,11 +353,11 @@ const styles = StyleSheet.create({
   stickyDate: { fontSize: 13, fontWeight: "700", color: "#111827" },
   stickySlot: { fontSize: 11, color: "#9ca3af" },
   ctaBtn: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 14,
     paddingHorizontal: 24,
     paddingVertical: 14,
-    shadowColor: "#16a34a",
+    shadowColor: "#00450d",
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 3,

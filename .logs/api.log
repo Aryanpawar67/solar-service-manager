@@ -1,0 +1,49 @@
+
+> @workspace/api-server@0.0.0 dev /Users/saidhumal/Documents/solar/solar-service-manager/apps/api-server
+> export NODE_ENV=development && pnpm run build && pnpm run start
+
+
+> @workspace/api-server@0.0.0 build /Users/saidhumal/Documents/solar/solar-service-manager/apps/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       4.2mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   7.8mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.1kb
+  dist/pino-pretty.mjs.map           203.9kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 1219ms
+
+> @workspace/api-server@0.0.0 start /Users/saidhumal/Documents/solar/solar-service-manager/apps/api-server
+> node --enable-source-maps ./dist/index.mjs
+
+[21:32:13.844] [31mERROR[39m (90812): [36mError listening on port[39m
+    err: {
+      "type": "Error",
+      "message": "listen EADDRINUSE: address already in use :::3000",
+      "stack":
+          Error: listen EADDRINUSE: address already in use :::3000
+              at Server.setupListenHandle [as _listen2] (node:net:1908:16)
+              at listenInCluster (node:net:1965:12)
+              at Server.listen (node:net:2067:7)
+              at Function.listen (/Users/saidhumal/Documents/solar/solar-service-manager/node_modules/.pnpm/express@5.2.1/node_modules/express/lib/application.js:605:24)
+              at <anonymous> (/Users/saidhumal/Documents/solar/solar-service-manager/apps/api-server/src/index.ts:30:5)
+              at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+              at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+              at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+      "code": "EADDRINUSE",
+      "errno": -48,
+      "syscall": "listen",
+      "address": "::",
+      "port": 3000
+    }
+ ELIFECYCLE  Command failed with exit code 1.
+/Users/saidhumal/Documents/solar/solar-service-manager/apps/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 dev: `export NODE_ENV=development && pnpm run build && pnpm run start`
+Exit status 1

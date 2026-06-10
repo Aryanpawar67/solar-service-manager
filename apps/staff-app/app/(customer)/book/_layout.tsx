@@ -4,7 +4,7 @@ export default function BookStackLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: "#16a34a" },
+        headerStyle: { backgroundColor: "#00450d" },
         headerTintColor: "#fff",
         headerTitleStyle: { fontWeight: "700", fontSize: 15 },
         animation: "slide_from_right",

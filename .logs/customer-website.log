@@ -1,0 +1,13 @@
+
+> @workspace/customer-website@0.0.0 dev /Users/saidhumal/Documents/solar/solar-service-manager/apps/customer-website
+> vite --config vite.config.ts --host 0.0.0.0
+
+9:32:10 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
+
+  VITE v7.3.1  ready in 542 ms
+
+  ➜  Local:   http://localhost:5174/
+  ➜  Network: http://192.168.1.11:5174/
+/Users/saidhumal/Documents/solar/solar-service-manager/apps/customer-website:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/customer-website@0.0.0 dev: `vite --config vite.config.ts --host 0.0.0.0`
+Command failed with signal "SIGTERM"

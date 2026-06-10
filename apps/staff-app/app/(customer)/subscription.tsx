@@ -37,7 +37,7 @@ export default function CustomerSubscriptionScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -63,17 +63,17 @@ export default function CustomerSubscriptionScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />}
     >
       {/* Plan hero card */}
       <FadeInView delay={0}>
       <View style={[styles.planCard, isExpiringSoon && styles.planCardWarn]}>
         <View style={styles.planIconBox}>
-          <Ionicons name="star" size={22} color={isExpiringSoon ? "#b45309" : "#16a34a"} />
+          <Ionicons name="star" size={22} color={isExpiringSoon ? "#b45309" : "#00450d"} />
         </View>
         <Text style={styles.planName}>{subscription.plan}</Text>
         <View style={[styles.badge, { backgroundColor: isActive ? "#dcfce7" : "#fee2e2" }]}>
-          <Text style={[styles.badgeText, { color: isActive ? "#16a34a" : "#dc2626" }]}>
+          <Text style={[styles.badgeText, { color: isActive ? "#00450d" : "#dc2626" }]}>
             {subscription.status.toUpperCase()}
           </Text>
         </View>
@@ -134,7 +134,7 @@ export default function CustomerSubscriptionScreen() {
 function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
     <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Ionicons name={icon} size={15} color="#00450d" />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -154,7 +154,7 @@ function InfoRow({
   return (
     <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#16a34a" />
+        <Ionicons name={icon} size={14} color="#00450d" />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -231,10 +231,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 14,
     padding: 16,
-    shadowColor: "#16a34a",
+    shadowColor: "#00450d",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,

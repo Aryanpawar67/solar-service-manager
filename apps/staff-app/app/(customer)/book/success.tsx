@@ -94,11 +94,11 @@ export default function BookSuccessScreen() {
             icon="cash-outline"
             label="Est. Amount"
             value={total ? `₹${total}` : "—"}
-            valueColor="#16a34a"
+            valueColor="#00450d"
           />
 
           <View style={styles.smsNote}>
-            <Ionicons name="chatbubble-ellipses-outline" size={14} color="#16a34a" />
+            <Ionicons name="chatbubble-ellipses-outline" size={14} color="#00450d" />
             <Text style={styles.smsNoteText}>
               SMS confirmation sent to your registered number. A technician will be assigned soon.
             </Text>
@@ -121,7 +121,7 @@ export default function BookSuccessScreen() {
             onPress={() => router.replace("/(customer)" as never)}
             activeOpacity={0.75}
           >
-            <Ionicons name="home-outline" size={18} color="#16a34a" />
+            <Ionicons name="home-outline" size={18} color="#00450d" />
             <Text style={styles.btnSecondaryText}>Back to Home</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -145,7 +145,7 @@ function DetailRow({
   return (
     <View style={styles.detailRow}>
       <View style={styles.detailIconBox}>
-        <Ionicons name={icon} size={15} color="#16a34a" />
+        <Ionicons name={icon} size={15} color="#00450d" />
       </View>
       <View style={styles.detailRowContent}>
         <Text style={styles.detailRowLabel}>{label}</Text>
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f0fdf4" },
 
   topSection: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     alignItems: "center",
     paddingTop: 80,
     paddingBottom: 48,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 8,
   },
-  smsNoteText: { fontSize: 12, color: "#16a34a", flex: 1, lineHeight: 17 },
+  smsNoteText: { fontSize: 12, color: "#00450d", flex: 1, lineHeight: 17 },
 
   // Buttons
   btnGroup: { paddingHorizontal: 16, gap: 10, marginTop: 8 },
@@ -252,10 +252,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#16a34a",
+    shadowColor: "#00450d",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
@@ -272,5 +272,5 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#bbf7d0",
   },
-  btnSecondaryText: { fontSize: 15, fontWeight: "700", color: "#16a34a" },
+  btnSecondaryText: { fontSize: 15, fontWeight: "700", color: "#00450d" },
 });

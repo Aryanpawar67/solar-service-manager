@@ -20,14 +20,14 @@ import { useState } from "react";
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7", label: "Pending" },
   in_progress: { color: "#2563eb", bg: "#dbeafe", label: "In Progress" },
-  completed:   { color: "#16a34a", bg: "#dcfce7", label: "Completed" },
+  completed:   { color: "#00450d", bg: "#dcfce7", label: "Completed" },
   cancelled:   { color: "#6b7280", bg: "#f3f4f6", label: "Cancelled" },
 };
 
 const STATUS_BORDER: Record<string, string> = {
   pending:     "#f59e0b",
   in_progress: "#3b82f6",
-  completed:   "#16a34a",
+  completed:   "#00450d",
   cancelled:   "#d1d5db",
 };
 
@@ -48,7 +48,7 @@ export default function AdminJobsScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -88,7 +88,7 @@ export default function AdminJobsScreen() {
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
         }
         ListEmptyComponent={
           <View style={styles.center}>
@@ -105,7 +105,7 @@ export default function AdminJobsScreen() {
           return (
             <FadeInView delay={Math.min(index * 70, 560)}>
             <Pressable
-              android_ripple={{ color: "#16a34a18" }}
+              android_ripple={{ color: "#00450d18" }}
               style={({ pressed }) => [
                 styles.card,
                 { borderLeftColor: borderColor },
@@ -188,13 +188,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
   },
-  filterChipActive: { backgroundColor: "#f0fdf4", borderColor: "#16a34a" },
+  filterChipActive: { backgroundColor: "#f0fdf4", borderColor: "#00450d" },
   filterLabel: { fontSize: 13, fontWeight: "600", color: "#6b7280" },
-  filterLabelActive: { color: "#16a34a" },
+  filterLabelActive: { color: "#00450d" },
   filterCount: { backgroundColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1 },
   filterCountActive: { backgroundColor: "#dcfce7" },
   filterCountText: { fontSize: 11, fontWeight: "700", color: "#6b7280" },
-  filterCountTextActive: { color: "#16a34a" },
+  filterCountTextActive: { color: "#00450d" },
 
   card: {
     backgroundColor: "#fff",

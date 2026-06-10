@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700", color: "#111827", marginBottom: 8, textAlign: "center" },
   message: { fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 24 },
   btn: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     paddingHorizontal: 28,
     paddingVertical: 14,
     borderRadius: 10,

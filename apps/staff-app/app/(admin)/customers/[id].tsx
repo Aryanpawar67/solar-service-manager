@@ -17,7 +17,7 @@ import { FadeInView } from "@/components/FadeInView";
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7" },
   in_progress: { color: "#2563eb", bg: "#dbeafe" },
-  completed:   { color: "#16a34a", bg: "#dcfce7" },
+  completed:   { color: "#00450d", bg: "#dcfce7" },
   cancelled:   { color: "#6b7280", bg: "#f3f4f6" },
 };
 
@@ -31,7 +31,7 @@ export default function AdminCustomerDetailScreen() {
   if (isLoading || (!customer && !isError)) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -48,7 +48,7 @@ export default function AdminCustomerDetailScreen() {
       <Stack.Screen
         options={{
           title: customer.name,
-          headerStyle: { backgroundColor: "#16a34a" },
+          headerStyle: { backgroundColor: "#00450d" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "700" },
           headerLeft: () => (
@@ -72,7 +72,7 @@ export default function AdminCustomerDetailScreen() {
           </View>
           {customer.solarCapacity ? (
             <View style={styles.capacityBadge}>
-              <Ionicons name="sunny-outline" size={12} color="#16a34a" />
+              <Ionicons name="sunny-outline" size={12} color="#00450d" />
               <Text style={styles.capacityText}>{customer.solarCapacity} kW</Text>
             </View>
           ) : null}
@@ -83,7 +83,7 @@ export default function AdminCustomerDetailScreen() {
         <FadeInView delay={80}>
         <View style={styles.statsRow}>
           <StatCard icon="construct-outline" label="Total Services" value={String(serviceList.length)} color="#3b82f6" />
-          <StatCard icon="checkmark-circle-outline" label="Completed" value={String(completedCount)} color="#16a34a" />
+          <StatCard icon="checkmark-circle-outline" label="Completed" value={String(completedCount)} color="#00450d" />
           <StatCard icon="flash-outline" label="Capacity" value={customer.solarCapacity ? `${customer.solarCapacity} kW` : "—"} color="#d97706" />
         </View>
         </FadeInView>
@@ -120,7 +120,7 @@ export default function AdminCustomerDetailScreen() {
             return (
               <FadeInView key={s.id} delay={300 + Math.min(idx * 70, 420)}>
               <Pressable
-                android_ripple={{ color: "#16a34a18" }}
+                android_ripple={{ color: "#00450d18" }}
                 style={({ pressed }) => [
                   styles.serviceCard,
                   Platform.OS === "ios" && pressed && { opacity: 0.75 },
@@ -170,7 +170,7 @@ export default function AdminCustomerDetailScreen() {
 function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
     <View style={styles.sectionHeaderInner}>
-      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Ionicons name={icon} size={15} color="#00450d" />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -190,7 +190,7 @@ function InfoRow({
   return (
     <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#16a34a" />
+        <Ionicons name={icon} size={14} color="#00450d" />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#bbf7d0",
   },
-  capacityText: { fontSize: 13, fontWeight: "700", color: "#16a34a" },
+  capacityText: { fontSize: 13, fontWeight: "700", color: "#00450d" },
 
   statsRow: { flexDirection: "row", gap: 10 },
   statCard: {

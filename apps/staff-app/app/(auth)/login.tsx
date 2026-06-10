@@ -14,6 +14,8 @@ import { useState, useRef, useEffect } from "react";
 import { router } from "expo-router";
 import { setToken, decodeJwtPayload } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/constants";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -22,31 +24,29 @@ export default function LoginScreen() {
   const [isPending, setIsPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Entrance animations
   const brandOpacity   = useRef(new Animated.Value(0)).current;
-  const brandTranslate = useRef(new Animated.Value(-24)).current;
+  const brandTranslate = useRef(new Animated.Value(-20)).current;
   const cardOpacity    = useRef(new Animated.Value(0)).current;
-  const cardTranslate  = useRef(new Animated.Value(40)).current;
+  const cardTranslate  = useRef(new Animated.Value(32)).current;
   const footerOpacity  = useRef(new Animated.Value(0)).current;
-  // Button press animation
-  const btnScale = useRef(new Animated.Value(1)).current;
+  const btnScale       = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.sequence([
       Animated.parallel([
-        Animated.timing(brandOpacity,   { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(brandTranslate, { toValue: 0, duration: 500, useNativeDriver: true }),
+        Animated.timing(brandOpacity,   { toValue: 1, duration: 480, useNativeDriver: true }),
+        Animated.timing(brandTranslate, { toValue: 0, duration: 480, useNativeDriver: true }),
       ]),
       Animated.parallel([
-        Animated.timing(cardOpacity,   { toValue: 1, duration: 450, useNativeDriver: true }),
-        Animated.timing(cardTranslate, { toValue: 0, duration: 450, useNativeDriver: true }),
+        Animated.timing(cardOpacity,   { toValue: 1, duration: 400, useNativeDriver: true }),
+        Animated.timing(cardTranslate, { toValue: 0, duration: 400, useNativeDriver: true }),
       ]),
-      Animated.timing(footerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(footerOpacity, { toValue: 1, duration: 280, useNativeDriver: true }),
     ]).start();
   }, []);
 
-  const onBtnPressIn  = () => Animated.spring(btnScale, { toValue: 0.96, useNativeDriver: true, speed: 60, bounciness: 0 }).start();
-  const onBtnPressOut = () => Animated.spring(btnScale, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 4 }).start();
+  const onPressIn  = () => Animated.spring(btnScale, { toValue: 0.97, useNativeDriver: true, speed: 60, bounciness: 0 }).start();
+  const onPressOut = () => Animated.spring(btnScale, { toValue: 1,    useNativeDriver: true, speed: 20, bounciness: 4 }).start();
 
   async function handleLogin() {
     setError(null);
@@ -77,46 +77,46 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#15803d" />
+    <LinearGradient
+      colors={["#e8f5e9", "#f1f8e9", "#ffffff"]}
+      start={{ x: 0.2, y: 0 }}
+      end={{ x: 0.8, y: 1 }}
+      style={styles.root}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor="#e8f5e9" />
 
-      {/* Decorative background circles */}
-      <View style={styles.circleTopRight} />
-      <View style={styles.circleBottomLeft} />
-      <View style={styles.circleCenter} />
-
-      {/* Branding — slides down + fades in */}
       <Animated.View style={[styles.brandArea, { opacity: brandOpacity, transform: [{ translateY: brandTranslate }] }]}>
-        <View style={styles.iconBadge}>
-          <Text style={styles.iconText}>☀️</Text>
+        <View style={styles.logoBox}>
+          <Ionicons name="flash" size={32} color="#00450d" />
         </View>
         <Text style={styles.brandName}>GreenVolt</Text>
-        <Text style={styles.brandTagline}>Solar Service Management</Text>
-        <Text style={styles.brandProvider}>Service Provider: Sun House Solar</Text>
+        <Text style={styles.brandTagline}>Efficient stewardship of your solar telemetry.</Text>
       </Animated.View>
 
-      {/* Form card — slides up + fades in */}
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.cardWrapper}>
         <Animated.View style={[styles.card, { opacity: cardOpacity, transform: [{ translateY: cardTranslate }] }]}>
-          <Text style={styles.cardTitle}>Sign In</Text>
-          <Text style={styles.cardSubtitle}>Enter your credentials to continue</Text>
+          <Text style={styles.cardTitle}>Welcome Back</Text>
 
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="you@greenvolt.in"
-            placeholderTextColor="#9ca3af"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            returnKeyType="next"
-            value={email}
-            onChangeText={setEmail}
-          />
+          <Text style={styles.label}>Email Address</Text>
+          <View style={styles.inputRow}>
+            <Ionicons name="mail-outline" size={16} color="#9ca3af" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="operator@greenvolt.com"
+              placeholderTextColor="#9ca3af"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              returnKeyType="next"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
 
           <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordRow}>
+          <View style={styles.inputRow}>
+            <Ionicons name="lock-closed-outline" size={16} color="#9ca3af" style={styles.inputIcon} />
             <TextInput
-              style={[styles.input, styles.passwordInput]}
+              style={[styles.input, { flex: 1 }]}
               placeholder="••••••••"
               placeholderTextColor="#9ca3af"
               secureTextEntry={!showPassword}
@@ -125,21 +125,26 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
-              <Text style={styles.eyeText}>{showPassword ? "🙈" : "👁️"}</Text>
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color="#9ca3af" />
             </TouchableOpacity>
           </View>
 
+          <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </TouchableOpacity>
+
           {error && (
-            <Animated.View style={[styles.errorBox, { opacity: cardOpacity }]}>
-              <Text style={styles.errorText}>⚠ {error}</Text>
-            </Animated.View>
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={14} color="#dc2626" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           )}
 
           <TouchableOpacity
             onPress={handleLogin}
-            onPressIn={onBtnPressIn}
-            onPressOut={onBtnPressOut}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
             disabled={isPending}
             activeOpacity={1}
           >
@@ -147,83 +152,94 @@ export default function LoginScreen() {
               {isPending ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Sign In →</Text>
+                <Text style={styles.buttonText}>Login  →</Text>
               )}
             </Animated.View>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAvoidingView>
 
-      <Animated.Text style={[styles.footer, { opacity: footerOpacity }]}>
-        GreenVolt © 2025 · Solar Service Platform
-      </Animated.Text>
-    </View>
+      <Animated.View style={[styles.footerRow, { opacity: footerOpacity }]}>
+        <Text style={styles.footerText}>Don't have an account? </Text>
+        <Text style={styles.footerLink}>Sign Up</Text>
+      </Animated.View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#16a34a", justifyContent: "center" },
+  root: { flex: 1, justifyContent: "center" },
 
-  circleTopRight: {
-    position: "absolute", width: 300, height: 300, borderRadius: 150,
-    backgroundColor: "rgba(255,255,255,0.07)", top: -80, right: -70,
+  brandArea: { alignItems: "center", marginBottom: 28, paddingHorizontal: 24 },
+  logoBox: {
+    width: 64, height: 64, borderRadius: 18,
+    backgroundColor: "#d1fae5",
+    justifyContent: "center", alignItems: "center",
+    marginBottom: 14,
   },
-  circleBottomLeft: {
-    position: "absolute", width: 240, height: 240, borderRadius: 120,
-    backgroundColor: "rgba(255,255,255,0.05)", bottom: 60, left: -90,
-  },
-  circleCenter: {
-    position: "absolute", width: 180, height: 180, borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.04)", top: "35%", right: -40,
-  },
-
-  brandArea: { alignItems: "center", marginBottom: 24, paddingHorizontal: 24 },
-  iconBadge: {
-    width: 68, height: 68, borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center", alignItems: "center", marginBottom: 12,
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.25)",
-  },
-  iconText: { fontSize: 34 },
-  brandName: { fontSize: 36, fontWeight: "800", color: "#fff", letterSpacing: 0.5 },
-  brandTagline: { fontSize: 14, color: "#bbf7d0", marginTop: 4, fontWeight: "500" },
-  brandProvider: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 },
+  brandName: { fontSize: 30, fontWeight: "800", color: "#00450d", letterSpacing: 0.2 },
+  brandTagline: { fontSize: 13, color: "#52525b", marginTop: 6, textAlign: "center", lineHeight: 19 },
 
   cardWrapper: { paddingHorizontal: 20 },
   card: {
-    backgroundColor: "#fff", borderRadius: 24, padding: 24,
-    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 24, elevation: 12,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 6,
   },
-  cardTitle: { fontSize: 22, fontWeight: "800", color: "#111827", marginBottom: 4 },
-  cardSubtitle: { fontSize: 13, color: "#6b7280", marginBottom: 20 },
+  cardTitle: { fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 20 },
 
   label: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 },
-  input: {
-    borderWidth: 1.5, borderColor: "#e5e7eb", borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 13, fontSize: 15,
-    color: "#111827", backgroundColor: "#f9fafb", marginBottom: 16,
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#fafafa",
+    marginBottom: 16,
+    height: 48,
   },
-  passwordRow: { position: "relative", marginBottom: 16 },
-  passwordInput: { marginBottom: 0, paddingRight: 50 },
-  eyeBtn: { position: "absolute", right: 12, top: 12, padding: 2 },
-  eyeText: { fontSize: 18 },
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, fontSize: 15, color: "#111827" },
+  eyeBtn: { padding: 4 },
+
+  forgotRow: { alignItems: "flex-end", marginBottom: 16, marginTop: -4 },
+  forgotText: { fontSize: 13, color: "#00450d", fontWeight: "600" },
 
   errorBox: {
-    backgroundColor: "#fef2f2", borderRadius: 10, padding: 12,
-    marginBottom: 16, borderWidth: 1, borderColor: "#fecaca",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fef2f2",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#fecaca",
   },
-  errorText: { color: "#dc2626", fontSize: 13, fontWeight: "500" },
+  errorText: { color: "#dc2626", fontSize: 13, flex: 1 },
 
   button: {
-    backgroundColor: "#16a34a", borderRadius: 12, paddingVertical: 16,
-    alignItems: "center", marginTop: 4,
-    shadowColor: "#16a34a", shadowOpacity: 0.4, shadowRadius: 10, elevation: 5,
+    backgroundColor: "#00450d",
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: "center",
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  buttonText: { color: "#fff", fontWeight: "700", fontSize: 16, letterSpacing: 0.3 },
 
-  footer: {
-    textAlign: "center", color: "rgba(255,255,255,0.45)",
-    fontSize: 11, marginTop: 24, paddingBottom: 16,
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 24,
+    paddingBottom: 16,
   },
+  footerText: { fontSize: 13, color: "#6b7280" },
+  footerLink: { fontSize: 13, color: "#00450d", fontWeight: "700" },
 });

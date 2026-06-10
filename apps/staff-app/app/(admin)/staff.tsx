@@ -36,7 +36,7 @@ export default function AdminStaffScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -54,7 +54,7 @@ export default function AdminStaffScreen() {
       data={staffList}
       keyExtractor={(item) => String(item.id)}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
       }
       ListHeaderComponent={
         staffList.length > 0 ? (
@@ -70,9 +70,9 @@ export default function AdminStaffScreen() {
       }
       renderItem={({ item, index }) => (
         <FadeInView delay={Math.min(index * 70, 490)}>
-        <View style={[styles.card, { borderLeftColor: item.isActive ? "#16a34a" : "#d1d5db" }]}>
+        <View style={[styles.card, { borderLeftColor: item.isActive ? "#00450d" : "#d1d5db" }]}>
           <View style={styles.cardRow}>
-            <View style={[styles.avatar, { backgroundColor: item.isActive ? "#16a34a" : "#9ca3af" }]}>
+            <View style={[styles.avatar, { backgroundColor: item.isActive ? "#00450d" : "#9ca3af" }]}>
               <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
             </View>
             <View style={styles.info}>
@@ -96,8 +96,8 @@ export default function AdminStaffScreen() {
             </View>
             <View style={styles.toggleBox}>
               <View style={[styles.statusPill, { backgroundColor: item.isActive ? "#dcfce7" : "#f3f4f6" }]}>
-                <View style={[styles.statusDot, { backgroundColor: item.isActive ? "#16a34a" : "#9ca3af" }]} />
-                <Text style={[styles.statusLabel, { color: item.isActive ? "#16a34a" : "#9ca3af" }]}>
+                <View style={[styles.statusDot, { backgroundColor: item.isActive ? "#00450d" : "#9ca3af" }]} />
+                <Text style={[styles.statusLabel, { color: item.isActive ? "#00450d" : "#9ca3af" }]}>
                   {item.isActive ? "Active" : "Off"}
                 </Text>
               </View>
@@ -105,7 +105,7 @@ export default function AdminStaffScreen() {
                 value={item.isActive ?? false}
                 onValueChange={() => toggleActive(item.id, item.isActive ?? false)}
                 trackColor={{ false: "#d1d5db", true: "#86efac" }}
-                thumbColor={item.isActive ? "#16a34a" : "#f3f4f6"}
+                thumbColor={item.isActive ? "#00450d" : "#f3f4f6"}
               />
             </View>
           </View>

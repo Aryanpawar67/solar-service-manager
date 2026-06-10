@@ -16,7 +16,7 @@ import { FadeInView } from "@/components/FadeInView";
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7" },
   in_progress: { color: "#2563eb", bg: "#dbeafe" },
-  completed:   { color: "#16a34a", bg: "#dcfce7" },
+  completed:   { color: "#00450d", bg: "#dcfce7" },
   cancelled:   { color: "#6b7280", bg: "#f3f4f6" },
 };
 
@@ -34,7 +34,7 @@ export default function ScheduleScreen() {
   if (meLoading || isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -108,7 +108,7 @@ export default function ScheduleScreen() {
                 return (
                   <Pressable
                     key={service.id}
-                    android_ripple={{ color: "#16a34a18" }}
+                    android_ripple={{ color: "#00450d18" }}
                     style={({ pressed }) => [
                       styles.card,
                       Platform.OS === "ios" && pressed && { opacity: 0.75 },
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  dateBubbleToday: { backgroundColor: "#16a34a" },
+  dateBubbleToday: { backgroundColor: "#00450d" },
   dateBubblePast: { backgroundColor: "#f3f4f6" },
 
   dateDayNum: { fontSize: 18, fontWeight: "800", color: "#374151", lineHeight: 20 },
@@ -181,11 +181,11 @@ const styles = StyleSheet.create({
 
   dateInfo: { flex: 1 },
   dateMonthYear: { fontSize: 14, fontWeight: "700", color: "#374151" },
-  dateMonthYearToday: { color: "#16a34a" },
+  dateMonthYearToday: { color: "#00450d" },
   dateJobCount: { fontSize: 12, color: "#9ca3af", marginTop: 1 },
 
   todayBadge: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 3,

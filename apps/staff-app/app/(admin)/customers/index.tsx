@@ -50,7 +50,7 @@ export default function AdminCustomersScreen() {
 
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#16a34a" />
+          <ActivityIndicator size="large" color="#00450d" />
         </View>
       ) : isError ? (
         <ErrorState onRetry={refetch} />
@@ -60,7 +60,7 @@ export default function AdminCustomersScreen() {
           data={customers}
           keyExtractor={(item) => String(item.id)}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
           }
           ListHeaderComponent={
             customers.length > 0 && !search ? (
@@ -79,7 +79,7 @@ export default function AdminCustomersScreen() {
           renderItem={({ item, index }) => (
             <FadeInView delay={Math.min(index * 70, 490)}>
             <Pressable
-              android_ripple={{ color: "#16a34a18" }}
+              android_ripple={{ color: "#00450d18" }}
               style={({ pressed }) => [
                 styles.card,
                 Platform.OS === "ios" && pressed && { opacity: 0.75 },
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -180,5 +180,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#bbf7d0",
   },
-  capacityText: { fontSize: 12, fontWeight: "700", color: "#16a34a" },
+  capacityText: { fontSize: 12, fontWeight: "700", color: "#00450d" },
 });

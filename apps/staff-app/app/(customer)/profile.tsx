@@ -67,7 +67,7 @@ export default function CustomerProfileScreen() {
   if (isLoading || !profile) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -87,7 +87,7 @@ export default function CustomerProfileScreen() {
         <Text style={styles.name}>{profile.name}</Text>
         {profile.city ? <Text style={styles.city}>{profile.city}</Text> : null}
         <View style={styles.roleBadge}>
-          <Ionicons name="person-outline" size={11} color="#16a34a" />
+          <Ionicons name="person-outline" size={11} color="#00450d" />
           <Text style={styles.roleBadgeText}>Customer</Text>
         </View>
       </View>
@@ -115,7 +115,7 @@ export default function CustomerProfileScreen() {
           <SectionHeader icon="call-outline" title="Contact Details" />
           {!editing ? (
             <TouchableOpacity onPress={startEdit} style={styles.editBtn}>
-              <Ionicons name="pencil-outline" size={14} color="#16a34a" />
+              <Ionicons name="pencil-outline" size={14} color="#00450d" />
               <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
           ) : null}
@@ -170,7 +170,7 @@ export default function CustomerProfileScreen() {
         <SectionHeader icon="notifications-outline" title="Notifications" />
         <View style={styles.toggleRow}>
           <View style={styles.toggleIconBox}>
-            <Ionicons name="phone-portrait-outline" size={14} color="#16a34a" />
+            <Ionicons name="phone-portrait-outline" size={14} color="#00450d" />
           </View>
           <View style={styles.toggleInfo}>
             <Text style={styles.toggleLabel}>Push Notifications</Text>
@@ -182,7 +182,7 @@ export default function CustomerProfileScreen() {
             value={pushEnabled}
             onValueChange={togglePush}
             trackColor={{ false: "#d1d5db", true: "#86efac" }}
-            thumbColor={pushEnabled ? "#16a34a" : "#f3f4f6"}
+            thumbColor={pushEnabled ? "#00450d" : "#f3f4f6"}
             disabled={updateNotifs.isPending}
           />
         </View>
@@ -205,7 +205,7 @@ export default function CustomerProfileScreen() {
 function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
     <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Ionicons name={icon} size={15} color="#00450d" />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -225,7 +225,7 @@ function InfoRow({
   return (
     <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#16a34a" />
+        <Ionicons name={icon} size={14} color="#00450d" />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   header: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     alignItems: "center",
     paddingTop: 40,
     paddingBottom: 36,
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginTop: 4,
   },
-  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#16a34a" },
+  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#00450d" },
 
   card: {
     backgroundColor: "#fff",
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
   sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
   editBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  editBtnText: { fontSize: 13, color: "#16a34a", fontWeight: "600" },
+  editBtnText: { fontSize: 13, color: "#00450d", fontWeight: "600" },
 
   infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
   infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   editActions: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 10, padding: 12, alignItems: "center" },
   cancelBtnText: { fontSize: 14, color: "#374151", fontWeight: "600" },
-  saveBtn: { flex: 1, backgroundColor: "#16a34a", borderRadius: 10, padding: 12, alignItems: "center" },
+  saveBtn: { flex: 1, backgroundColor: "#00450d", borderRadius: 10, padding: 12, alignItems: "center" },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: 14, color: "#fff", fontWeight: "700" },
 

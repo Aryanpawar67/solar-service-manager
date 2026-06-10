@@ -19,7 +19,7 @@ import { ErrorState } from "@/components/ErrorState";
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7" },
   in_progress: { color: "#2563eb", bg: "#dbeafe" },
-  completed:   { color: "#16a34a", bg: "#dcfce7" },
+  completed:   { color: "#00450d", bg: "#dcfce7" },
   cancelled:   { color: "#6b7280", bg: "#f3f4f6" },
 };
 
@@ -44,7 +44,7 @@ export default function CustomerServiceDetailScreen() {
   if (isLoading || (!service && !isError)) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -60,7 +60,7 @@ export default function CustomerServiceDetailScreen() {
       <Stack.Screen
         options={{
           title: service.serviceType ?? "Service Detail",
-          headerStyle: { backgroundColor: "#16a34a" },
+          headerStyle: { backgroundColor: "#00450d" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "700" },
           headerLeft: () => (
@@ -149,7 +149,7 @@ export default function CustomerServiceDetailScreen() {
 function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
   return (
     <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={15} color="#16a34a" />
+      <Ionicons name={icon} size={15} color="#00450d" />
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
@@ -169,7 +169,7 @@ function InfoRow({
   return (
     <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#16a34a" />
+        <Ionicons name={icon} size={14} color="#00450d" />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -232,10 +232,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     borderRadius: 14,
     padding: 16,
-    shadowColor: "#16a34a",
+    shadowColor: "#00450d",
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,

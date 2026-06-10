@@ -2,33 +2,36 @@ import {
   View,
   Text,
   FlatList,
-  Pressable,
-  Platform,
+  TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { useState } from "react";
 import { router } from "expo-router";
 import { useListServices, useGetMe } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
-import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  pending:     { color: "#d97706", bg: "#fef3c7", label: "Pending" },
-  in_progress: { color: "#2563eb", bg: "#dbeafe", label: "In Progress" },
-  completed:   { color: "#16a34a", bg: "#dcfce7", label: "Completed" },
-  cancelled:   { color: "#6b7280", bg: "#f3f4f6", label: "Cancelled" },
+  pending:     { color: "#6b7280", bg: "#f3f4f6", label: "PENDING" },
+  in_progress: { color: "#2563eb", bg: "#dbeafe", label: "IN PROGRESS" },
+  completed:   { color: "#00450d", bg: "#dcfce7", label: "COMPLETED" },
+  cancelled:   { color: "#ef4444", bg: "#fef2f2", label: "CANCELLED" },
 };
 
-const STATUS_BORDER: Record<string, string> = {
-  pending:     "#f59e0b",
-  in_progress: "#3b82f6",
-  completed:   "#16a34a",
-  cancelled:   "#d1d5db",
-};
+const FILTERS = ["All", "Pending", "In Progress", "Completed"] as const;
+type Filter = (typeof FILTERS)[number];
+
+function filterKey(f: Filter): string | null {
+  if (f === "Pending") return "pending";
+  if (f === "In Progress") return "in_progress";
+  if (f === "Completed") return "completed";
+  return null;
+}
 
 export default function JobsScreen() {
+  const [activeFilter, setActiveFilter] = useState<Filter>("All");
   const { data: meData, isLoading: meLoading, isError: meError } = useGetMe();
   const staffId = meData?.user?.staffId;
 
@@ -39,14 +42,12 @@ export default function JobsScreen() {
   if (meLoading || (isLoading && meData != null)) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
 
-  if (meError || isError) {
-    return <ErrorState onRetry={refetch} />;
-  }
+  if (meError || isError) return <ErrorState onRetry={refetch} />;
 
   if (staffId == null) {
     return (
@@ -58,119 +59,208 @@ export default function JobsScreen() {
     );
   }
 
-  const jobs = data?.data ?? [];
+  const allJobs = data?.data ?? [];
+  const key = filterKey(activeFilter);
+  const jobs = key ? allJobs.filter((j) => j.status === key) : allJobs;
 
   return (
-    <FlatList
-      style={styles.list}
-      contentContainerStyle={[styles.content, jobs.length === 0 && styles.contentEmpty]}
-      data={jobs}
-      keyExtractor={(item) => String(item.id)}
-      refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />
-      }
-      ListHeaderComponent={
-        jobs.length > 0 ? (
-          <View style={styles.listHeader}>
-            <Text style={styles.listHeaderText}>{jobs.length} job{jobs.length !== 1 ? "s" : ""} assigned</Text>
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerLogo}>
+            <Ionicons name="flash" size={15} color="#00450d" />
           </View>
-        ) : null
-      }
-      ListEmptyComponent={
-        <View style={styles.center}>
-          <Ionicons name="briefcase-outline" size={52} color="#d1d5db" />
-          <Text style={styles.emptyTitle}>No jobs assigned</Text>
-          <Text style={styles.emptyText}>You have no jobs assigned at the moment.</Text>
+          <Text style={styles.headerBrand}>GreenVolt</Text>
         </View>
-      }
-      renderItem={({ item, index }) => {
-        const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.cancelled;
-        const borderColor = STATUS_BORDER[item.status] ?? "#d1d5db";
-        return (
-          <FadeInView delay={Math.min(index * 80, 560)}>
-          <Pressable
-            android_ripple={{ color: "#16a34a18" }}
-            style={({ pressed }) => [
-              styles.card,
-              { borderLeftColor: borderColor },
-              Platform.OS === "ios" && pressed && { opacity: 0.75 },
-            ]}
-            onPress={() => router.push(`/job/${item.id}`)}
+        <Ionicons name="person-outline" size={22} color="#374151" />
+      </View>
+
+      {/* Filter chips */}
+      <View style={styles.filterRow}>
+        {FILTERS.map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
+            onPress={() => setActiveFilter(f)}
+            activeOpacity={0.75}
           >
-            <View style={styles.cardTop}>
-              <Text style={styles.customerName} numberOfLines={1}>{item.customer?.name ?? "—"}</Text>
-              <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
-                <Text style={[styles.badgeText, { color: cfg.color }]}>{cfg.label}</Text>
+            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <FlatList
+        style={styles.list}
+        contentContainerStyle={[styles.content, jobs.length === 0 && styles.contentEmpty]}
+        data={jobs}
+        keyExtractor={(item) => String(item.id)}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
+        }
+        ListEmptyComponent={
+          <View style={styles.center}>
+            <Ionicons name="briefcase-outline" size={52} color="#d1d5db" />
+            <Text style={styles.emptyTitle}>No jobs found</Text>
+            <Text style={styles.emptyText}>No {activeFilter !== "All" ? activeFilter.toLowerCase() : ""} jobs at the moment.</Text>
+          </View>
+        }
+        renderItem={({ item }) => {
+          const cfg = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.cancelled;
+          const isPending = item.status === "pending";
+          const isInProgress = item.status === "in_progress";
+          return (
+            <View style={styles.card}>
+              <View style={styles.cardTop}>
+                <Text style={styles.customerName} numberOfLines={1}>{item.customer?.name ?? "—"}</Text>
+                <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
+                  <View style={[styles.badgeDot, { backgroundColor: cfg.color }]} />
+                  <Text style={[styles.badgeText, { color: cfg.color }]}>{cfg.label}</Text>
+                </View>
               </View>
-            </View>
 
-            {item.serviceType && (
-              <Text style={styles.serviceType}>{item.serviceType}</Text>
-            )}
+              {item.serviceType ? (
+                <Text style={styles.serviceType}>{item.serviceType}</Text>
+              ) : null}
 
-            <View style={styles.cardMeta}>
               {item.customer?.address ? (
                 <View style={styles.metaRow}>
                   <Ionicons name="location-outline" size={13} color="#9ca3af" />
                   <Text style={styles.metaText} numberOfLines={1}>{item.customer.address}</Text>
                 </View>
               ) : null}
+
               {item.scheduledDate ? (
                 <View style={styles.metaRow}>
-                  <Ionicons name="calendar-outline" size={13} color="#9ca3af" />
+                  <Ionicons name="time-outline" size={13} color="#9ca3af" />
                   <Text style={styles.metaText}>
                     {new Date(item.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
+                      weekday: "short", day: "numeric", month: "short",
                     })}
                   </Text>
                 </View>
               ) : null}
-            </View>
 
-            <View style={styles.cardFooter}>
-              <Text style={styles.tapHint}>Tap to view details</Text>
-              <Ionicons name="chevron-forward" size={14} color="#d1d5db" />
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={() => router.push(`/job/${item.id}`)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.primaryBtnText}>
+                    {isInProgress ? "View Details" : isPending ? "Start Job" : "View Details"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.navBtn}
+                  onPress={() => router.push(`/job/${item.id}`)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="navigate-outline" size={18} color="#00450d" />
+                </TouchableOpacity>
+              </View>
             </View>
-          </Pressable>
-          </FadeInView>
-        );
-      }}
-    />
+          );
+        }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { flex: 1, backgroundColor: "#f9fafb" },
+  container: { flex: 1, backgroundColor: "#f8fafb" },
+  list: { flex: 1 },
   content: { padding: 16, gap: 12, paddingBottom: 24 },
   contentEmpty: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40, gap: 10 },
   emptyTitle: { fontSize: 16, fontWeight: "700", color: "#374151", textAlign: "center" },
   emptyText: { fontSize: 13, color: "#9ca3af", textAlign: "center", lineHeight: 20 },
-  listHeader: { marginBottom: 4 },
-  listHeaderText: { fontSize: 12, fontWeight: "600", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.5 },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headerLogo: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: "#d1fae5",
+    justifyContent: "center", alignItems: "center",
+  },
+  headerBrand: { fontSize: 16, fontWeight: "800", color: "#00450d" },
+
+  filterRow: {
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+    backgroundColor: "#fff",
+  },
+  filterChip: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
+  },
+  filterChipActive: {
+    backgroundColor: "#00450d",
+    borderColor: "#00450d",
+  },
+  filterText: { fontSize: 12, fontWeight: "600", color: "#6b7280" },
+  filterTextActive: { color: "#fff" },
+
   card: {
     backgroundColor: "#fff",
     borderRadius: 14,
     padding: 16,
-    overflow: "hidden",
-    borderLeftWidth: 4,
-    borderLeftColor: "#d1d5db",
     shadowColor: "#000",
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-    gap: 6,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
   },
   cardTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  customerName: { fontSize: 16, fontWeight: "700", color: "#111827", flex: 1 },
-  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
-  badgeText: { fontSize: 11, fontWeight: "700" },
+  customerName: { fontSize: 17, fontWeight: "700", color: "#111827", flex: 1 },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 20,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    flexShrink: 0,
+  },
+  badgeDot: { width: 6, height: 6, borderRadius: 3 },
+  badgeText: { fontSize: 10, fontWeight: "700", letterSpacing: 0.2 },
   serviceType: { fontSize: 13, color: "#6b7280", fontWeight: "500" },
-  cardMeta: { gap: 4, marginTop: 2 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 5 },
-  metaText: { fontSize: 12, color: "#9ca3af", flex: 1 },
-  cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#f9fafb" },
-  tapHint: { fontSize: 11, color: "#d1d5db", fontStyle: "italic" },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  metaText: { fontSize: 13, color: "#6b7280", flex: 1 },
+
+  cardActions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  primaryBtn: {
+    flex: 1,
+    backgroundColor: "#00450d",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  navBtn: {
+    width: 46, height: 46,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
 });

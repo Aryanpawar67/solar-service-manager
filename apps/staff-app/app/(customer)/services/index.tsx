@@ -17,7 +17,7 @@ import { FadeInView } from "@/components/FadeInView";
 const STATUS_CONFIG: Record<string, { color: string; bg: string; border: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7", border: "#f59e0b" },
   in_progress: { color: "#2563eb", bg: "#dbeafe", border: "#3b82f6" },
-  completed:   { color: "#16a34a", bg: "#dcfce7", border: "#16a34a" },
+  completed:   { color: "#00450d", bg: "#dcfce7", border: "#00450d" },
   cancelled:   { color: "#6b7280", bg: "#f3f4f6", border: "#d1d5db" },
 };
 
@@ -27,7 +27,7 @@ export default function CustomerServicesScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -45,7 +45,7 @@ export default function CustomerServicesScreen() {
       data={serviceList}
       keyExtractor={(item) => String(item.id)}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
       }
       ListHeaderComponent={
         serviceList.length > 0 ? (
@@ -64,7 +64,7 @@ export default function CustomerServicesScreen() {
         return (
           <FadeInView delay={Math.min(index * 80, 560)}>
           <Pressable
-            android_ripple={{ color: "#16a34a18" }}
+            android_ripple={{ color: "#00450d18" }}
             style={({ pressed }) => [
               styles.card,
               { borderLeftColor: cfg.border },

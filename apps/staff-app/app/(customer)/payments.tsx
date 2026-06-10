@@ -12,7 +12,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { FadeInView } from "@/components/FadeInView";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  paid:     { color: "#16a34a", bg: "#dcfce7", icon: "checkmark-circle-outline" },
+  paid:     { color: "#00450d", bg: "#dcfce7", icon: "checkmark-circle-outline" },
   pending:  { color: "#d97706", bg: "#fef3c7", icon: "time-outline" },
   failed:   { color: "#ef4444", bg: "#fee2e2", icon: "close-circle-outline" },
   refunded: { color: "#6b7280", bg: "#f3f4f6", icon: "return-down-back-outline" },
@@ -24,7 +24,7 @@ export default function CustomerPaymentsScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -45,13 +45,13 @@ export default function CustomerPaymentsScreen() {
       data={payments}
       keyExtractor={(item) => String(item.id)}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#16a34a" colors={["#16a34a"]} />
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
       }
       ListHeaderComponent={
         payments.length > 0 ? (
           <View style={styles.totalCard}>
             <View style={styles.totalIconBox}>
-              <Ionicons name="cash-outline" size={22} color="#16a34a" />
+              <Ionicons name="cash-outline" size={22} color="#00450d" />
             </View>
             <Text style={styles.totalLabel}>Total Paid</Text>
             <Text style={styles.totalValue}>₹{totalPaid.toLocaleString("en-IN")}</Text>

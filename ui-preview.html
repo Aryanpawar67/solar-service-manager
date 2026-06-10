@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenVolt App — UI Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; min-height: 100vh; padding: 40px 20px; }
+
+  h1 { color: #fff; text-align: center; font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .subtitle { color: #64748b; text-align: center; font-size: 14px; margin-bottom: 40px; }
+
+  .portal-section { margin-bottom: 60px; }
+  .portal-title { color: #16a34a; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; text-align: center; margin-bottom: 24px; }
+
+  .screens-row { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+
+  .phone {
+    width: 300px;
+    background: #1e293b;
+    border-radius: 44px;
+    padding: 12px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .phone-inner {
+    background: #f9fafb;
+    border-radius: 34px;
+    overflow: hidden;
+    height: 620px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 28px;
+    background: #1e293b;
+    border-radius: 0 0 18px 18px;
+    z-index: 10;
+  }
+  .screen-label { color: #94a3b8; font-size: 11px; text-align: center; margin-top: 10px; font-weight: 600; letter-spacing: 0.5px; }
+
+  /* Header */
+  .header { background: #16a34a; padding: 44px 16px 14px; display: flex; align-items: center; gap: 10; flex-shrink: 0; }
+  .header-back { color: #fff; font-size: 18px; margin-right: 6px; cursor: pointer; }
+  .header-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+
+  /* Tab bar */
+  .tabbar { background: #fff; border-top: 1px solid #f3f4f6; padding: 8px 0 10px; display: flex; flex-shrink: 0; box-shadow: 0 -4px 12px rgba(0,0,0,0.06); }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3; cursor: pointer; }
+  .tab-icon { font-size: 20px; }
+  .tab-label { font-size: 10px; font-weight: 600; color: #9ca3af; }
+  .tab.active .tab-label { color: #16a34a; }
+  .tab-dot { width: 16px; height: 3px; background: #16a34a; border-radius: 2px; margin-top: 1px; }
+
+  /* Scroll area */
+  .scroll { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .scroll::-webkit-scrollbar { width: 0; }
+
+  /* Cards */
+  .card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+  .card-sm { background: #fff; border-radius: 12px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+
+  /* Welcome hero */
+  .welcome-hero { background: #16a34a; border-radius: 20px; padding: 20px; box-shadow: 0 8px 24px rgba(22,163,74,0.35); }
+  .welcome-top { display: flex; align-items: center; gap: 12px; }
+  .welcome-avatar { width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .welcome-greeting { font-size: 12px; color: #dcfce7; }
+  .welcome-name { font-size: 18px; font-weight: 800; color: #fff; }
+  .cap-badge { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 4px 10px; font-size: 11px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 4; white-space: nowrap; }
+
+  /* List cards */
+  .list-card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .list-card:hover { opacity: 0.85; }
+  .list-avatar { width: 46px; height: 46px; border-radius: 14px; background: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .list-info { flex: 1; }
+  .list-name { font-size: 14px; font-weight: 700; color: #111827; }
+  .list-meta { font-size: 11px; color: #9ca3af; margin-top: 2px; display: flex; align-items: center; gap: 4; }
+
+  /* Job card */
+  .job-card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid; display: flex; flex-direction: column; gap: 5; cursor: pointer; }
+  .job-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8; }
+  .job-customer { font-size: 15px; font-weight: 700; color: #111827; flex: 1; }
+  .job-type { font-size: 12px; color: #6b7280; }
+  .job-staff { font-size: 12px; color: #3b82f6; font-weight: 600; display: flex; align-items: center; gap: 4; }
+  .job-meta { font-size: 11px; color: #9ca3af; display: flex; align-items: center; gap: 4; }
+  .job-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #f9fafb; margin-top: 2px; }
+  .tap-hint { font-size: 10px; color: #d1d5db; font-style: italic; }
+
+  /* Badge */
+  .badge { border-radius: 20px; padding: 3px 10px; font-size: 10px; font-weight: 700; display: inline-flex; white-space: nowrap; }
+  .badge-pending { background: #fef3c7; color: #d97706; }
+  .badge-progress { background: #dbeafe; color: #2563eb; }
+  .badge-done { background: #dcfce7; color: #16a34a; }
+  .badge-cancel { background: #f3f4f6; color: #6b7280; }
+  .badge-active { background: #dcfce7; color: #16a34a; }
+
+  /* Filter chips */
+  .filter-bar { background: #fff; padding: 10px 16px; border-bottom: 1px solid #f3f4f6; display: flex; gap: 8; flex-shrink: 0; overflow: hidden; }
+  .chip { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid transparent; display: flex; align-items: center; gap: 5; white-space: nowrap; }
+  .chip-inactive { background: #f3f4f6; color: #6b7280; }
+  .chip-active { background: #f0fdf4; color: #16a34a; border-color: #16a34a; }
+  .chip-count { background: #dcfce7; color: #16a34a; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
+  .chip-count-off { background: #e5e7eb; color: #6b7280; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
+
+  /* Profile header */
+  .profile-header { background: #16a34a; padding: 36px 16px 32px; display: flex; flex-direction: column; align-items: center; gap: 6; flex-shrink: 0; }
+  .profile-ring { width: 88px; height: 88px; border-radius: 26px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; }
+  .profile-avatar { width: 74px; height: 74px; border-radius: 22px; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: #fff; }
+  .profile-name { font-size: 19px; font-weight: 800; color: #fff; }
+  .profile-email { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .role-badge { background: #fff; border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: #16a34a; display: flex; align-items: center; gap: 4; margin-top: 2px; }
+
+  /* Info rows */
+  .info-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f9fafb; }
+  .info-row:last-child { border-bottom: none; }
+  .info-icon-box { width: 30px; height: 30px; border-radius: 8px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .info-label { font-size: 10px; color: #9ca3af; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .info-value { font-size: 13px; color: #111827; font-weight: 500; margin-top: 1px; }
+
+  /* Logout button */
+  .logout-btn { background: #fee2e2; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: center; gap: 8; font-size: 14px; font-weight: 700; color: #dc2626; cursor: pointer; }
+
+  /* Stats row */
+  .stats-row { display: flex; gap: 8px; }
+  .stat-card { flex: 1; background: #fff; border-radius: 14px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 3; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .stat-val { font-size: 18px; font-weight: 800; }
+  .stat-lbl { font-size: 9px; color: #9ca3af; font-weight: 500; text-align: center; }
+
+  /* Section header */
+  .sec-header { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+  .sec-title { font-size: 13px; font-weight: 700; color: #374151; }
+
+  /* Analytics */
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metric-card { background: #fff; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 6; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .metric-icon-box { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .metric-val { font-size: 26px; font-weight: 800; }
+  .metric-lbl { font-size: 11px; color: #6b7280; text-align: center; font-weight: 500; }
+
+  /* Revenue card */
+  .revenue-card { background: #16a34a; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 4; box-shadow: 0 10px 30px rgba(22,163,74,0.4); }
+  .rev-icon-box { width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 4px; }
+  .rev-label { font-size: 12px; color: #dcfce7; font-weight: 600; }
+  .rev-value { font-size: 36px; font-weight: 800; color: #fff; }
+  .rev-monthly { font-size: 12px; color: #bbf7d0; }
+
+  /* Staff card */
+  .staff-card { background: #fff; border-radius: 14px; padding: 12px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); border-left: 4px solid; display: flex; align-items: center; gap: 10; }
+  .staff-avatar { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .status-pill { border-radius: 10px; padding: 3px 8px; font-size: 10px; font-weight: 700; display: flex; align-items: center; gap: 3; }
+  .status-dot { width: 6px; height: 6px; border-radius: 3px; }
+
+  /* Quick grid */
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .quick-card { background: #fff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10; box-shadow: 0 1px 4px rgba(0,0,0,0.05); cursor: pointer; }
+  .quick-card:hover { transform: scale(0.97); }
+  .quick-icon-box { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .quick-label { font-size: 12px; font-weight: 600; color: #374151; text-align: center; }
+
+  /* Sub card */
+  .sub-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); border: 1px solid #f3f4f6; }
+  .sub-plan-row { display: flex; align-items: center; gap: 6px; }
+  .sub-plan-name { font-size: 15px; font-weight: 700; color: #111827; }
+  .sub-meta-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #9ca3af; margin-top: 3px; }
+
+  /* Appt card */
+  .appt-card { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+  .appt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .appt-title-label { font-size: 10px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.4px; display: flex; align-items: center; gap: 5px; }
+  .appt-date { font-size: 15px; font-weight: 700; color: #111827; }
+  .appt-staff { font-size: 12px; color: #3b82f6; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+  /* Plan hero */
+  .plan-hero { background: #fff; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; align-items: center; gap: 8; border: 2px solid #dcfce7; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .plan-icon-box { width: 52px; height: 52px; border-radius: 16px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 2px; }
+  .plan-name { font-size: 22px; font-weight: 800; color: #111827; }
+
+  /* Payment card */
+  .pay-card { background: #fff; border-radius: 14px; padding: 13px; box-shadow: 0 1px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 8; }
+  .pay-top { display: flex; align-items: center; gap: 10; }
+  .pay-icon-box { width: 42px; height: 42px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+  .pay-amount { font-size: 16px; font-weight: 700; color: #111827; }
+  .pay-desc { font-size: 11px; color: #6b7280; margin-top: 1px; }
+  .pay-meta { display: flex; flex-direction: column; gap: 3px; padding-top: 6px; border-top: 1px solid #f9fafb; }
+  .pay-meta-row { font-size: 11px; color: #9ca3af; display: flex; align-items: center; gap: 5px; }
+
+  /* Total card */
+  .total-card { background: #fff; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 3; border: 1px solid #f0fdf4; box-shadow: 0 2px 10px rgba(0,0,0,0.06); margin-bottom: 2px; }
+  .total-icon-box { width: 46px; height: 46px; border-radius: 14px; background: #f0fdf4; display: flex; align-items: center; justify-content: center; font-size: 21px; margin-bottom: 2px; }
+  .total-label { font-size: 12px; color: #6b7280; font-weight: 600; }
+  .total-value { font-size: 30px; font-weight: 800; color: #111827; }
+  .total-count { font-size: 11px; color: #9ca3af; }
+
+  /* Divider */
+  .section-header-row { display: flex; align-items: center; gap: 6px; }
+  .section-title-sm { font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Login */
+  .login-screen { background: #16a34a; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 24px; position: relative; overflow: hidden; }
+  .login-circle1 { position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.1); }
+  .login-circle2 { position: absolute; bottom: -80px; left: -60px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .login-card { background: #fff; border-radius: 24px; padding: 24px; width: 100%; z-index: 1; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+  .login-icon { width: 52px; height: 52px; border-radius: 16px; background: #f0fdf4; border: 2px solid #dcfce7; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px; }
+  .login-brand { font-size: 20px; font-weight: 800; color: #111827; text-align: center; }
+  .login-sub { font-size: 11px; color: #9ca3af; text-align: center; margin-top: 2px; margin-bottom: 18px; }
+  .field-label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 5px; }
+  .input-box { background: #f9fafb; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 11px 14px; font-size: 13px; color: #111827; margin-bottom: 12px; width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .login-btn { background: #16a34a; border-radius: 12px; padding: 13px; text-align: center; color: #fff; font-size: 14px; font-weight: 700; margin-top: 4px; box-shadow: 0 4px 12px rgba(22,163,74,0.35); }
+  .login-footer { font-size: 10px; color: rgba(255,255,255,0.5); text-align: center; margin-top: 20px; z-index: 1; }
+
+  /* Step progress */
+  .step-bar { display: flex; align-items: center; padding: 14px 16px; background: #fff; flex-shrink: 0; border-bottom: 1px solid #f3f4f6; }
+  .step { display: flex; flex-direction: column; align-items: center; gap: 4; flex: 1; }
+  .step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .step-done { background: #16a34a; color: #fff; }
+  .step-active { background: #fff; border: 2px solid #16a34a; color: #16a34a; }
+  .step-future { background: #f3f4f6; color: #9ca3af; }
+  .step-label { font-size: 9px; font-weight: 600; color: #9ca3af; }
+  .step-label-active { color: #16a34a; }
+  .step-line { flex: 1; height: 2px; background: #e5e7eb; margin-bottom: 14px; }
+  .step-line-done { background: #16a34a; }
+</style>
+</head>
+<body>
+
+<h1>GreenVolt App — UI Preview</h1>
+<p class="subtitle">Visual mockup of all redesigned screens across Staff, Admin, and Customer portals</p>
+
+<!-- ===================== LOGIN ===================== -->
+<div class="portal-section">
+  <div class="portal-title">🔐 Authentication</div>
+  <div class="screens-row">
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="login-screen">
+            <div class="login-circle1"></div>
+            <div class="login-circle2"></div>
+            <div class="login-card">
+              <div class="login-icon">☀️</div>
+              <div class="login-brand">GreenVolt</div>
+              <div class="login-sub">Solar Service Management</div>
+              <div class="field-label">Email Address</div>
+              <div class="input-box" style="color:#111827">admin@greenvolt.in</div>
+              <div class="field-label">Password</div>
+              <div class="input-box"><span style="color:#111827">••••••••</span><span style="color:#9ca3af;font-size:16px">👁</span></div>
+              <div class="login-btn">Sign In</div>
+            </div>
+            <div class="login-footer">GreenVolt © 2025 · Solar Service Platform</div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Login Screen</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== STAFF PORTAL ===================== -->
+<div class="portal-section">
+  <div class="portal-title">👷 Staff Portal</div>
+  <div class="screens-row">
+
+    <!-- Staff Jobs -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px">
+            <div class="header-title">Jobs</div>
+          </div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;background:#f9fafb">
+            <div class="job-card" style="border-left-color:#f59e0b">
+              <div class="job-top">
+                <div class="job-customer">Ramesh Kumar</div>
+                <span class="badge badge-pending">Pending</span>
+              </div>
+              <div class="job-type">Panel Cleaning</div>
+              <div class="job-staff">👤 Suresh M.</div>
+              <div class="job-meta">📍 12 MG Road, Pune</div>
+              <div class="job-meta">📅 Tue, 10 Jun</div>
+              <div class="job-footer"><span class="tap-hint">Tap to view details</span><span style="color:#d1d5db">›</span></div>
+            </div>
+            <div class="job-card" style="border-left-color:#3b82f6">
+              <div class="job-top">
+                <div class="job-customer">Priya Sharma</div>
+                <span class="badge badge-progress">In Progress</span>
+              </div>
+              <div class="job-type">Inverter Check</div>
+              <div class="job-staff">👤 Anil P.</div>
+              <div class="job-meta">📅 Mon, 9 Jun</div>
+              <div class="job-footer"><span class="tap-hint">Tap to view details</span><span style="color:#d1d5db">›</span></div>
+            </div>
+            <div class="job-card" style="border-left-color:#16a34a">
+              <div class="job-top">
+                <div class="job-customer">Vikram Singh</div>
+                <span class="badge badge-done">Completed</span>
+              </div>
+              <div class="job-type">Annual Maintenance</div>
+              <div class="job-staff">👤 Suresh M.</div>
+              <div class="job-meta">📅 Sat, 7 Jun</div>
+              <div class="job-footer"><span class="tap-hint">Tap to view details</span><span style="color:#d1d5db">›</span></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab active"><div style="font-size:19px">💼</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Jobs</div></div>
+            <div class="tab"><div style="font-size:19px">📅</div><div class="tab-label">Schedule</div></div>
+            <div class="tab"><div style="font-size:19px">👤</div><div class="tab-label">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Staff · Jobs</div>
+    </div>
+
+    <!-- Job Detail -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px">
+            <div class="header-back">‹</div>
+            <div class="header-title">Ramesh Kumar</div>
+          </div>
+          <!-- Step bar -->
+          <div class="step-bar">
+            <div class="step">
+              <div class="step-circle step-done">✓</div>
+              <div class="step-label step-label-active">Pending</div>
+            </div>
+            <div class="step-line step-line-done"></div>
+            <div class="step">
+              <div class="step-circle step-active">2</div>
+              <div class="step-label step-label-active">In Progress</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+              <div class="step-circle step-future">3</div>
+              <div class="step-label">Completed</div>
+            </div>
+          </div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;background:#f9fafb">
+            <div class="card">
+              <div class="sec-header"><span>🔧</span><span class="sec-title">Service Details</span></div>
+              <div class="info-row"><div class="info-icon-box">📅</div><div><div class="info-label">Scheduled</div><div class="info-value">Tue, 10 Jun 2025</div></div></div>
+              <div class="info-row"><div class="info-icon-box">👤</div><div><div class="info-label">Technician</div><div class="info-value" style="color:#3b82f6">Suresh M.</div></div></div>
+              <div class="info-row"><div class="info-icon-box">📍</div><div><div class="info-label">Address</div><div class="info-value">12 MG Road, Pune</div></div></div>
+            </div>
+            <div class="card" style="padding:12px">
+              <div class="sec-header"><span>📸</span><span class="sec-title">Before Photo</span></div>
+              <div style="background:#f3f4f6;border-radius:12px;height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+                <div style="font-size:22px">📷</div>
+                <div style="font-size:10px;color:#9ca3af">Tap to capture</div>
+              </div>
+            </div>
+            <div style="background:#16a34a;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(22,163,74,0.35)">
+              <span style="font-size:18px">▶️</span>
+              <span style="color:#fff;font-weight:700;font-size:14px">Mark In Progress</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Staff · Job Detail</div>
+    </div>
+
+    <!-- Staff Profile -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="profile-header" style="padding-top:44px">
+            <div class="profile-ring"><div class="profile-avatar">S</div></div>
+            <div class="profile-name">Suresh M.</div>
+            <div class="profile-email">suresh@greenvolt.in</div>
+            <div class="role-badge">🪪 Technician</div>
+          </div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;background:#f9fafb">
+            <div class="card">
+              <div class="info-row"><div class="info-icon-box">✉️</div><div><div class="info-label">Email</div><div class="info-value">suresh@greenvolt.in</div></div></div>
+              <div class="info-row"><div class="info-icon-box">🛡</div><div><div class="info-label">Role</div><div class="info-value">Technician</div></div></div>
+              <div class="info-row"><div class="info-icon-box">🪪</div><div><div class="info-label">Employee ID</div><div class="info-value">GV-0042</div></div></div>
+            </div>
+            <div class="logout-btn">🚪 Log Out</div>
+            <div style="text-align:center;font-size:11px;color:#d1d5db">GreenVolt Staff App · v1.0.0</div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:19px">💼</div><div class="tab-label">Jobs</div></div>
+            <div class="tab"><div style="font-size:19px">📅</div><div class="tab-label">Schedule</div></div>
+            <div class="tab active"><div style="font-size:19px">👤</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Staff · Profile</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== ADMIN PORTAL ===================== -->
+<div class="portal-section">
+  <div class="portal-title">⚙️ Admin Portal</div>
+  <div class="screens-row">
+
+    <!-- Admin Jobs -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Jobs</div></div>
+          <div class="filter-bar">
+            <div class="chip chip-active">All <span class="chip-count">12</span></div>
+            <div class="chip chip-inactive">Pending <span class="chip-count-off">4</span></div>
+            <div class="chip chip-inactive">In Progress <span class="chip-count-off">3</span></div>
+          </div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:9px;background:#f9fafb">
+            <div class="job-card" style="border-left-color:#f59e0b">
+              <div class="job-top"><div class="job-customer">Ramesh Kumar</div><span class="badge badge-pending">Pending</span></div>
+              <div class="job-type">Panel Cleaning</div>
+              <div class="job-staff">👤 Suresh M.</div>
+              <div class="job-meta">📍 Pune · 📅 Tue 10 Jun</div>
+              <div class="job-footer"><span class="tap-hint">Tap to manage</span><span style="color:#d1d5db">›</span></div>
+            </div>
+            <div class="job-card" style="border-left-color:#3b82f6">
+              <div class="job-top"><div class="job-customer">Priya Sharma</div><span class="badge badge-progress">In Progress</span></div>
+              <div class="job-type">Inverter Check</div>
+              <div class="job-staff">👤 Anil P.</div>
+              <div class="job-footer"><span class="tap-hint">Tap to manage</span><span style="color:#d1d5db">›</span></div>
+            </div>
+            <div class="job-card" style="border-left-color:#16a34a">
+              <div class="job-top"><div class="job-customer">Vikram Singh</div><span class="badge badge-done">Completed</span></div>
+              <div class="job-type">Annual Maintenance</div>
+              <div class="job-staff">👤 Suresh M.</div>
+              <div class="job-footer"><span class="tap-hint">Tap to manage</span><span style="color:#d1d5db">›</span></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab active"><div style="font-size:18px">💼</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Jobs</div></div>
+            <div class="tab"><div style="font-size:18px">👥</div><div class="tab-label">Customers</div></div>
+            <div class="tab"><div style="font-size:18px">🪪</div><div class="tab-label">Staff</div></div>
+            <div class="tab"><div style="font-size:18px">📊</div><div class="tab-label">Analytics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Admin · Jobs</div>
+    </div>
+
+    <!-- Admin Customers -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Customers</div></div>
+          <div style="background:#fff;padding:10px 12px;border-bottom:1px solid #f3f4f6">
+            <div style="background:#f3f4f6;border-radius:12px;padding:9px 12px;display:flex;align-items:center;gap:8px;font-size:13px;color:#9ca3af">🔍 Search by name, phone, city…</div>
+          </div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb">
+            <div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">3 Customers</div>
+            <div class="list-card">
+              <div class="list-avatar">R</div>
+              <div class="list-info">
+                <div class="list-name">Ramesh Kumar</div>
+                <div class="list-meta">📞 9876543210</div>
+                <div class="list-meta">📍 Pune</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;color:#16a34a">5 kW</div>
+                <span style="color:#d1d5db">›</span>
+              </div>
+            </div>
+            <div class="list-card">
+              <div class="list-avatar" style="background:#3b82f6">P</div>
+              <div class="list-info">
+                <div class="list-name">Priya Sharma</div>
+                <div class="list-meta">📞 9123456789</div>
+                <div class="list-meta">📍 Mumbai</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;color:#16a34a">3 kW</div>
+                <span style="color:#d1d5db">›</span>
+              </div>
+            </div>
+            <div class="list-card">
+              <div class="list-avatar" style="background:#8b5cf6">V</div>
+              <div class="list-info">
+                <div class="list-name">Vikram Singh</div>
+                <div class="list-meta">📞 9988776655</div>
+                <div class="list-meta">📍 Bangalore</div>
+              </div>
+              <span style="color:#d1d5db">›</span>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">💼</div><div class="tab-label">Jobs</div></div>
+            <div class="tab active"><div style="font-size:18px">👥</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Customers</div></div>
+            <div class="tab"><div style="font-size:18px">🪪</div><div class="tab-label">Staff</div></div>
+            <div class="tab"><div style="font-size:18px">📊</div><div class="tab-label">Analytics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Admin · Customers</div>
+    </div>
+
+    <!-- Admin Analytics -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Analytics</div></div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;background:#f9fafb">
+            <div class="revenue-card">
+              <div class="rev-icon-box">💰</div>
+              <div class="rev-label">Total Revenue</div>
+              <div class="rev-value">₹4,85,000</div>
+              <div style="width:40px;height:1px;background:rgba(255,255,255,0.25);margin:4px 0"></div>
+              <div class="rev-monthly">📈 This month: ₹42,500</div>
+            </div>
+            <div class="section-header-row"><span style="font-size:12px">🔧</span><span class="section-title-sm">Services</span></div>
+            <div class="metric-grid">
+              <div class="metric-card"><div class="metric-icon-box" style="background:#f0fdf4">✅</div><div class="metric-val" style="color:#16a34a">48</div><div class="metric-lbl">Completed</div></div>
+              <div class="metric-card"><div class="metric-icon-box" style="background:#fffbeb">⏱</div><div class="metric-val" style="color:#d97706">12</div><div class="metric-lbl">Pending</div></div>
+              <div class="metric-card"><div class="metric-icon-box" style="background:#eff6ff">🔧</div><div class="metric-val" style="color:#2563eb">5</div><div class="metric-lbl">In Progress</div></div>
+              <div class="metric-card"><div class="metric-icon-box" style="background:#fef2f2">📬</div><div class="metric-val" style="color:#ef4444">3</div><div class="metric-lbl">Unread</div></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">💼</div><div class="tab-label">Jobs</div></div>
+            <div class="tab"><div style="font-size:18px">👥</div><div class="tab-label">Customers</div></div>
+            <div class="tab"><div style="font-size:18px">🪪</div><div class="tab-label">Staff</div></div>
+            <div class="tab active"><div style="font-size:18px">📊</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Analytics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Admin · Analytics</div>
+    </div>
+
+    <!-- Admin Staff -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Staff</div></div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb">
+            <div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">3 Members</div>
+            <div class="staff-card" style="border-left-color:#16a34a">
+              <div class="staff-avatar" style="background:#16a34a">S</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:#111827">Suresh M.</div>
+                <div style="font-size:12px;color:#6b7280">Technician</div>
+                <div style="font-size:11px;color:#9ca3af">📞 9876500001</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+                <div class="status-pill" style="background:#dcfce7"><div class="status-dot" style="background:#16a34a"></div><span style="color:#16a34a;font-size:10px;font-weight:700">Active</span></div>
+                <div style="background:#86efac;border-radius:12px;width:44px;height:24px;position:relative"><div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#16a34a"></div></div>
+              </div>
+            </div>
+            <div class="staff-card" style="border-left-color:#16a34a">
+              <div class="staff-avatar" style="background:#16a34a">A</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:#111827">Anil P.</div>
+                <div style="font-size:12px;color:#6b7280">Technician</div>
+                <div style="font-size:11px;color:#9ca3af">📞 9876500002</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+                <div class="status-pill" style="background:#dcfce7"><div class="status-dot" style="background:#16a34a"></div><span style="color:#16a34a;font-size:10px;font-weight:700">Active</span></div>
+                <div style="background:#86efac;border-radius:12px;width:44px;height:24px;position:relative"><div style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#16a34a"></div></div>
+              </div>
+            </div>
+            <div class="staff-card" style="border-left-color:#d1d5db">
+              <div class="staff-avatar" style="background:#9ca3af">R</div>
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:#111827">Ravi K.</div>
+                <div style="font-size:12px;color:#6b7280">Supervisor</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:5px">
+                <div class="status-pill" style="background:#f3f4f6"><div class="status-dot" style="background:#9ca3af"></div><span style="color:#9ca3af;font-size:10px;font-weight:700">Off</span></div>
+                <div style="background:#d1d5db;border-radius:12px;width:44px;height:24px;position:relative"><div style="position:absolute;left:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#f3f4f6"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">💼</div><div class="tab-label">Jobs</div></div>
+            <div class="tab"><div style="font-size:18px">👥</div><div class="tab-label">Customers</div></div>
+            <div class="tab active"><div style="font-size:18px">🪪</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Staff</div></div>
+            <div class="tab"><div style="font-size:18px">📊</div><div class="tab-label">Analytics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Admin · Staff</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== CUSTOMER PORTAL ===================== -->
+<div class="portal-section">
+  <div class="portal-title">🏠 Customer Portal</div>
+  <div class="screens-row">
+
+    <!-- Customer Home -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Home</div></div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;background:#f9fafb">
+            <div class="welcome-hero">
+              <div class="welcome-top">
+                <div class="welcome-avatar">R</div>
+                <div style="flex:1"><div class="welcome-greeting">Welcome back,</div><div class="welcome-name">Ramesh Kumar</div></div>
+                <div class="cap-badge">☀️ 5 kW</div>
+              </div>
+            </div>
+            <div class="sub-card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div class="sub-plan-row"><span style="color:#16a34a">⭐</span><span class="sub-plan-name">Premium Plan</span></div>
+                <span class="badge badge-active">ACTIVE</span>
+              </div>
+              <div class="sub-meta-row">⏱ Expires in 45 days</div>
+              <div class="sub-meta-row">🔄 4 visits/month</div>
+            </div>
+            <div class="appt-card">
+              <div class="appt-header">
+                <div class="appt-title-label">📅 Next Appointment</div>
+                <span class="badge badge-pending">pending</span>
+              </div>
+              <div class="appt-date">Tuesday, 10 June</div>
+              <div class="appt-staff">👤 Suresh M.</div>
+            </div>
+            <div class="quick-grid">
+              <div class="quick-card"><div class="quick-icon-box" style="background:#eff6ff">🔧</div><div class="quick-label">Service History</div></div>
+              <div class="quick-card"><div class="quick-icon-box" style="background:#f5f3ff">💳</div><div class="quick-label">Payments</div></div>
+              <div class="quick-card"><div class="quick-icon-box" style="background:#fffbeb">⭐</div><div class="quick-label">Subscription</div></div>
+              <div class="quick-card"><div class="quick-icon-box" style="background:#f0fdf4">👤</div><div class="quick-label">My Profile</div></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab active"><div style="font-size:18px">🏠</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Home</div></div>
+            <div class="tab"><div style="font-size:18px">🔧</div><div class="tab-label">Services</div></div>
+            <div class="tab"><div style="font-size:18px">⭐</div><div class="tab-label">Plan</div></div>
+            <div class="tab"><div style="font-size:18px">💳</div><div class="tab-label">Payments</div></div>
+            <div class="tab"><div style="font-size:18px">👤</div><div class="tab-label">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Customer · Home</div>
+    </div>
+
+    <!-- Customer Services -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Services</div></div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb">
+            <div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">4 Services</div>
+            <div class="job-card" style="border-left-color:#f59e0b">
+              <div class="job-top"><div class="job-customer" style="font-size:14px">Panel Cleaning</div><span class="badge badge-pending">pending</span></div>
+              <div class="job-meta">📅 Tue, 10 Jun 2025</div>
+              <div class="job-staff">👤 Suresh M.</div>
+              <div class="job-footer"><span class="tap-hint">Tap to view details</span><span style="color:#d1d5db">›</span></div>
+            </div>
+            <div class="job-card" style="border-left-color:#16a34a">
+              <div class="job-top"><div class="job-customer" style="font-size:14px">Annual Maintenance</div><span class="badge badge-done">completed</span></div>
+              <div class="job-meta">📅 Sat, 7 Jun 2025</div>
+              <div class="job-staff">👤 Anil P.</div>
+              <div class="job-footer"><span class="tap-hint">Tap to view details</span><span style="color:#d1d5db">›</span></div>
+            </div>
+            <div class="job-card" style="border-left-color:#16a34a">
+              <div class="job-top"><div class="job-customer" style="font-size:14px">Inverter Check</div><span class="badge badge-done">completed</span></div>
+              <div class="job-meta">📅 Mon, 2 Jun 2025</div>
+              <div class="job-footer"><span class="tap-hint">Tap to view details</span><span style="color:#d1d5db">›</span></div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">🏠</div><div class="tab-label">Home</div></div>
+            <div class="tab active"><div style="font-size:18px">🔧</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Services</div></div>
+            <div class="tab"><div style="font-size:18px">⭐</div><div class="tab-label">Plan</div></div>
+            <div class="tab"><div style="font-size:18px">💳</div><div class="tab-label">Payments</div></div>
+            <div class="tab"><div style="font-size:18px">👤</div><div class="tab-label">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Customer · Services</div>
+    </div>
+
+    <!-- Customer Subscription -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Plan</div></div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;background:#f9fafb">
+            <div class="plan-hero">
+              <div class="plan-icon-box">⭐</div>
+              <div class="plan-name">Premium Plan</div>
+              <span class="badge badge-active">ACTIVE</span>
+              <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#6b7280"><span>⏱</span> Expires in 45 days</div>
+            </div>
+            <div class="card">
+              <div class="sec-header"><span>📄</span><span class="sec-title">Plan Details</span></div>
+              <div class="info-row"><div class="info-icon-box">⭐</div><div><div class="info-label">Plan</div><div class="info-value">Premium Plan</div></div></div>
+              <div class="info-row"><div class="info-icon-box">🔄</div><div><div class="info-label">Visits / Month</div><div class="info-value">4</div></div></div>
+              <div class="info-row"><div class="info-icon-box">💰</div><div><div class="info-label">Amount</div><div class="info-value">₹12,000</div></div></div>
+              <div class="info-row"><div class="info-icon-box">📅</div><div><div class="info-label">End Date</div><div class="info-value">24 Jul 2025</div></div></div>
+            </div>
+            <div style="background:#16a34a;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(22,163,74,0.3)">
+              <span>🔄</span><span style="color:#fff;font-weight:700;font-size:14px">Request Renewal</span>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">🏠</div><div class="tab-label">Home</div></div>
+            <div class="tab"><div style="font-size:18px">🔧</div><div class="tab-label">Services</div></div>
+            <div class="tab active"><div style="font-size:18px">⭐</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Plan</div></div>
+            <div class="tab"><div style="font-size:18px">💳</div><div class="tab-label">Payments</div></div>
+            <div class="tab"><div style="font-size:18px">👤</div><div class="tab-label">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Customer · Subscription</div>
+    </div>
+
+    <!-- Customer Payments -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="header" style="padding-top:44px"><div class="header-title">Payments</div></div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb">
+            <div class="total-card">
+              <div class="total-icon-box">💰</div>
+              <div class="total-label">Total Paid</div>
+              <div class="total-value">₹36,000</div>
+              <div class="total-count">3 transactions</div>
+            </div>
+            <div class="pay-card">
+              <div class="pay-top">
+                <div class="pay-icon-box" style="background:#dcfce7">✅</div>
+                <div class="pay-amount">₹12,000</div>
+                <div style="flex:1"></div>
+                <span class="badge badge-done">PAID</span>
+              </div>
+              <div class="pay-meta">
+                <div class="pay-meta-row">💳 UPI</div>
+                <div class="pay-meta-row">📅 1 Jun 2025</div>
+              </div>
+            </div>
+            <div class="pay-card">
+              <div class="pay-top">
+                <div class="pay-icon-box" style="background:#dcfce7">✅</div>
+                <div class="pay-amount">₹12,000</div>
+                <div style="flex:1"></div>
+                <span class="badge badge-done">PAID</span>
+              </div>
+              <div class="pay-meta">
+                <div class="pay-meta-row">💳 Bank Transfer</div>
+                <div class="pay-meta-row">📅 1 Mar 2025</div>
+              </div>
+            </div>
+            <div class="pay-card">
+              <div class="pay-top">
+                <div class="pay-icon-box" style="background:#fef3c7">⏱</div>
+                <div class="pay-amount">₹12,000</div>
+                <div style="flex:1"></div>
+                <span class="badge badge-pending">PENDING</span>
+              </div>
+              <div class="pay-meta">
+                <div class="pay-meta-row">📅 1 Sep 2025</div>
+              </div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">🏠</div><div class="tab-label">Home</div></div>
+            <div class="tab"><div style="font-size:18px">🔧</div><div class="tab-label">Services</div></div>
+            <div class="tab"><div style="font-size:18px">⭐</div><div class="tab-label">Plan</div></div>
+            <div class="tab active"><div style="font-size:18px">💳</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Payments</div></div>
+            <div class="tab"><div style="font-size:18px">👤</div><div class="tab-label">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Customer · Payments</div>
+    </div>
+
+    <!-- Customer Profile -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="profile-header" style="padding-top:44px">
+            <div class="profile-ring"><div class="profile-avatar">R</div></div>
+            <div class="profile-name">Ramesh Kumar</div>
+            <div class="profile-email">Pune, Maharashtra</div>
+            <div class="role-badge">👤 Customer</div>
+          </div>
+          <div style="overflow-y:auto;flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f9fafb">
+            <div class="card">
+              <div class="sec-header"><span>☀️</span><span class="sec-title">System Info</span></div>
+              <div class="info-row"><div class="info-icon-box">⚡</div><div><div class="info-label">Capacity</div><div class="info-value">5 kW</div></div></div>
+              <div class="info-row"><div class="info-icon-box">📅</div><div><div class="info-label">Installed</div><div class="info-value">2023-06-15</div></div></div>
+            </div>
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <div class="sec-header" style="margin-bottom:0"><span>📞</span><span class="sec-title">Contact Details</span></div>
+                <span style="font-size:12px;color:#16a34a;font-weight:600">✏️ Edit</span>
+              </div>
+              <div class="info-row"><div class="info-icon-box">📞</div><div><div class="info-label">Phone</div><div class="info-value">9876543210</div></div></div>
+              <div class="info-row"><div class="info-icon-box">📍</div><div><div class="info-label">Address</div><div class="info-value">12 MG Road, Pune</div></div></div>
+            </div>
+            <div class="logout-btn">🚪 Log Out</div>
+          </div>
+          <div class="tabbar">
+            <div class="tab"><div style="font-size:18px">🏠</div><div class="tab-label">Home</div></div>
+            <div class="tab"><div style="font-size:18px">🔧</div><div class="tab-label">Services</div></div>
+            <div class="tab"><div style="font-size:18px">⭐</div><div class="tab-label">Plan</div></div>
+            <div class="tab"><div style="font-size:18px">💳</div><div class="tab-label">Payments</div></div>
+            <div class="tab active"><div style="font-size:18px">👤</div><div class="tab-dot"></div><div class="tab-label" style="color:#16a34a">Profile</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-label">Customer · Profile</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

@@ -152,7 +152,7 @@ export default function BookReviewScreen() {
         amount,
         order_id: razorpayOrderId,
         name: "GreenVolt",
-        theme: { color: "#16a34a" },
+        theme: { color: "#00450d" },
         retry: { enabled: false },
         ...(paymentMethod !== "cash" && { method: { [paymentMethod]: 1 } }),
       };
@@ -233,7 +233,7 @@ export default function BookReviewScreen() {
       <Stack.Screen
         options={{
           title: "Review Order",
-          headerStyle: { backgroundColor: "#16a34a" },
+          headerStyle: { backgroundColor: "#00450d" },
           headerTintColor: "#fff",
           headerTitleStyle: { fontWeight: "700" },
           headerLeft: () => (
@@ -300,7 +300,7 @@ export default function BookReviewScreen() {
             {discountAmount > 0 && (
               <View style={styles.priceRow}>
                 <View style={styles.discountLabelRow}>
-                  <Ionicons name="pricetag-outline" size={12} color="#16a34a" />
+                  <Ionicons name="pricetag-outline" size={12} color="#00450d" />
                   <Text style={styles.discountKey}>Discount ({appliedCoupon?.code})</Text>
                 </View>
                 <Text style={styles.discountVal}>−₹{discountAmount}</Text>
@@ -312,7 +312,7 @@ export default function BookReviewScreen() {
             </View>
             {discountAmount > 0 && (
               <View style={styles.savingsBanner}>
-                <Ionicons name="happy-outline" size={14} color="#16a34a" />
+                <Ionicons name="happy-outline" size={14} color="#00450d" />
                 <Text style={styles.savingsText}>You saved ₹{discountAmount} on this booking!</Text>
               </View>
             )}
@@ -324,7 +324,7 @@ export default function BookReviewScreen() {
             {appliedCoupon ? (
               <View style={styles.appliedCoupon}>
                 <View style={styles.appliedCouponLeft}>
-                  <Ionicons name="pricetag" size={16} color="#16a34a" />
+                  <Ionicons name="pricetag" size={16} color="#00450d" />
                   <View>
                     <Text style={styles.appliedCode}>{appliedCoupon.code} applied</Text>
                     <Text style={styles.appliedLabel}>{appliedCoupon.description}</Text>
@@ -391,13 +391,13 @@ export default function BookReviewScreen() {
                     activeOpacity={0.75}
                   >
                     <View style={[styles.methodIconBox, selected && styles.methodIconBoxSelected]}>
-                      <Ionicons name={m.icon} size={18} color={selected ? "#16a34a" : "#6b7280"} />
+                      <Ionicons name={m.icon} size={18} color={selected ? "#00450d" : "#6b7280"} />
                     </View>
                     <Text style={[styles.methodLabel, selected && styles.methodLabelSelected]}>{m.label}</Text>
                     <Text style={styles.methodSub}>{m.sub}</Text>
                     {selected && (
                       <View style={styles.methodCheck}>
-                        <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
+                        <Ionicons name="checkmark-circle" size={16} color="#00450d" />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -407,7 +407,7 @@ export default function BookReviewScreen() {
 
             {paymentMethod !== "cash" && (
               <View style={styles.onlineNote}>
-                <Ionicons name="shield-checkmark-outline" size={14} color="#16a34a" />
+                <Ionicons name="shield-checkmark-outline" size={14} color="#00450d" />
                 <Text style={styles.onlineNoteText}>
                   Secured by Razorpay. Supports UPI, cards, wallets and net banking.
                 </Text>
@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
   priceKey: { fontSize: 13, color: "#6b7280" },
   priceVal: { fontSize: 13, color: "#374151", fontWeight: "500" },
   discountLabelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  discountKey: { fontSize: 13, color: "#16a34a", fontWeight: "600" },
-  discountVal: { fontSize: 13, color: "#16a34a", fontWeight: "700" },
+  discountKey: { fontSize: 13, color: "#00450d", fontWeight: "600" },
+  discountVal: { fontSize: 13, color: "#00450d", fontWeight: "700" },
   totalRow: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     paddingTop: 12, borderTopWidth: 1.5, borderTopColor: "#f0fdf4", marginTop: 2,
@@ -508,7 +508,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10,
   },
-  savingsText: { fontSize: 12, color: "#16a34a", fontWeight: "600", flex: 1 },
+  savingsText: { fontSize: 12, color: "#00450d", fontWeight: "600", flex: 1 },
 
   couponInputRow: { flexDirection: "row", gap: 10 },
   couponInput: {
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb", letterSpacing: 1,
   },
   applyBtn: {
-    backgroundColor: "#16a34a", borderRadius: 12, paddingHorizontal: 20,
+    backgroundColor: "#00450d", borderRadius: 12, paddingHorizontal: 20,
     justifyContent: "center", alignItems: "center", minWidth: 72,
   },
   applyBtnDisabled: { backgroundColor: "#d1d5db" },
@@ -532,8 +532,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0fdf4", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#bbf7d0",
   },
   appliedCouponLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  appliedCode: { fontSize: 14, fontWeight: "700", color: "#16a34a" },
-  appliedLabel: { fontSize: 11, color: "#16a34a", opacity: 0.8, marginTop: 1 },
+  appliedCode: { fontSize: 14, fontWeight: "700", color: "#00450d" },
+  appliedLabel: { fontSize: 11, color: "#00450d", opacity: 0.8, marginTop: 1 },
 
   // Payment method
   methodGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   methodChipSelected: {
-    borderColor: "#16a34a",
+    borderColor: "#00450d",
     backgroundColor: "#f0fdf4",
   },
   methodIconBox: {
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   },
   methodIconBoxSelected: { backgroundColor: "#dcfce7" },
   methodLabel: { fontSize: 13, fontWeight: "700", color: "#374151" },
-  methodLabelSelected: { color: "#16a34a" },
+  methodLabelSelected: { color: "#00450d" },
   methodSub: { fontSize: 9, color: "#9ca3af", textAlign: "center" },
   methodCheck: { position: "absolute", top: 6, right: 6 },
 
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "flex-start", gap: 8,
     backgroundColor: "#f0fdf4", borderRadius: 10, padding: 10,
   },
-  onlineNoteText: { fontSize: 12, color: "#16a34a", flex: 1, lineHeight: 17 },
+  onlineNoteText: { fontSize: 12, color: "#00450d", flex: 1, lineHeight: 17 },
   cashNote: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,
     backgroundColor: "#fef3c7", borderRadius: 10, padding: 10,
@@ -588,10 +588,10 @@ const styles = StyleSheet.create({
   stickyLeft: { gap: 2 },
   stickyLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600" },
   stickyTotal: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  stickySaved: { fontSize: 10, color: "#16a34a", fontWeight: "700" },
+  stickySaved: { fontSize: 10, color: "#00450d", fontWeight: "700" },
   ctaBtn: {
-    backgroundColor: "#16a34a", borderRadius: 14, paddingHorizontal: 22, paddingVertical: 14,
-    shadowColor: "#16a34a", shadowOpacity: 0.3, shadowRadius: 8, elevation: 3,
+    backgroundColor: "#00450d", borderRadius: 14, paddingHorizontal: 22, paddingVertical: 14,
+    shadowColor: "#00450d", shadowOpacity: 0.3, shadowRadius: 8, elevation: 3,
     minWidth: 160, alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center",
   },
   ctaBtnDisabled: { backgroundColor: "#9ca3af", shadowOpacity: 0 },

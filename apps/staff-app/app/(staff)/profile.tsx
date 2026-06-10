@@ -34,7 +34,7 @@ export default function ProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
         <Text style={styles.name}>{user?.name ?? "—"}</Text>
         <Text style={styles.email}>{user?.email ?? "—"}</Text>
         <View style={styles.roleBadge}>
-          <Ionicons name="shield-checkmark" size={12} color="#16a34a" />
+          <Ionicons name="shield-checkmark" size={12} color="#00450d" />
           <Text style={styles.roleBadgeText}>{(user?.role ?? "staff").toUpperCase()}</Text>
         </View>
       </View>
@@ -102,7 +102,7 @@ function InfoRow({
   return (
     <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={16} color="#16a34a" />
+        <Ionicons name={icon} size={16} color="#00450d" />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   header: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     alignItems: "center",
     paddingTop: 32,
     paddingBottom: 36,

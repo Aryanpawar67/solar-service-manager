@@ -118,7 +118,7 @@ export const SERVICE_CATALOG: CatalogItem[] = [
     taxPercent: 18,
     durationMins: 0,
     icon: "shield-checkmark-outline",
-    color: "#16a34a",
+    color: "#00450d",
     bg: "#f0fdf4",
     popular: true,
     includes: [

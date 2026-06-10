@@ -34,7 +34,7 @@ export default function AdminProfileScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#16a34a" />
+        <ActivityIndicator size="large" color="#00450d" />
       </View>
     );
   }
@@ -54,7 +54,7 @@ export default function AdminProfileScreen() {
         <Text style={styles.name}>{user?.name ?? "—"}</Text>
         <Text style={styles.email}>{user?.email ?? "—"}</Text>
         <View style={styles.roleBadge}>
-          <Ionicons name="shield-checkmark-outline" size={12} color="#16a34a" />
+          <Ionicons name="shield-checkmark-outline" size={12} color="#00450d" />
           <Text style={styles.roleBadgeText}>Administrator</Text>
         </View>
       </View>
@@ -77,7 +77,7 @@ export default function AdminProfileScreen() {
           activeOpacity={0.75}
         >
           <View style={styles.linkIconBox}>
-            <Ionicons name="id-card-outline" size={16} color="#16a34a" />
+            <Ionicons name="id-card-outline" size={16} color="#00450d" />
           </View>
           <View style={styles.linkContent}>
             <Text style={styles.linkLabel}>Manage Staff</Text>
@@ -115,7 +115,7 @@ function InfoRow({
   return (
     <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
       <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#16a34a" />
+        <Ionicons name={icon} size={14} color="#00450d" />
       </View>
       <View style={styles.infoContent}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   header: {
-    backgroundColor: "#16a34a",
+    backgroundColor: "#00450d",
     alignItems: "center",
     paddingTop: 40,
     paddingBottom: 36,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginTop: 4,
   },
-  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#16a34a" },
+  roleBadgeText: { fontSize: 12, fontWeight: "700", color: "#00450d" },
 
   card: {
     backgroundColor: "#fff",
