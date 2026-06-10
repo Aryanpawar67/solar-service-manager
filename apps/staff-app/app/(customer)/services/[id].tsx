@@ -16,12 +16,21 @@ import { API_BASE_URL } from "@/lib/constants";
 import { getToken } from "@/lib/auth";
 import { ErrorState } from "@/components/ErrorState";
 
-const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
-  pending:     { color: "#d97706", bg: "#fef3c7" },
-  in_progress: { color: "#2563eb", bg: "#dbeafe" },
-  completed:   { color: "#00450d", bg: "#dcfce7" },
-  cancelled:   { color: "#6b7280", bg: "#f3f4f6" },
+const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
+  pending:     { color: "#6b7280", bg: "#f3f4f6",  label: "SCHEDULED" },
+  in_progress: { color: "#2563eb", bg: "#dbeafe",  label: "IN PROGRESS" },
+  completed:   { color: "#00450d", bg: "#dcfce7",  label: "COMPLETED" },
+  cancelled:   { color: "#ef4444", bg: "#fee2e2",  label: "CANCELLED" },
 };
+
+const STEPS = ["Scheduled", "Assigned", "In Progress", "Completed"] as const;
+
+function getVisualStep(status: string): number {
+  if (status === "completed") return 4;
+  if (status === "in_progress") return 2;
+  if (status === "pending") return 1;
+  return 0;
+}
 
 export default function CustomerServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,10 +39,7 @@ export default function CustomerServiceDetailScreen() {
 
   const downloadReport = async () => {
     const token = await getToken();
-    if (!token) {
-      Alert.alert("Not logged in", "Please log in again.");
-      return;
-    }
+    if (!token) { Alert.alert("Not logged in", "Please log in again."); return; }
     const url = `${API_BASE_URL}/api/services/${serviceId}/report?token=${encodeURIComponent(token)}`;
     Alert.alert("Download Report", "This will open the PDF report in your browser.", [
       { text: "Cancel", style: "cancel" },
@@ -42,203 +48,236 @@ export default function CustomerServiceDetailScreen() {
   };
 
   if (isLoading || (!service && !isError)) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00450d" />
-      </View>
-    );
+    return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
-
-  if (isError || !service) {
-    return <ErrorState onRetry={refetch} />;
-  }
+  if (isError || !service) return <ErrorState onRetry={refetch} />;
 
   const cfg = STATUS_CONFIG[service.status] ?? STATUS_CONFIG.cancelled;
+  const step = getVisualStep(service.status);
 
   return (
     <>
       <Stack.Screen
         options={{
           title: service.serviceType ?? "Service Detail",
-          headerStyle: { backgroundColor: "#00450d" },
-          headerTintColor: "#fff",
-          headerTitleStyle: { fontWeight: "700" },
+          headerStyle: { backgroundColor: "#fff" },
+          headerTintColor: "#00450d",
+          headerTitleStyle: { fontWeight: "700", color: "#111827" },
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 4, padding: 4 }}>
-              <Ionicons name="arrow-back" size={22} color="#fff" />
+              <Ionicons name="arrow-back" size={22} color="#00450d" />
             </TouchableOpacity>
           ),
         }}
       />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Status header */}
+      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* Status card */}
         <View style={styles.statusCard}>
           <View style={styles.statusTop}>
             <Text style={styles.serviceType}>{service.serviceType ?? "Maintenance"}</Text>
             <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
-              <Text style={[styles.badgeText, { color: cfg.color }]}>
-                {service.status.replace("_", " ")}
-              </Text>
+              <Text style={[styles.badgeText, { color: cfg.color }]}>{cfg.label}</Text>
             </View>
+          </View>
+
+          {/* Step progress */}
+          <View style={styles.stepper}>
+            {STEPS.map((label, i) => {
+              const filled = (i + 1) * (4 / STEPS.length) <= step;
+              const isLast = i === STEPS.length - 1;
+              return (
+                <View key={label} style={styles.stepItem}>
+                  <View style={[styles.stepDot, filled && styles.stepDotFilled]}>
+                    {filled && <Ionicons name="checkmark" size={11} color="#fff" />}
+                  </View>
+                  {!isLast && (
+                    <View style={[styles.stepLine, filled && styles.stepLineFilled]} />
+                  )}
+                  <Text style={[styles.stepLabel, filled && styles.stepLabelFilled]}>{label}</Text>
+                </View>
+              );
+            })}
           </View>
         </View>
 
-        {/* Details */}
-        <View style={styles.card}>
-          <SectionHeader icon="information-circle-outline" title="Service Details" />
-          <InfoRow
-            icon="calendar-outline"
-            label="Scheduled"
-            value={service.scheduledDate
-              ? new Date(service.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
-                  weekday: "long", day: "numeric", month: "long", year: "numeric",
-                })
-              : "—"}
-          />
-          {service.completedAt ? (
-            <InfoRow
-              icon="checkmark-circle-outline"
-              label="Completed"
-              value={new Date(service.completedAt).toLocaleDateString("en-IN", {
-                day: "numeric", month: "short", year: "numeric",
-              })}
-            />
+        {/* Technician */}
+        {service.staff ? (
+          <View style={styles.techCard}>
+            <View style={styles.techAvatar}>
+              <Text style={styles.techAvatarText}>{service.staff.name.charAt(0)}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.techName}>{service.staff.name}</Text>
+              <Text style={styles.techRole}>Lead Technician</Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: "#dcfce7" }]}>
+              <Text style={[styles.badgeText, { color: "#00450d" }]}>ASSIGNED</Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.techCard}>
+            <View style={[styles.techAvatar, { backgroundColor: "#f3f4f6" }]}>
+              <Ionicons name="person-outline" size={18} color="#9ca3af" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.techName}>Pending Assignment</Text>
+              <Text style={styles.techRole}>Technician will be assigned shortly</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Service Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Service Details</Text>
+          {service.scheduledDate ? (
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}><Ionicons name="calendar-outline" size={14} color="#00450d" /></View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Scheduled Date</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(service.scheduledDate + "T00:00:00").toLocaleDateString("en-IN", {
+                    weekday: "long", day: "numeric", month: "long", year: "numeric",
+                  })}
+                </Text>
+              </View>
+            </View>
           ) : null}
-          {service.staff ? (
-            <InfoRow icon="person-outline" label="Technician" value={service.staff.name} />
+          {service.completedAt ? (
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}><Ionicons name="checkmark-circle-outline" size={14} color="#00450d" /></View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Completed</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(service.completedAt).toLocaleDateString("en-IN", {
+                    day: "numeric", month: "short", year: "numeric",
+                  })}
+                </Text>
+              </View>
+            </View>
           ) : null}
           {service.notes ? (
-            <InfoRow icon="document-text-outline" label="Notes" value={service.notes} />
+            <View style={styles.infoRow}>
+              <View style={styles.infoIcon}><Ionicons name="document-text-outline" size={14} color="#00450d" /></View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Notes</Text>
+                <Text style={styles.infoValue}>{service.notes}</Text>
+              </View>
+            </View>
           ) : null}
           {service.remarks ? (
-            <InfoRow icon="chatbubble-outline" label="Remarks" value={service.remarks} last />
+            <View style={[styles.infoRow, styles.infoRowLast]}>
+              <View style={styles.infoIcon}><Ionicons name="chatbubble-outline" size={14} color="#00450d" /></View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Technician Remarks</Text>
+                <Text style={styles.infoValue}>{service.remarks}</Text>
+              </View>
+            </View>
           ) : null}
         </View>
 
         {/* Photos */}
         {(service.preServiceImage || service.postServiceImage) ? (
-          <View style={styles.card}>
-            <SectionHeader icon="images-outline" title="Photos" />
-            {service.preServiceImage ? (
-              <View style={styles.photoBlock}>
-                <Text style={styles.photoLabel}>Before Service</Text>
-                <Image source={{ uri: service.preServiceImage }} style={styles.photo} resizeMode="cover" />
-              </View>
-            ) : null}
-            {service.postServiceImage ? (
-              <View style={[styles.photoBlock, { marginBottom: 0 }]}>
-                <Text style={styles.photoLabel}>After Service</Text>
-                <Image source={{ uri: service.postServiceImage }} style={styles.photo} resizeMode="cover" />
-              </View>
-            ) : null}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Site Documentation</Text>
+            <View style={styles.photoRow}>
+              {service.preServiceImage ? (
+                <View style={styles.photoBlock}>
+                  <Text style={styles.photoLabel}>BEFORE</Text>
+                  <Image source={{ uri: service.preServiceImage }} style={styles.photo} resizeMode="cover" />
+                </View>
+              ) : null}
+              {service.postServiceImage ? (
+                <View style={styles.photoBlock}>
+                  <Text style={styles.photoLabel}>AFTER</Text>
+                  <Image source={{ uri: service.postServiceImage }} style={styles.photo} resizeMode="cover" />
+                </View>
+              ) : null}
+            </View>
           </View>
         ) : null}
 
         {/* PDF Report */}
         {service.status === "completed" ? (
-          <TouchableOpacity style={styles.reportBtn} onPress={downloadReport} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.reportBtn} onPress={downloadReport} activeOpacity={0.85}>
             <Ionicons name="document-outline" size={18} color="#fff" />
             <Text style={styles.reportBtnText}>Download PDF Report</Text>
           </TouchableOpacity>
         ) : null}
+
       </ScrollView>
     </>
   );
 }
 
-function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; title: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Ionicons name={icon} size={15} color="#00450d" />
-      <Text style={styles.sectionTitle}>{title}</Text>
-    </View>
-  );
-}
-
-function InfoRow({
-  icon,
-  label,
-  value,
-  last,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.infoRow, !last && styles.infoRowBorder]}>
-      <View style={styles.infoIcon}>
-        <Ionicons name={icon} size={14} color="#00450d" />
-      </View>
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 14, paddingBottom: 40 },
+  container: { flex: 1, backgroundColor: "#f8fafb" },
+  content: { padding: 16, gap: 12, paddingBottom: 40 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   statusCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
+    backgroundColor: "#fff", borderRadius: 16, padding: 18,
+    borderWidth: 1, borderColor: "#f0f0f0", gap: 16,
   },
   statusTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
   serviceType: { fontSize: 18, fontWeight: "800", color: "#111827", flex: 1 },
-  badge: { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, flexShrink: 0 },
-  badgeText: { fontSize: 12, fontWeight: "700", textTransform: "capitalize" },
+  badge: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
+  badgeText: { fontSize: 10, fontWeight: "800", letterSpacing: 0.3 },
 
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 1,
+  stepper: { flexDirection: "row", alignItems: "flex-start" },
+  stepItem: { flex: 1, alignItems: "center", gap: 5 },
+  stepDot: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: "#f3f4f6", borderWidth: 1.5, borderColor: "#e5e7eb",
+    justifyContent: "center", alignItems: "center",
   },
-  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#374151" },
-  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, gap: 12 },
-  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: "#f9fafb" },
+  stepDotFilled: { backgroundColor: "#00450d", borderColor: "#00450d" },
+  stepLine: { position: "absolute", top: 10, left: "50%", right: "-50%", height: 2, backgroundColor: "#e5e7eb" },
+  stepLineFilled: { backgroundColor: "#00450d" },
+  stepLabel: { fontSize: 9, color: "#9ca3af", fontWeight: "600", textAlign: "center" },
+  stepLabelFilled: { color: "#00450d" },
+
+  techCard: {
+    backgroundColor: "#fff", borderRadius: 14, padding: 16,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    borderWidth: 1, borderColor: "#f0f0f0",
+  },
+  techAvatar: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: "#00450d",
+    justifyContent: "center", alignItems: "center", flexShrink: 0,
+  },
+  techAvatarText: { fontSize: 17, fontWeight: "700", color: "#fff" },
+  techName: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  techRole: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
+
+  section: {
+    backgroundColor: "#fff", borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: "#f0f0f0", gap: 0,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111827", marginBottom: 12 },
+
+  infoRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 12,
+    paddingVertical: 10, borderTopWidth: 1, borderTopColor: "#f4f4f5",
+  },
+  infoRowLast: {},
   infoIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: "#f0fdf4",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 30, height: 30, borderRadius: 8,
+    backgroundColor: "#f0fdf4", justifyContent: "center", alignItems: "center", flexShrink: 0,
   },
-  infoContent: { flex: 1 },
-  infoLabel: { fontSize: 11, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
-  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 1 },
+  infoContent: { flex: 1, paddingTop: 1 },
+  infoLabel: { fontSize: 10, color: "#9ca3af", fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4 },
+  infoValue: { fontSize: 14, color: "#111827", fontWeight: "500", marginTop: 2 },
 
-  photoBlock: { marginBottom: 12 },
-  photoLabel: { fontSize: 12, color: "#9ca3af", fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 8 },
-  photo: { width: "100%", height: 200, borderRadius: 12 },
+  photoRow: { flexDirection: "row", gap: 10 },
+  photoBlock: { flex: 1, gap: 6 },
+  photoLabel: { fontSize: 10, fontWeight: "700", color: "#9ca3af", letterSpacing: 0.5 },
+  photo: { width: "100%", height: 160, borderRadius: 10 },
 
   reportBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#00450d",
-    borderRadius: 14,
-    padding: 16,
-    shadowColor: "#00450d",
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#00450d", borderRadius: 14, paddingVertical: 16,
   },
   reportBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
 });

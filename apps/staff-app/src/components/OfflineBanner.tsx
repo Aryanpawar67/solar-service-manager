@@ -16,7 +16,7 @@ export function OfflineBanner({ visible }: { visible: boolean }) {
 
   return (
     <Animated.View style={[styles.banner, { transform: [{ translateY }] }]}>
-      <Ionicons name="wifi-outline" size={15} color="#fff" />
+      <Ionicons name="wifi-outline" size={14} color="#fff" />
       <Text style={styles.text}>No internet connection</Text>
     </Animated.View>
   );
@@ -25,11 +25,9 @@ export function OfflineBanner({ visible }: { visible: boolean }) {
 const styles = StyleSheet.create({
   banner: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 0, left: 0, right: 0,
     height: 44,
-    backgroundColor: "#dc2626",
+    backgroundColor: "#374151",
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",

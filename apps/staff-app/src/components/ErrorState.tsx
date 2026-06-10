@@ -5,12 +5,14 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry: ()
   return (
     <View style={styles.center}>
       <View style={styles.iconBox}>
-        <Ionicons name="cloud-offline-outline" size={36} color="#9ca3af" />
+        <Ionicons name="cloud-offline-outline" size={32} color="#9ca3af" />
       </View>
       <Text style={styles.title}>Something went wrong</Text>
-      <Text style={styles.text}>{message ?? "We couldn't load this data. Check your connection and try again."}</Text>
-      <TouchableOpacity style={styles.btn} onPress={onRetry} activeOpacity={0.8}>
-        <Ionicons name="refresh-outline" size={16} color="#fff" />
+      <Text style={styles.text}>
+        {message ?? "We couldn't load this data. Check your connection and try again."}
+      </Text>
+      <TouchableOpacity style={styles.btn} onPress={onRetry} activeOpacity={0.85}>
+        <Ionicons name="refresh-outline" size={15} color="#fff" />
         <Text style={styles.btnText}>Try Again</Text>
       </TouchableOpacity>
     </View>
@@ -18,27 +20,20 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry: ()
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40, gap: 12 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 40, gap: 10 },
   iconBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
+    width: 80, height: 80, borderRadius: 24,
     backgroundColor: "#f3f4f6",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center", alignItems: "center",
     marginBottom: 4,
   },
   title: { fontSize: 16, fontWeight: "700", color: "#374151" },
-  text: { color: "#9ca3af", fontSize: 13, textAlign: "center", lineHeight: 20 },
+  text: { fontSize: 13, color: "#9ca3af", textAlign: "center", lineHeight: 20 },
   btn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#00450d",
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    marginTop: 4,
+    flexDirection: "row", alignItems: "center", gap: 7,
+    backgroundColor: "#00450d", borderRadius: 12,
+    paddingHorizontal: 28, paddingVertical: 13,
+    marginTop: 6,
   },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
 });
