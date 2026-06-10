@@ -100,6 +100,8 @@ export default function AdminTabsLayout() {
 
       <Tabs.Screen name="staff" options={{ href: null }} />
       <Tabs.Screen name="customers/[id]" options={{ href: null }} />
+      <Tabs.Screen name="edit-profile" options={{ href: null }} />
+      <Tabs.Screen name="create-job" options={{ href: null }} />
     </Tabs>
   );
 }

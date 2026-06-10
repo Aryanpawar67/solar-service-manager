@@ -19,14 +19,19 @@ import { notifyJobAssigned, notifyCustomer } from "../lib/push";
 const router: IRouter = Router();
 
 router.get("/", async (req, res) => {
-  const { status, staffId, customerId, date, startDate, endDate, page = "1", limit = "20" } = req.query as Record<string, string>;
+  const { status, staffId: staffIdParam, customerId, date, startDate, endDate, page = "1", limit = "20" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
   const offset = (pageNum - 1) * limitNum;
 
+  // Server-side RBAC: staff users are always restricted to their own assigned jobs
+  const effectiveStaffId = req.user?.role === "staff"
+    ? (req.user.staffId ?? -1)
+    : (staffIdParam ? parseInt(staffIdParam) : undefined);
+
   const filters = [];
   if (status) filters.push(eq(servicesTable.status, status as "cancelled" | "pending" | "in_progress" | "completed"));
-  if (staffId) filters.push(eq(servicesTable.staffId, parseInt(staffId)));
+  if (effectiveStaffId !== undefined) filters.push(eq(servicesTable.staffId, effectiveStaffId));
   if (customerId) filters.push(eq(servicesTable.customerId, parseInt(customerId)));
   if (date) filters.push(eq(servicesTable.scheduledDate, date));
   if (startDate) filters.push(gte(servicesTable.scheduledDate, startDate));

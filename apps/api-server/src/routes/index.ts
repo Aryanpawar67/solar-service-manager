@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { contactTable, insertContactSchema, customersTable, insertCustomerSchema, subscriptionsTable, insertSubscriptionSchema } from "@workspace/db/schema";
+import { contactTable, insertContactSchema, customersTable, insertCustomerSchema, subscriptionsTable, insertSubscriptionSchema, usersTable, staffTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 import healthRouter from "./health";
 import authRouter from "./auth";
 import customersRouter from "./customers";
@@ -67,6 +68,30 @@ router.post("/subscriptions", async (req, res) => {
 
 // All routes below require authentication
 router.use(requireAuth);
+
+// Admin: create a new staff member with login credentials
+router.post("/admin/create-staff", async (req, res) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin only" });
+  }
+  const { name, phone, role: staffRole, email, password, workArea } = req.body as {
+    name: string; phone: string; role: string; email: string; password: string; workArea?: string;
+  };
+  if (!name || !phone || !staffRole || !email || !password) {
+    return res.status(400).json({ error: "name, phone, role, email, password are required" });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+  }
+  const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email.toLowerCase().trim()));
+  if (existing) return res.status(409).json({ error: "Email already in use" });
+  const bcrypt = (await import("bcrypt")).default;
+  const passwordHash = await bcrypt.hash(password, 10);
+  const [staffMember] = await db.insert(staffTable).values({ name, phone, role: staffRole, workArea: workArea || null, isActive: true }).returning();
+  await db.insert(usersTable).values({ name, email: email.toLowerCase().trim(), passwordHash, role: "staff", staffId: staffMember.id });
+  return res.status(201).json({ ok: true, staff: staffMember });
+});
+
 router.use("/customers", customersRouter);
 router.use("/staff", staffRouter);
 router.use("/services", servicesRouter);

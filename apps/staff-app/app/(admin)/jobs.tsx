@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useListServices } from "@workspace/api-client-react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
 import { useState } from "react";
@@ -36,6 +37,7 @@ export default function AdminJobsScreen() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All Jobs");
   const [search, setSearch] = useState("");
   const { data, isLoading, isError, refetch, isRefetching } = useListServices({ limit: 200 });
+  const insets = useSafeAreaInsets();
 
   if (isLoading) {
     return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
@@ -80,7 +82,7 @@ export default function AdminJobsScreen() {
       </View>
 
       {/* Filter chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
         {FILTERS.map((f) => (
           <TouchableOpacity
             key={f}
@@ -95,7 +97,7 @@ export default function AdminJobsScreen() {
 
       <FlatList
         style={styles.list}
-        contentContainerStyle={[styles.content, filtered.length === 0 && styles.contentEmpty]}
+        contentContainerStyle={[styles.content, filtered.length === 0 && styles.contentEmpty, { paddingBottom: 88 + insets.bottom }]}
         data={filtered}
         keyExtractor={(item) => String(item.id)}
         refreshControl={
@@ -166,6 +168,15 @@ export default function AdminJobsScreen() {
           );
         }}
       />
+
+      {/* FAB — Create Job */}
+      <TouchableOpacity
+        style={[styles.fab, { bottom: 20 + insets.bottom }]}
+        onPress={() => router.push("/(admin)/create-job")}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={26} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -191,10 +202,12 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: "#111827" },
 
-  filterRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
+  filterScroll: { flexGrow: 0 },
+  filterRow: { paddingHorizontal: 16, gap: 8, paddingBottom: 12, alignItems: "center" },
   filterChip: {
-    borderRadius: 20, paddingHorizontal: 16, paddingVertical: 7,
+    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7,
     backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#e5e7eb",
+    height: 36, justifyContent: "center",
   },
   filterChipActive: { backgroundColor: "#00450d", borderColor: "#00450d" },
   filterText: { fontSize: 12, fontWeight: "600", color: "#6b7280" },
@@ -222,4 +235,11 @@ const styles = StyleSheet.create({
   actionBtnOutline: { backgroundColor: "transparent", borderWidth: 1.5, borderColor: "#00450d" },
   actionBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   actionBtnTextOutline: { color: "#00450d" },
+  fab: {
+    position: "absolute", right: 20,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: "#00450d",
+    justifyContent: "center", alignItems: "center",
+    shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 8, elevation: 6,
+  },
 });

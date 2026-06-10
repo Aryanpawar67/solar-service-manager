@@ -145,7 +145,7 @@ export default function AdminCustomersScreen() {
       />
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.fab} onPress={() => router.push("/(admin)/customers/create")} activeOpacity={0.85}>
         <Ionicons name="add" size={26} color="#00450d" />
       </TouchableOpacity>
     </View>

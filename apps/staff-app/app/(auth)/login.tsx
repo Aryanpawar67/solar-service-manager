@@ -9,6 +9,7 @@ import {
   Platform,
   StatusBar,
   Animated,
+  Alert,
 } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import { router } from "expo-router";
@@ -130,7 +131,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.forgotRow} onPress={() => router.push("/(auth)/forgot-password")} activeOpacity={0.7}>
             <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
 
@@ -161,7 +162,9 @@ export default function LoginScreen() {
 
       <Animated.View style={[styles.footerRow, { opacity: footerOpacity }]}>
         <Text style={styles.footerText}>Don't have an account? </Text>
-        <Text style={styles.footerLink}>Sign Up</Text>
+        <TouchableOpacity onPress={() => router.push("/(auth)/register")} activeOpacity={0.7}>
+          <Text style={styles.footerLink}>Sign Up</Text>
+        </TouchableOpacity>
       </Animated.View>
     </LinearGradient>
   );

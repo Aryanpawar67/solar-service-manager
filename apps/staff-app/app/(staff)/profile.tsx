@@ -110,11 +110,11 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>Account Settings</Text>
         <View style={styles.divider} />
         {[
-          { icon: "person-outline" as const, label: "Personal Details" },
-          { icon: "shield-outline" as const, label: "Security & Password" },
-          { icon: "notifications-outline" as const, label: "Notification Preferences" },
+          { icon: "person-outline" as const, label: "Personal Details", route: "/(staff)/personal-details" as const },
+          { icon: "shield-outline" as const, label: "Security & Password", route: "/(staff)/security" as const },
+          { icon: "notifications-outline" as const, label: "Notification Preferences", route: "/(staff)/notifications" as const },
         ].map((item) => (
-          <TouchableOpacity key={item.label} style={styles.settingsRow} activeOpacity={0.7}>
+          <TouchableOpacity key={item.label} style={styles.settingsRow} onPress={() => router.push(item.route)} activeOpacity={0.7}>
             <Ionicons name={item.icon} size={20} color="#374151" />
             <Text style={styles.settingsLabel}>{item.label}</Text>
             <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
@@ -125,12 +125,13 @@ export default function ProfileScreen() {
       {/* Help */}
       <View style={styles.sectionCard}>
         {[
-          { icon: "help-circle-outline" as const, label: "Help & Support" },
-          { icon: "shield-checkmark-outline" as const, label: "Company Policies" },
+          { icon: "help-circle-outline" as const, label: "Help & Support", route: "/(staff)/support" as const },
+          { icon: "shield-checkmark-outline" as const, label: "Company Policies", route: "/(staff)/policies" as const },
         ].map((item, idx) => (
           <TouchableOpacity
             key={item.label}
             style={[styles.settingsRow, idx === 0 && { borderBottomWidth: 1, borderBottomColor: "#f0f0f0" }]}
+            onPress={() => router.push(item.route)}
             activeOpacity={0.7}
           >
             <Ionicons name={item.icon} size={20} color="#374151" />

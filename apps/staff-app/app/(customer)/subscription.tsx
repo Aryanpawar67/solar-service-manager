@@ -126,7 +126,7 @@ export default function CustomerSubscriptionScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.changePlanBtn} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.changePlanBtn} onPress={() => Alert.alert("Change Plan", "To change your subscription plan, please contact GreenVolt support:\n\nEmail: support@greenvolt.in\nPhone: +91 98765 43210\n\nOr use the Support section in your profile.")} activeOpacity={0.8}>
           <Text style={styles.changePlanText}>Change Plan</Text>
         </TouchableOpacity>
       </View>

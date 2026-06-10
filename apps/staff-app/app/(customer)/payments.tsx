@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useGetMyPayments } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
@@ -90,7 +91,7 @@ export default function CustomerPaymentsScreen() {
                   <Text style={styles.pendingValue}>₹{pendingAmount.toLocaleString("en-IN")}</Text>
                   <Text style={styles.pendingDue}>Due soon</Text>
                 </View>
-                <TouchableOpacity style={styles.payNowBtn} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.payNowBtn} onPress={() => Alert.alert("Pay Now", "To pay your pending dues, please contact GreenVolt support or visit the Subscription section to submit a renewal request.")} activeOpacity={0.85}>
                   <Text style={styles.payNowText}>Pay Now</Text>
                 </TouchableOpacity>
               </View>
@@ -111,7 +112,7 @@ export default function CustomerPaymentsScreen() {
       }
       ListFooterComponent={
         payments.length >= 10 ? (
-          <TouchableOpacity style={styles.loadMore} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.loadMore} onPress={() => Alert.alert("Load More", "Showing all recent transactions. Older records can be viewed on the web portal.")} activeOpacity={0.7}>
             <Text style={styles.loadMoreText}>Load More Transactions</Text>
           </TouchableOpacity>
         ) : null

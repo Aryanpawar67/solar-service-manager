@@ -24,11 +24,11 @@ const QUICK_ACTIONS = [
   { icon: "flash-outline" as const,     label: "Payments",     route: "/(customer)/payments" },
   { icon: "star-outline" as const,      label: "Subscription", route: "/(customer)/subscription" },
   { icon: "calendar-outline" as const,  label: "Book Now",     route: "/(customer)/book" },
-  { icon: "headset-outline" as const,   label: "Support",      route: null },
+  { icon: "headset-outline" as const,   label: "Support",      route: "/(customer)/support" },
 ];
 
 export default function CustomerHomeScreen() {
-  const { data: profile, isLoading, refetch } = useGetMyProfile();
+  const { data: profile, isLoading, refetch, isRefetching } = useGetMyProfile();
   const { data: subscription } = useGetMySubscription();
   const { data: services } = useGetMyServices({ limit: 5 });
 
@@ -77,7 +77,7 @@ export default function CustomerHomeScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
         }
       >
         {/* Greeting */}

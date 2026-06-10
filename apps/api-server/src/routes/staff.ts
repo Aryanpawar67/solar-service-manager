@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { staffTable, insertStaffSchema, updateStaffSchema } from "@workspace/db/schema";
+import { staffTable, usersTable, insertStaffSchema, updateStaffSchema } from "@workspace/db/schema";
 import { and, eq, isNull, ilike, or, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -64,6 +64,14 @@ router.put("/:id", async (req, res) => {
     .where(and(eq(staffTable.id, id), isNull(staffTable.deletedAt)))
     .returning();
   if (!member) return res.status(404).json({ error: "Staff not found" });
+
+  // Keep usersTable.name in sync when name changes
+  if (parsed.data.name) {
+    await db.update(usersTable)
+      .set({ name: parsed.data.name, updatedAt: new Date() })
+      .where(eq(usersTable.staffId, id));
+  }
+
   return res.json(member);
 });
 

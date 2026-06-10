@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Linking,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetCustomer, useListServices } from "@workspace/api-client-react";
@@ -48,7 +49,7 @@ export default function AdminCustomerDetailScreen() {
             </TouchableOpacity>
           ),
           headerRight: () => (
-            <TouchableOpacity style={{ marginRight: 4, padding: 4 }}>
+            <TouchableOpacity style={{ marginRight: 4, padding: 4 }} onPress={() => router.push({ pathname: "/(admin)/customers/edit", params: { id: String(customerId) } })}>
               <Ionicons name="pencil-outline" size={20} color="#374151" />
             </TouchableOpacity>
           ),
@@ -114,7 +115,7 @@ export default function AdminCustomerDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionTop}>
             <Text style={styles.sectionTitle}>Service History</Text>
-            <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert("Filter", "Filter by status coming soon")} activeOpacity={0.7}>
               <Ionicons name="options-outline" size={14} color="#6b7280" />
               <Text style={styles.filterText}>FILTER</Text>
             </TouchableOpacity>
@@ -166,7 +167,7 @@ export default function AdminCustomerDetailScreen() {
             </View>
           )}
 
-          <TouchableOpacity style={styles.viewAllBtn} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.viewAllBtn} onPress={() => Alert.alert("Records", `Showing ${serviceList.length} most recent records.`)} activeOpacity={0.7}>
             <Text style={styles.viewAllText}>VIEW ALL RECORDS</Text>
           </TouchableOpacity>
         </View>

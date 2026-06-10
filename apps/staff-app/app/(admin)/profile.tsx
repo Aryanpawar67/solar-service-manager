@@ -54,7 +54,7 @@ export default function AdminProfileScreen() {
           <Text style={styles.adminBadgeText}>SYSTEM ADMIN</Text>
         </View>
         <Text style={styles.email}>{user?.email ?? "—"}</Text>
-        <TouchableOpacity style={styles.editBtn} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.editBtn} onPress={() => router.push("/(admin)/edit-profile")} activeOpacity={0.8}>
           <Ionicons name="pencil-outline" size={14} color="#374151" />
           <Text style={styles.editBtnText}>Edit Profile</Text>
         </TouchableOpacity>
@@ -78,7 +78,7 @@ export default function AdminProfileScreen() {
         <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.sectionCard} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.sectionCard} onPress={() => Alert.alert("System Settings", "System configuration is managed via the admin web dashboard at greenvolt.in/admin")} activeOpacity={0.85}>
         <View style={styles.sectionCardLeft}>
           <View style={styles.sectionIcon}>
             <Ionicons name="settings-outline" size={22} color="#00450d" />
@@ -91,7 +91,7 @@ export default function AdminProfileScreen() {
         <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.sectionCard} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.sectionCard} onPress={() => Alert.alert("Role Permissions", "Role-based access is automatically enforced by the system:\n\n• Admin: Full access\n• Staff: Assigned jobs only\n• Customer: Own data only")} activeOpacity={0.85}>
         <View style={styles.sectionCardLeft}>
           <View style={styles.sectionIcon}>
             <Ionicons name="shield-outline" size={22} color="#00450d" />

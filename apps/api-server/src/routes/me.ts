@@ -36,26 +36,35 @@ router.get("/profile", async (req, res) => {
   return res.json({ ...customer, pushEnabled: userRow?.pushEnabled ?? true });
 });
 
-/** PUT /api/me/profile — update phone, address, email */
+/** PUT /api/me/profile — update phone, address, email, name */
 router.put("/profile", async (req, res) => {
   const customerId = req.user!.customerId;
   if (!customerId) return res.status(404).json({ error: "No customer linked" });
 
-  const { phone, address, email } = req.body as { phone?: string; address?: string; email?: string };
-  const update: Record<string, unknown> = {};
-  if (phone !== undefined) update.phone = phone;
-  if (address !== undefined) update.address = address;
-  if (email !== undefined) update.email = email;
+  const { phone, address, email, name } = req.body as { phone?: string; address?: string; email?: string; name?: string };
+  const customerUpdate: Record<string, unknown> = {};
+  if (phone !== undefined) customerUpdate.phone = phone;
+  if (address !== undefined) customerUpdate.address = address;
+  if (email !== undefined) customerUpdate.email = email;
+  if (name !== undefined) customerUpdate.name = name;
 
-  if (Object.keys(update).length === 0) {
+  if (Object.keys(customerUpdate).length === 0) {
     return res.status(400).json({ error: "No fields to update" });
   }
 
   const [updated] = await db
     .update(customersTable)
-    .set(update)
+    .set(customerUpdate)
     .where(eq(customersTable.id, customerId))
     .returning();
+
+  // Keep usersTable in sync for name and email
+  const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
+  if (name !== undefined) userUpdate.name = name;
+  if (email !== undefined) userUpdate.email = email;
+  if (Object.keys(userUpdate).length > 1) {
+    await db.update(usersTable).set(userUpdate).where(eq(usersTable.id, req.user!.userId));
+  }
 
   return res.json(updated);
 });

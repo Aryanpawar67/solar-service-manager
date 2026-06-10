@@ -23,6 +23,8 @@ export default function CustomerProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
+  const [nameField, setNameField] = useState("");
+  const [emailField, setEmailField] = useState("");
 
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [smsNotifs, setSmsNotifs] = useState(true);
@@ -30,12 +32,14 @@ export default function CustomerProfileScreen() {
   const startEdit = () => {
     setPhone(profile?.phone ?? "");
     setCity((profile as typeof profile & { city?: string })?.city ?? profile?.address ?? "");
+    setNameField(profile?.name ?? "");
+    setEmailField((profile as typeof profile & { email?: string })?.email ?? "");
     setEditing(true);
   };
 
   const saveEdit = () => {
     update.mutate(
-      { phone, address: city },
+      { phone, address: city, name: nameField, email: emailField },
       {
         onSuccess: () => {
           setEditing(false);
@@ -105,6 +109,28 @@ export default function CustomerProfileScreen() {
 
         {editing ? (
           <>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Full Name</Text>
+              <TextInput
+                style={styles.inputBox}
+                value={nameField}
+                onChangeText={setNameField}
+                placeholderTextColor="#9ca3af"
+                placeholder="Your full name"
+              />
+            </View>
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>Email Address</Text>
+              <TextInput
+                style={styles.inputBox}
+                value={emailField}
+                onChangeText={setEmailField}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholderTextColor="#9ca3af"
+                placeholder="email@example.com"
+              />
+            </View>
             <View style={styles.fieldBlock}>
               <Text style={styles.fieldLabel}>Phone Number</Text>
               <TextInput

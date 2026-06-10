@@ -88,6 +88,11 @@ export default function StaffTabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="personal-details" options={{ href: null }} />
+      <Tabs.Screen name="security" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="support" options={{ href: null }} />
+      <Tabs.Screen name="policies" options={{ href: null }} />
     </Tabs>
   );
 }

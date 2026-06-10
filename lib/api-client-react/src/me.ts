@@ -20,8 +20,10 @@ export interface MyPaymentsParams {
 }
 
 export interface UpdateMyProfileBody {
+  name?: string;
   phone?: string;
   address?: string;
+  email?: string;
 }
 
 interface PaginatedResponse<T> {
