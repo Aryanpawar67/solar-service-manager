@@ -7,9 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "greenvolt-staff",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -93,7 +90,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "a92f7c18-0248-496d-9960-35f5fb06f912"
+        "projectId": "89e8a3b4-6c67-4367-874d-5ef9ef839191"
       }
     }
   }
