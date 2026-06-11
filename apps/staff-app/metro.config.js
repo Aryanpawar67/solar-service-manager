@@ -7,21 +7,26 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
 const config = getDefaultConfig(projectRoot);
 
 // ── pnpm monorepo support ────────────────────────────────────────────────────
-// 1. Watch the entire monorepo so Metro picks up changes in workspace packages
-config.watchFolders = [workspaceRoot];
+// 1. Watch the entire monorepo + pnpm virtual store
+config.watchFolders = [
+  workspaceRoot,
+  path.resolve(workspaceRoot, "node_modules/.pnpm"),
+];
 
-// 2. Resolve modules from the project first, then the workspace root
+// 2. Resolve modules: project → workspace → pnpm virtual store
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
+  path.resolve(workspaceRoot, "node_modules/.pnpm/node_modules"),
 ];
 
-// 3. Enable package exports resolution for pnpm symlinks (required for expo-router)
+// 3. Follow pnpm symlinks so Metro can reach the actual package files
+config.resolver.unstable_enableSymlinks = true;
+
+// 4. Enable package exports resolution (required for expo-router)
 config.resolver.unstable_enablePackageExports = true;
 
-// 4. Explicitly map workspace packages so Metro can find them from any origin
-//    (needed because pnpm only symlinks packages in apps/staff-app/node_modules,
-//    but Metro resolves bundle entry imports relative to the workspace root)
+// 5. Explicitly map core packages so Metro finds the single copy from any origin
 const pkgs = [
   "expo",
   "expo-router",
