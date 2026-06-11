@@ -6,11 +6,13 @@ export function useNetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef(AppState.currentState);
+  const failCount = useRef(0);
 
   const checkConnectivity = async () => {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      // 15s timeout — Render free tier cold-starts can take 30–60s
+      const timeout = setTimeout(() => controller.abort(), 15000);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await fetch(`${API_BASE_URL}/api/healthz`, {
         method: "HEAD",
@@ -18,9 +20,18 @@ export function useNetworkStatus() {
         cache: "no-store",
       });
       clearTimeout(timeout);
-      setIsOnline(res.ok);
+      if (res.ok) {
+        failCount.current = 0;
+        setIsOnline(true);
+      } else {
+        failCount.current += 1;
+        if (failCount.current >= 2) setIsOnline(false);
+      }
     } catch {
-      setIsOnline(false);
+      failCount.current += 1;
+      // Only show offline banner after 2 consecutive failures to avoid
+      // false positives from Render cold-start timeouts
+      if (failCount.current >= 2) setIsOnline(false);
     }
   };
 
