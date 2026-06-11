@@ -71,7 +71,7 @@ export default function AdminStaffScreen() {
       }
     } else if (modal?.mode === "edit") {
       update.mutate(
-        { id: modal.id, data: { name: fName.trim(), phone: fPhone.trim(), workArea: fWorkArea.trim() || undefined } },
+        { id: modal.id, data: { name: fName.trim(), phone: fPhone.trim(), role: fRole.trim(), workArea: fWorkArea.trim() || undefined } },
         {
           onSuccess: () => { setModal(null); refetch(); },
           onError: () => Alert.alert("Error", "Failed to update staff"),

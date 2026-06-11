@@ -10,7 +10,7 @@ import {
   couponUsagesTable,
 } from "@workspace/db/schema";
 import { eq, sql } from "drizzle-orm";
-import { requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole } from "../middleware/requireAuth";
 import { notify } from "../lib/notifications";
 
 function getRazorpay() {
@@ -25,7 +25,7 @@ function getRazorpay() {
 // ── Customer-facing routes (require auth + customer role) ──────────────────────
 
 export const customerRazorpayRouter = Router();
-customerRazorpayRouter.use(requireRole("customer"));
+customerRazorpayRouter.use(requireAuth, requireRole("customer"));
 
 /**
  * POST /api/me/razorpay/create-order
@@ -186,6 +186,27 @@ customerRazorpayRouter.post("/verify", async (req, res) => {
   }).catch(() => {});
 
   return res.json({ verified: true, bookingId: service.id, serviceId: service.id });
+});
+
+/**
+ * POST /api/me/razorpay/cancel-order
+ * Marks a pending payment as cancelled when the user dismisses the Razorpay checkout modal.
+ */
+customerRazorpayRouter.post("/cancel-order", async (req, res) => {
+  const customerId = req.user!.customerId;
+  if (!customerId) return res.status(404).json({ error: "No customer linked" });
+
+  const { razorpayOrderId } = req.body as { razorpayOrderId?: string };
+  if (!razorpayOrderId) {
+    return res.status(400).json({ error: "razorpayOrderId is required" });
+  }
+
+  await db
+    .update(paymentsTable)
+    .set({ status: "failed", updatedAt: new Date() })
+    .where(eq(paymentsTable.razorpayOrderId, razorpayOrderId));
+
+  return res.json({ ok: true });
 });
 
 // ── Webhook (public, no auth) ──────────────────────────────────────────────────

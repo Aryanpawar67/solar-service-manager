@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { customersTable, insertCustomerSchema, updateCustomerSchema } from "@workspace/db/schema";
 import { eq, isNull, ilike, or, sql, and } from "drizzle-orm";
+import { requireAuth, requireRole } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
 
@@ -80,7 +81,7 @@ router.post("/", async (req, res) => {
   return res.status(201).json(customer);
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, requireRole("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   const parsed = updateCustomerSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
@@ -94,7 +95,7 @@ router.put("/:id", async (req, res) => {
   return res.json(customer);
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   const [customer] = await db
     .update(customersTable)

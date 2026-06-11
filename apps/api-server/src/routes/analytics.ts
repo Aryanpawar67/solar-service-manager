@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
+import { requireAuth, requireRole } from "../middleware/requireAuth";
 import {
   customersTable,
   staffTable,
@@ -11,6 +12,8 @@ import {
 import { eq, sql } from "drizzle-orm";
 
 const router: IRouter = Router();
+
+router.use(requireAuth, requireRole("admin"));
 
 router.get("/dashboard", async (req, res) => {
   const [

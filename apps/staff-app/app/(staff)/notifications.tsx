@@ -3,8 +3,9 @@ import {
 } from "react-native";
 import { router, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getToken } from "@/lib/auth";
+import * as SecureStore from "expo-secure-store";
 import { API_BASE_URL } from "@/lib/constants";
 
 export default function StaffNotificationsScreen() {
@@ -12,6 +13,22 @@ export default function StaffNotificationsScreen() {
   const [reminders, setReminders] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Load persisted local prefs on mount
+  useEffect(() => {
+    SecureStore.getItemAsync("staff_notif_job_assignment").then((v) => { if (v !== null) setJobAssignment(v === "true"); });
+    SecureStore.getItemAsync("staff_notif_reminders").then((v) => { if (v !== null) setReminders(v === "true"); });
+  }, []);
+
+  const handleJobAssignmentChange = (value: boolean) => {
+    setJobAssignment(value);
+    SecureStore.setItemAsync("staff_notif_job_assignment", String(value)).catch(() => {});
+  };
+
+  const handleRemindersChange = (value: boolean) => {
+    setReminders(value);
+    SecureStore.setItemAsync("staff_notif_reminders", String(value)).catch(() => {});
+  };
 
   const savePushPref = async (value: boolean) => {
     setPushEnabled(value);
@@ -55,14 +72,14 @@ export default function StaffNotificationsScreen() {
             title="Job Assignment Alerts"
             sub="Get notified when you are assigned a new job"
             value={jobAssignment}
-            onChange={setJobAssignment}
+            onChange={handleJobAssignmentChange}
           />
           <ToggleRow
             icon="alarm-outline"
             title="Job Reminders"
             sub="Reminder 1 hour before scheduled job time"
             value={reminders}
-            onChange={setReminders}
+            onChange={handleRemindersChange}
           />
           <ToggleRow
             icon="phone-portrait-outline"

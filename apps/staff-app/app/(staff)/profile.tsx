@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { router } from "expo-router";
-import { useGetMe, useListServices } from "@workspace/api-client-react";
+import { useGetMe, useListServices, useGetStaff } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -20,6 +20,10 @@ export default function ProfileScreen() {
     user?.staffId != null ? { staffId: user.staffId, limit: 200 } : {}
   );
   const completedCount = (servicesData?.data ?? []).filter((s) => s.status === "completed").length;
+
+  const { data: staffRecord } = useGetStaff(user?.staffId ?? 0, {
+    query: { queryKey: ["staff", user?.staffId ?? 0], enabled: user?.staffId != null },
+  });
 
   const handleLogout = () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -93,14 +97,14 @@ export default function ProfileScreen() {
           <Ionicons name="call-outline" size={18} color="#6b7280" />
           <View>
             <Text style={styles.infoLabel}>Phone</Text>
-            <Text style={styles.infoValue}>—</Text>
+            <Text style={styles.infoValue}>{staffRecord?.phone ?? "—"}</Text>
           </View>
         </View>
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={18} color="#6b7280" />
           <View>
             <Text style={styles.infoLabel}>Service Region</Text>
-            <Text style={styles.infoValue}>—</Text>
+            <Text style={styles.infoValue}>{staffRecord?.workArea ?? "—"}</Text>
           </View>
         </View>
       </View>

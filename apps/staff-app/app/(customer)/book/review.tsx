@@ -157,11 +157,18 @@ export default function BookReviewScreen() {
         ...(paymentMethod !== "cash" && { method: { [paymentMethod]: 1 } }),
       };
 
-      const paymentData = await RazorpayCheckout.open(checkoutOptions) as {
-        razorpay_payment_id: string;
-        razorpay_order_id: string;
-        razorpay_signature: string;
-      };
+      let paymentData: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string };
+      try {
+        paymentData = await RazorpayCheckout.open(checkoutOptions) as typeof paymentData;
+      } catch {
+        // User cancelled or checkout was dismissed — mark payment as cancelled
+        fetch(`${API_URL}/api/me/razorpay/cancel-order`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ razorpayOrderId }),
+        }).catch(() => {});
+        throw new Error("Payment cancelled.");
+      }
 
       // Step 3: verify + create booking
       const verifyRes = await fetch(`${API_URL}/api/me/razorpay/verify`, {

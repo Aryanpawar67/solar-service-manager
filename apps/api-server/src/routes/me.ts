@@ -34,7 +34,7 @@ router.put("/push-token", requireAuth, async (req, res) => {
 });
 
 // All remaining /me routes are customer-only
-router.use(requireRole("customer"));
+router.use(requireAuth, requireRole("customer"));
 
 /** GET /api/me/profile — own customer record + notification preferences */
 router.get("/profile", async (req, res) => {
@@ -57,10 +57,11 @@ router.put("/profile", async (req, res) => {
   const customerId = req.user!.customerId;
   if (!customerId) return res.status(404).json({ error: "No customer linked" });
 
-  const { phone, address, email, name } = req.body as { phone?: string; address?: string; email?: string; name?: string };
+  const { phone, address, city, email, name } = req.body as { phone?: string; address?: string; city?: string; email?: string; name?: string };
   const customerUpdate: Record<string, unknown> = {};
   if (phone !== undefined) customerUpdate.phone = phone;
   if (address !== undefined) customerUpdate.address = address;
+  if (city !== undefined) customerUpdate.city = city;
   if (email !== undefined) customerUpdate.email = email;
   if (name !== undefined) customerUpdate.name = name;
 

@@ -13,7 +13,8 @@ import { router } from "expo-router";
 import { useGetMyProfile, useUpdateMyProfile, useUpdateNotificationPrefs } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import * as SecureStore from "expo-secure-store";
 
 export default function CustomerProfileScreen() {
   const { data: profile, isLoading, refetch } = useGetMyProfile();
@@ -29,6 +30,22 @@ export default function CustomerProfileScreen() {
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [smsNotifs, setSmsNotifs] = useState(true);
 
+  // Load persisted notification prefs on mount
+  useEffect(() => {
+    SecureStore.getItemAsync("notif_email_alerts").then((v) => { if (v !== null) setEmailAlerts(v === "true"); });
+    SecureStore.getItemAsync("notif_sms_notifs").then((v) => { if (v !== null) setSmsNotifs(v === "true"); });
+  }, []);
+
+  const handleEmailAlertsChange = (value: boolean) => {
+    setEmailAlerts(value);
+    SecureStore.setItemAsync("notif_email_alerts", String(value)).catch(() => {});
+  };
+
+  const handleSmsNotifsChange = (value: boolean) => {
+    setSmsNotifs(value);
+    SecureStore.setItemAsync("notif_sms_notifs", String(value)).catch(() => {});
+  };
+
   const startEdit = () => {
     setPhone(profile?.phone ?? "");
     setCity((profile as typeof profile & { city?: string })?.city ?? profile?.address ?? "");
@@ -39,7 +56,7 @@ export default function CustomerProfileScreen() {
 
   const saveEdit = () => {
     update.mutate(
-      { phone, address: city, name: nameField, email: emailField },
+      { phone, city, name: nameField, email: emailField },
       {
         onSuccess: () => {
           setEditing(false);
@@ -231,7 +248,7 @@ export default function CustomerProfileScreen() {
           </View>
           <Switch
             value={emailAlerts}
-            onValueChange={setEmailAlerts}
+            onValueChange={handleEmailAlertsChange}
             trackColor={{ false: "#d1d5db", true: "#86efac" }}
             thumbColor={emailAlerts ? "#00450d" : "#f3f4f6"}
           />
@@ -244,7 +261,7 @@ export default function CustomerProfileScreen() {
           </View>
           <Switch
             value={smsNotifs}
-            onValueChange={setSmsNotifs}
+            onValueChange={handleSmsNotifsChange}
             trackColor={{ false: "#d1d5db", true: "#86efac" }}
             thumbColor={smsNotifs ? "#00450d" : "#f3f4f6"}
           />

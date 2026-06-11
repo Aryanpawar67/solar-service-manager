@@ -23,6 +23,7 @@ export interface UpdateMyProfileBody {
   name?: string;
   phone?: string;
   address?: string;
+  city?: string;
   email?: string;
 }
 

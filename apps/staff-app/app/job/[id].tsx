@@ -76,7 +76,10 @@ export default function JobDetailScreen() {
           onPress: () =>
             update.mutate(
               { id: jobId, data: { status: targetStatus } },
-              { onSuccess: () => refetch() }
+              {
+                onSuccess: () => refetch(),
+                onError: () => Alert.alert("Error", "Failed to update job status. Please try again."),
+              }
             ),
         },
       ]

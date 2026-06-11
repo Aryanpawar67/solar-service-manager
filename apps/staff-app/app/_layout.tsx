@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/react-native";
 import { Stack, router } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { Platform, BackHandler, View, StatusBar } from "react-native";
+import { Platform, BackHandler, View, StatusBar, AppState } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
 import { setBaseUrl, setAuthTokenGetter, useRegisterMyPushToken } from "@workspace/api-client-react";
@@ -64,6 +64,15 @@ function RootLayoutInner() {
       if (!ok) router.replace("/(auth)/login");
     });
 
+    // Re-check token when app comes back to foreground
+    const appStateSub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        isAuthenticated().then((ok) => {
+          if (!ok) router.replace("/(auth)/login");
+        });
+      }
+    });
+
     // Push notifications are native-only
     if (Platform.OS !== "web") {
       registerForPushNotifications().then((token) => {
@@ -90,6 +99,7 @@ function RootLayoutInner() {
     return () => {
       notificationListener.current?.remove();
       responseListener.current?.remove();
+      appStateSub.remove();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

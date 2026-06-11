@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { staffTable, usersTable, insertStaffSchema, updateStaffSchema } from "@workspace/db/schema";
 import { and, eq, isNull, ilike, or, sql } from "drizzle-orm";
+import { requireAuth, requireRole } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
 
@@ -45,7 +46,7 @@ router.get("/:id", async (req, res) => {
   return res.json(member);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   const parsed = insertStaffSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
@@ -53,7 +54,7 @@ router.post("/", async (req, res) => {
   return res.status(201).json(member);
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, requireRole("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   const parsed = updateStaffSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
@@ -75,7 +76,7 @@ router.put("/:id", async (req, res) => {
   return res.json(member);
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   const [member] = await db
     .update(staffTable)

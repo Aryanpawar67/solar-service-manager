@@ -1,6 +1,8 @@
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
 import { View, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
+import { getToken, decodeJwtPayload } from "@/lib/auth";
 
 function TabIcon({
   icon,
@@ -39,6 +41,14 @@ function TabIcon({
 }
 
 export default function CustomerTabsLayout() {
+  useEffect(() => {
+    getToken().then((token) => {
+      if (!token) { router.replace("/(auth)/login"); return; }
+      const payload = decodeJwtPayload(token);
+      if (!payload || payload.role !== "customer") router.replace("/(auth)/login");
+    });
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
