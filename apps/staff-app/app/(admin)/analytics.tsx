@@ -20,7 +20,7 @@ export default function AdminAnalyticsScreen() {
     { label: "Completed",        value: d?.completedServices  ?? 0, icon: "checkmark-circle-outline" as const, color: "#00450d" },
     { label: "Pending",          value: d?.pendingServices    ?? 0, icon: "time-outline" as const,             color: "#9ca3af" },
     { label: "In Progress",      value: d?.inProgressServices ?? 0, icon: "sync-outline" as const,             color: "#9ca3af" },
-    { label: "Unread Contacts",  value: d?.unreadContacts     ?? 0, icon: "mail-unread-outline" as const,      color: "#ef4444" },
+    { label: "Unread Contacts",  value: d?.newContactsUnread  ?? 0, icon: "mail-unread-outline" as const,      color: "#ef4444" },
   ];
 
   const peopleStats = [

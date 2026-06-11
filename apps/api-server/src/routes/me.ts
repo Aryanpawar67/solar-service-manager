@@ -12,12 +12,28 @@ import {
   couponUsagesTable,
 } from "@workspace/db/schema";
 import { eq, desc, and, isNull, count, sql } from "drizzle-orm";
-import { requireRole } from "../middleware/requireAuth";
+import { requireAuth, requireRole } from "../middleware/requireAuth";
 import { notify } from "../lib/notifications";
 
 const router = Router();
 
-// All /me routes are customer-only
+/** PUT /api/me/push-token — register or update the Expo push token (all roles: customer, staff, admin) */
+// Defined BEFORE router.use(requireRole) so requireAuth-only applies here
+router.put("/push-token", requireAuth, async (req, res) => {
+  const { token } = req.body as { token?: string };
+  if (!token || typeof token !== "string") {
+    return res.status(400).json({ error: "token is required" });
+  }
+
+  await db
+    .update(usersTable)
+    .set({ pushToken: token })
+    .where(eq(usersTable.id, req.user!.userId));
+
+  return res.json({ ok: true });
+});
+
+// All remaining /me routes are customer-only
 router.use(requireRole("customer"));
 
 /** GET /api/me/profile — own customer record + notification preferences */
@@ -341,21 +357,6 @@ router.post("/book", async (req, res) => {
     service,
     message: "Booking confirmed. You'll receive an SMS shortly.",
   });
-});
-
-/** PUT /api/me/push-token — register or update the customer's Expo push token */
-router.put("/push-token", async (req, res) => {
-  const { token } = req.body as { token?: string };
-  if (!token || typeof token !== "string") {
-    return res.status(400).json({ error: "token is required" });
-  }
-
-  await db
-    .update(usersTable)
-    .set({ pushToken: token })
-    .where(eq(usersTable.id, req.user!.userId));
-
-  return res.json({ ok: true });
 });
 
 export default router;

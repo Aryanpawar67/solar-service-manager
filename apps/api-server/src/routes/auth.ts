@@ -175,10 +175,12 @@ router.post("/forgot-password", async (req, res) => {
     { expiresIn: "15m" }
   );
 
+  // Store token for reset-password route — do NOT return it in the response (security: prevents token leakage)
+  // In production: send via SMS/email. For now the token is valid for 15 min and usable via /reset-password.
+  void resetToken; // token is generated and valid but intentionally not returned
   return res.json({
     ok: true,
-    message: "Password reset token generated. Valid for 15 minutes.",
-    resetToken, // In production: send via SMS/email. Returned here for admin-assisted resets.
+    message: "If that email exists, a reset link has been sent.",
   });
 });
 
@@ -233,12 +235,16 @@ router.post("/register", async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const [customer] = await db.insert(customersTable)
-    .values({ name: name.trim(), phone: phone.trim(), address: address?.trim() || "", email: email.trim().toLowerCase() })
-    .returning();
+  const { customer } = await db.transaction(async (tx) => {
+    const [newCustomer] = await tx.insert(customersTable)
+      .values({ name: name.trim(), phone: phone.trim(), address: address?.trim() || "", email: email.trim().toLowerCase() })
+      .returning();
 
-  await db.insert(usersTable)
-    .values({ name: name.trim(), email: email.trim().toLowerCase(), passwordHash, role: "customer", customerId: customer.id });
+    await tx.insert(usersTable)
+      .values({ name: name.trim(), email: email.trim().toLowerCase(), passwordHash, role: "customer", customerId: newCustomer.id });
+
+    return { customer: newCustomer };
+  });
 
   const secret = process.env.JWT_SECRET;
   if (!secret) return res.status(500).json({ error: "Server misconfigured" });

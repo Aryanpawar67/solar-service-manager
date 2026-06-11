@@ -11,6 +11,16 @@ import {
 import { useGetMyPayments } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { getToken } from "@/lib/auth";
+
+const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+
+// Lazily import Razorpay so the app doesn't crash in Expo Go
+let RazorpayCheckout: typeof import("react-native-razorpay").default | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  RazorpayCheckout = require("react-native-razorpay").default;
+} catch {}
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; dot: string; label: string }> = {
   paid:     { color: "#00450d", bg: "#dcfce7", dot: "#00450d", label: "SUCCESS" },
@@ -91,7 +101,72 @@ export default function CustomerPaymentsScreen() {
                   <Text style={styles.pendingValue}>₹{pendingAmount.toLocaleString("en-IN")}</Text>
                   <Text style={styles.pendingDue}>Due soon</Text>
                 </View>
-                <TouchableOpacity style={styles.payNowBtn} onPress={() => Alert.alert("Pay Now", "To pay your pending dues, please contact GreenVolt support or visit the Subscription section to submit a renewal request.")} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.payNowBtn} onPress={async () => {
+                  if (!RazorpayCheckout) {
+                    Alert.alert("Pay Now", "Online payments require a dev build. Please use the Subscription section to submit a renewal request, or contact GreenVolt support.");
+                    return;
+                  }
+                  try {
+                    const token = await getToken();
+                    if (!token) { Alert.alert("Not logged in", "Please log in again."); return; }
+
+                    // Create a Razorpay order for the pending amount
+                    const orderRes = await fetch(`${API_URL}/api/me/razorpay/create-order`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ amount: pendingAmount }),
+                    });
+                    if (!orderRes.ok) {
+                      const err = await orderRes.json().catch(() => ({})) as { error?: string };
+                      Alert.alert("Payment Error", err.error ?? "Could not initiate payment. Please try again.");
+                      return;
+                    }
+                    const { razorpayOrderId, amount, currency, paymentId, keyId } =
+                      await orderRes.json() as {
+                        razorpayOrderId: string; amount: number; currency: string;
+                        paymentId: number; keyId: string;
+                      };
+
+                    const paymentData = await RazorpayCheckout.open({
+                      description: "GreenVolt – Pending Dues",
+                      currency,
+                      key: keyId,
+                      amount,
+                      order_id: razorpayOrderId,
+                      name: "GreenVolt",
+                      theme: { color: "#00450d" },
+                      retry: { enabled: false },
+                    }) as { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string };
+
+                    // Verify payment
+                    const verifyRes = await fetch(`${API_URL}/api/me/razorpay/verify`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({
+                        razorpayPaymentId: paymentData.razorpay_payment_id,
+                        razorpayOrderId: paymentData.razorpay_order_id,
+                        razorpaySignature: paymentData.razorpay_signature,
+                        paymentId,
+                        serviceType: "Pending Dues Payment",
+                        scheduledDate: new Date().toISOString().slice(0, 10),
+                        finalAmount: pendingAmount,
+                      }),
+                    });
+                    if (verifyRes.ok) {
+                      Alert.alert("Payment Successful", "Your payment has been processed successfully.", [
+                        { text: "OK", onPress: () => refetch() },
+                      ]);
+                    } else {
+                      const err = await verifyRes.json().catch(() => ({})) as { error?: string };
+                      Alert.alert("Verification Failed", err.error ?? "Payment could not be verified. Contact support.");
+                    }
+                  } catch (e: unknown) {
+                    const msg = e && typeof e === "object" && "description" in e
+                      ? String((e as { description: string }).description)
+                      : "Payment was cancelled or failed.";
+                    Alert.alert("Payment Failed", msg);
+                  }
+                }} activeOpacity={0.85}>
                   <Text style={styles.payNowText}>Pay Now</Text>
                 </TouchableOpacity>
               </View>

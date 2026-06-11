@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
-  Linking,
   Alert,
 } from "react-native";
 import { useLocalSearchParams, router, Stack } from "expo-router";
@@ -15,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { API_BASE_URL } from "@/lib/constants";
 import { getToken } from "@/lib/auth";
 import { ErrorState } from "@/components/ErrorState";
+import { File as FSFile, Paths } from "expo-file-system";
+import * as Sharing from "expo-sharing";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   pending:     { color: "#6b7280", bg: "#f3f4f6",  label: "SCHEDULED" },
@@ -40,11 +41,28 @@ export default function CustomerServiceDetailScreen() {
   const downloadReport = async () => {
     const token = await getToken();
     if (!token) { Alert.alert("Not logged in", "Please log in again."); return; }
-    const url = `${API_BASE_URL}/api/services/${serviceId}/report?token=${encodeURIComponent(token)}`;
-    Alert.alert("Download Report", "This will open the PDF report in your browser.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Open", onPress: () => Linking.openURL(url) },
-    ]);
+
+    const url = `${API_BASE_URL}/api/services/${serviceId}/report`;
+    const destFile = new FSFile(Paths.cache, `service-report-${serviceId}.pdf`);
+
+    try {
+      const downloaded = await FSFile.downloadFileAsync(url, destFile, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(downloaded.uri, {
+          mimeType: "application/pdf",
+          dialogTitle: `Service Report #${serviceId}`,
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        Alert.alert("Downloaded", `Report saved to ${downloaded.uri}`);
+      }
+    } catch {
+      Alert.alert("Error", "Could not download the report. Check your connection.");
+    }
   };
 
   if (isLoading || (!service && !isError)) {

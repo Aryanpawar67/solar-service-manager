@@ -76,6 +76,14 @@ router.get("/:id/report", async (req, res) => {
 
   if (!row) return res.status(404).json({ error: "Service not found" });
 
+  // Ownership check: customers may only download their own service reports
+  const user = req.user;
+  if (user && user.role === "customer") {
+    if (row.service.customerId !== user.customerId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+
   const { service, customer, staff } = row;
   const doc = new PDFDocument({ size: "A4", margin: 50 });
 
@@ -215,7 +223,6 @@ router.post("/", async (req, res) => {
   }
 
   const [service] = await db.insert(servicesTable).values(parsed.data).returning();
-  return res.status(201).json(service);
 
   // Fire notification (non-blocking) — re-fetch full customer for phone/name
   const [fullCustomer] = await db
@@ -237,6 +244,8 @@ router.post("/", async (req, res) => {
       { serviceId: service.id, screen: "customer-service-detail" }
     ).catch(() => {});
   }
+
+  return res.status(201).json(service);
 });
 
 router.put("/:id", async (req, res) => {
