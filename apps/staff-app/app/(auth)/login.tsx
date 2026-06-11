@@ -53,12 +53,22 @@ export default function LoginScreen() {
     setError(null);
     setIsPending(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json() as { token?: string; error?: string };
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+      const text = await res.text();
+      let data: { token?: string; error?: string } = {};
+      try { data = JSON.parse(text); } catch { /* non-JSON response */ }
       if (!res.ok) {
         setError(data.error ?? "Invalid email or password");
         return;
@@ -70,8 +80,13 @@ export default function LoginScreen() {
       if (role === "admin") router.replace("/(admin)/jobs");
       else if (role === "customer") router.replace("/(customer)");
       else router.replace("/(staff)/jobs");
-    } catch {
-      setError("Network error. Please try again.");
+    } catch (err: unknown) {
+      const isTimeout = err instanceof Error && err.name === "AbortError";
+      setError(
+        isTimeout
+          ? "Server is starting up. Please wait 30 seconds and try again."
+          : "Network error. Please check your connection and try again."
+      );
     } finally {
       setIsPending(false);
     }
