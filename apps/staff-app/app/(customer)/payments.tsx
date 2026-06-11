@@ -12,6 +12,7 @@ import { useGetMyPayments } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
 import { getToken } from "@/lib/auth";
+import { useState, useCallback } from "react";
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
@@ -41,21 +42,87 @@ function getServiceIcon(description?: string | null): keyof typeof Ionicons.glyp
   return "construct-outline";
 }
 
+const PAGE_SIZE = 20;
+
 export default function CustomerPaymentsScreen() {
-  const { data, isLoading, isError, refetch, isRefetching } = useGetMyPayments({ limit: 50 });
+  const [page, setPage] = useState(1);
+  const [allPayments, setAllPayments] = useState<NonNullable<ReturnType<typeof useGetMyPayments>["data"]>["data"]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const { data, isLoading, isError, refetch, isRefetching } = useGetMyPayments({ limit: PAGE_SIZE, page: 1 });
+
+  // On fresh data (page 1), seed allPayments
+  const page1Data = data?.data ?? [];
+  const stablePayments = allPayments.length === 0 ? page1Data : allPayments;
+
+  const handleRefresh = useCallback(() => {
+    setPage(1);
+    setAllPayments([]);
+    refetch();
+  }, [refetch]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore) return;
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(
+        `${API_URL}/api/me/payments?page=${nextPage}&limit=${PAGE_SIZE}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      if (res.ok) {
+        const json = await res.json() as { data: typeof page1Data };
+        if (json.data.length > 0) {
+          setAllPayments((prev) => {
+            const base = prev.length === 0 ? page1Data : prev;
+            return [...base, ...json.data];
+          });
+          setPage(nextPage);
+        }
+      }
+    } catch {
+      Alert.alert("Error", "Could not load more transactions.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, page, page1Data]);
 
   if (isLoading) {
     return <View style={styles.center}><ActivityIndicator size="large" color="#00450d" /></View>;
   }
   if (isError) return <ErrorState onRetry={refetch} />;
 
-  const payments = data?.data ?? [];
+  const payments = stablePayments;
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
   const totalPaid = payments
     .filter((p) => (p.status as string) === "paid")
     .reduce((sum, p) => sum + Number(p.amount), 0);
   const pendingAmount = payments
     .filter((p) => (p.status as string) === "pending")
     .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const currentMonthTotal = payments
+    .filter((p) => {
+      const d = new Date(p.createdAt);
+      return (p.status as string) === "paid" && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const lastMonthTotal = payments
+    .filter((p) => {
+      const d = new Date(p.createdAt);
+      return (p.status as string) === "paid" && d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+    })
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const trendText = lastMonthTotal > 0
+    ? `${currentMonthTotal >= lastMonthTotal ? "+" : ""}${((currentMonthTotal - lastMonthTotal) / lastMonthTotal * 100).toFixed(1)}% vs last month`
+    : null;
 
   return (
     <FlatList
@@ -64,7 +131,7 @@ export default function CustomerPaymentsScreen() {
       data={payments}
       keyExtractor={(item) => String(item.id)}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#00450d" colors={["#00450d"]} />
+        <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor="#00450d" colors={["#00450d"]} />
       }
       ListHeaderComponent={
         <>
@@ -83,10 +150,12 @@ export default function CustomerPaymentsScreen() {
               </View>
             </View>
             <Text style={styles.totalValue}>₹{totalPaid.toLocaleString("en-IN")}</Text>
-            <View style={styles.trendRow}>
-              <Ionicons name="trending-up-outline" size={13} color="#00450d" />
-              <Text style={styles.trendText}>+12.5% vs last month</Text>
-            </View>
+            {trendText ? (
+              <View style={styles.trendRow}>
+                <Ionicons name={currentMonthTotal >= lastMonthTotal ? "trending-up-outline" : "trending-down-outline"} size={13} color={currentMonthTotal >= lastMonthTotal ? "#00450d" : "#ef4444"} />
+                <Text style={styles.trendText}>{trendText}</Text>
+              </View>
+            ) : null}
           </View>
 
           {/* Pending dues */}
@@ -186,9 +255,12 @@ export default function CustomerPaymentsScreen() {
         </View>
       }
       ListFooterComponent={
-        payments.length >= 10 ? (
-          <TouchableOpacity style={styles.loadMore} onPress={() => Alert.alert("Load More", "Showing all recent transactions. Older records can be viewed on the web portal.")} activeOpacity={0.7}>
-            <Text style={styles.loadMoreText}>Load More Transactions</Text>
+        payments.length >= PAGE_SIZE ? (
+          <TouchableOpacity style={styles.loadMore} onPress={handleLoadMore} activeOpacity={0.7} disabled={loadingMore}>
+            {loadingMore
+              ? <ActivityIndicator size="small" color="#00450d" />
+              : <Text style={styles.loadMoreText}>Load More Transactions</Text>
+            }
           </TouchableOpacity>
         ) : null
       }

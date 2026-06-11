@@ -23,20 +23,21 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }
   cancelled:   { color: "#ef4444", bg: "#fef2f2",  label: "CANCELLED" },
 };
 
-const FILTERS = ["All Jobs", "Pending", "In Progress", "Completed"] as const;
+const FILTERS = ["All Jobs", "Pending", "In Progress", "Completed", "Cancelled"] as const;
 type Filter = (typeof FILTERS)[number];
 
 function filterKey(f: Filter): string | null {
   if (f === "Pending") return "pending";
   if (f === "In Progress") return "in_progress";
   if (f === "Completed") return "completed";
+  if (f === "Cancelled") return "cancelled";
   return null;
 }
 
 export default function AdminJobsScreen() {
   const [activeFilter, setActiveFilter] = useState<Filter>("All Jobs");
   const [search, setSearch] = useState("");
-  const { data, isLoading, isError, refetch, isRefetching } = useListServices({ limit: 200 });
+  const { data, isLoading, isError, refetch, isRefetching } = useListServices({ limit: 500 });
   const insets = useSafeAreaInsets();
 
   if (isLoading) {

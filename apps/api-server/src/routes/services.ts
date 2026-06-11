@@ -21,7 +21,7 @@ const router: IRouter = Router();
 router.get("/", async (req, res) => {
   const { status, staffId: staffIdParam, customerId, date, startDate, endDate, page = "1", limit = "20" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+  const limitNum = Math.min(500, Math.max(1, parseInt(limit)));
   const offset = (pageNum - 1) * limitNum;
 
   // Server-side RBAC: staff users are always restricted to their own assigned jobs

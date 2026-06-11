@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Sentry from "@sentry/react-native";
 
 interface Props { children: React.ReactNode }
 interface State { hasError: boolean; message: string }
@@ -11,6 +12,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
   static getDerivedStateFromError(error: unknown): State {
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
     return { hasError: true, message };
+  }
+
+  componentDidCatch(error: unknown) {
+    Sentry.captureException(error);
   }
 
   retry = () => this.setState({ hasError: false, message: "" });

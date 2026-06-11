@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  Linking,
 } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
@@ -153,7 +154,10 @@ export default function JobsScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.navBtn}
-                  onPress={() => router.push(`/job/${item.id}`)}
+                  onPress={() => {
+                    const address = encodeURIComponent(item.customer?.address ?? "");
+                    if (address) Linking.openURL(`https://maps.google.com/?q=${address}`);
+                  }}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="navigate-outline" size={18} color="#00450d" />

@@ -1,8 +1,10 @@
 import { Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function OfflineBanner({ visible }: { visible: boolean }) {
+  const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(-52)).current;
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export function OfflineBanner({ visible }: { visible: boolean }) {
   }, [visible, translateY]);
 
   return (
-    <Animated.View style={[styles.banner, { transform: [{ translateY }] }]}>
+    <Animated.View style={[styles.banner, { top: insets.top, transform: [{ translateY }] }]}>
       <Ionicons name="wifi-outline" size={14} color="#fff" />
       <Text style={styles.text}>No internet connection</Text>
     </Animated.View>

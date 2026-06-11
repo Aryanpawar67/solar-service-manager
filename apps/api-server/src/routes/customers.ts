@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { customersTable, insertCustomerSchema, updateCustomerSchema } from "@workspace/db/schema";
+import { customersTable, insertCustomerSchema, updateCustomerSchema, servicesTable } from "@workspace/db/schema";
 import { eq, isNull, ilike, or, sql, and } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middleware/requireAuth";
 
@@ -24,11 +24,15 @@ router.get("/", async (req, res) => {
     baseFilter = and(notDeleted, searchFilter)!;
   }
 
-  const [data, [{ count }]] = await Promise.all([
-    db.select().from(customersTable).where(baseFilter).limit(limitNum).offset(offset).orderBy(customersTable.createdAt),
+  const [rawData, [{ count }]] = await Promise.all([
+    db.select({
+      customer: customersTable,
+      serviceCount: sql<number>`(select count(*) from services where services.customer_id = ${customersTable.id})`,
+    }).from(customersTable).where(baseFilter).limit(limitNum).offset(offset).orderBy(customersTable.createdAt),
     db.select({ count: sql<number>`count(*)` }).from(customersTable).where(baseFilter),
   ]);
 
+  const data = rawData.map(({ customer, serviceCount }) => ({ ...customer, serviceCount: Number(serviceCount) }));
   res.json({ data, total: Number(count), page: pageNum, limit: limitNum });
 });
 
