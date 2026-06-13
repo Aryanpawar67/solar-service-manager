@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/react-native";
 import { Stack, router } from "expo-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
+import { clearToken } from "@/lib/auth";
 import { useEffect, useRef } from "react";
 import { Platform, BackHandler, View, StatusBar, AppState } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -33,7 +34,23 @@ if (Platform.OS !== "web") {
   });
 }
 
+function handleUnauthorized() {
+  clearToken();
+  queryClient.clear();
+  router.replace("/(auth)/login");
+}
+
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (err) => {
+      if ((err as { status?: number }).status === 401) handleUnauthorized();
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (err) => {
+      if ((err as { status?: number }).status === 401) handleUnauthorized();
+    },
+  }),
   defaultOptions: {
     queries: { refetchOnWindowFocus: false, retry: 1 },
   },

@@ -229,39 +229,41 @@ router.post("/register", async (req, res) => {
     return res.status(400).json({ error: "Password must be at least 8 characters" });
   }
 
-  const [existing] = await db.select({ id: usersTable.id }).from(usersTable)
-    .where(eq(usersTable.email, email.trim().toLowerCase()));
-  if (existing) return res.status(409).json({ error: "An account with this email already exists" });
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const { customer } = await db.transaction(async (tx) => {
-    const [newCustomer] = await tx.insert(customersTable)
-      .values({ name: name.trim(), phone: phone.trim(), address: address?.trim() || "", email: email.trim().toLowerCase() })
-      .returning();
-
-    await tx.insert(usersTable)
-      .values({ name: name.trim(), email: email.trim().toLowerCase(), passwordHash, role: "customer", customerId: newCustomer.id });
-
-    return { customer: newCustomer };
-  });
-
   const secret = process.env.JWT_SECRET;
   if (!secret) return res.status(500).json({ error: "Server misconfigured" });
 
-  const [newUser] = await db.select().from(usersTable)
-    .where(eq(usersTable.email, email.trim().toLowerCase()));
+  const passwordHash = await bcrypt.hash(password, 10);
 
-  const token = jwt.sign(
-    { userId: newUser.id, email: newUser.email, name: newUser.name, role: "customer", staffId: null, customerId: customer.id },
-    secret,
-    { expiresIn: "8h" }
-  );
+  try {
+    const { newUser, customer } = await db.transaction(async (tx) => {
+      const [newCustomer] = await tx.insert(customersTable)
+        .values({ name: name.trim(), phone: phone.trim(), address: address?.trim() || "", email: email.trim().toLowerCase() })
+        .returning();
 
-  return res.status(201).json({
-    token,
-    user: { id: newUser.id, email: newUser.email, name: newUser.name, role: "customer", customerId: customer.id },
-  });
+      const [createdUser] = await tx.insert(usersTable)
+        .values({ name: name.trim(), email: email.trim().toLowerCase(), passwordHash, role: "customer", customerId: newCustomer.id })
+        .returning({ id: usersTable.id, email: usersTable.email, name: usersTable.name });
+
+      return { newUser: createdUser, customer: newCustomer };
+    });
+
+    const token = jwt.sign(
+      { userId: newUser.id, email: newUser.email, name: newUser.name, role: "customer", staffId: null, customerId: customer.id },
+      secret,
+      { expiresIn: "8h" }
+    );
+
+    return res.status(201).json({
+      token,
+      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: "customer", customerId: customer.id },
+    });
+  } catch (err: unknown) {
+    const pg = err as { code?: string };
+    if (pg.code === "23505") {
+      return res.status(409).json({ error: "An account with this email already exists" });
+    }
+    throw err;
+  }
 });
 
 export default router;

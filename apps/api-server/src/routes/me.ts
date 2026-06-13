@@ -62,26 +62,40 @@ router.put("/profile", async (req, res) => {
   if (phone !== undefined) customerUpdate.phone = phone;
   if (address !== undefined) customerUpdate.address = address;
   if (city !== undefined) customerUpdate.city = city;
-  if (email !== undefined) customerUpdate.email = email;
   if (name !== undefined) customerUpdate.name = name;
 
-  if (Object.keys(customerUpdate).length === 0) {
+  if (Object.keys(customerUpdate).length === 0 && email === undefined) {
     return res.status(400).json({ error: "No fields to update" });
   }
 
-  const [updated] = await db
-    .update(customersTable)
-    .set(customerUpdate)
-    .where(eq(customersTable.id, customerId))
-    .returning();
-
-  // Keep usersTable in sync for name and email
-  const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
-  if (name !== undefined) userUpdate.name = name;
-  if (email !== undefined) userUpdate.email = email;
-  if (Object.keys(userUpdate).length > 1) {
-    await db.update(usersTable).set(userUpdate).where(eq(usersTable.id, req.user!.userId));
+  // Check for duplicate email before entering the transaction
+  if (email !== undefined) {
+    const normalised = email.trim().toLowerCase();
+    const [existing] = await db.select({ id: usersTable.id }).from(usersTable)
+      .where(eq(usersTable.email, normalised));
+    if (existing && existing.id !== req.user!.userId) {
+      return res.status(409).json({ error: "Email already in use by another account" });
+    }
+    customerUpdate.email = normalised;
   }
+
+  // Both table updates in a single transaction to prevent divergence on failure
+  const updated = await db.transaction(async (tx) => {
+    const [customer] = await tx
+      .update(customersTable)
+      .set(customerUpdate)
+      .where(eq(customersTable.id, customerId))
+      .returning();
+
+    const userUpdate: Record<string, unknown> = { updatedAt: new Date() };
+    if (name !== undefined) userUpdate.name = name;
+    if (email !== undefined) userUpdate.email = customerUpdate.email as string;
+    if (Object.keys(userUpdate).length > 1) {
+      await tx.update(usersTable).set(userUpdate).where(eq(usersTable.id, req.user!.userId));
+    }
+
+    return customer;
+  });
 
   return res.json(updated);
 });
@@ -289,14 +303,14 @@ router.post("/book", async (req, res) => {
   const customerId = req.user!.customerId;
   if (!customerId) return res.status(404).json({ error: "No customer linked to this account" });
 
-  const { serviceType, scheduledDate, timeSlot, notes, estimatedPrice, couponId, discountApplied } = req.body as {
+  // discountApplied is intentionally NOT accepted from the caller — computed server-side below
+  const { serviceType, scheduledDate, timeSlot, notes, estimatedPrice, couponId } = req.body as {
     serviceType: string;
     scheduledDate: string;
     timeSlot?: string;
     notes?: string;
     estimatedPrice?: number;
     couponId?: number;
-    discountApplied?: number;
   };
 
   if (!serviceType || !scheduledDate) {
@@ -313,49 +327,94 @@ router.post("/book", async (req, res) => {
 
   if (!customer) return res.status(404).json({ error: "Customer not found" });
 
-  const bookingMeta = [
-    timeSlot ? `Time: ${timeSlot}` : null,
-    estimatedPrice ? `Est. price: ₹${estimatedPrice}` : null,
-    discountApplied ? `Discount: ₹${discountApplied}` : null,
-    notes || null,
-    "Source: customer app",
-  ].filter(Boolean).join(" | ");
+  let bookingResult: { service: typeof servicesTable.$inferSelect; discount: number };
+  try {
+    bookingResult = await db.transaction(async (tx) => {
+      let serverDiscount = 0;
+      let resolvedCouponId: number | undefined;
 
-  const [service] = await db
-    .insert(servicesTable)
-    .values({ customerId, serviceType, scheduledDate, notes: bookingMeta, status: "pending" })
-    .returning();
+      // Re-validate and recompute coupon server-side inside the transaction
+      if (couponId) {
+        const now = new Date();
+        const [coupon] = await tx.select().from(couponsTable).where(
+          and(
+            eq(couponsTable.id, couponId),
+            eq(couponsTable.active, true),
+            sql`(${couponsTable.expiresAt} IS NULL OR ${couponsTable.expiresAt} > ${now})`
+          )
+        );
+        if (!coupon) throw Object.assign(new Error("Coupon is invalid or expired"), { httpStatus: 400 });
+        if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
+          throw Object.assign(new Error("This coupon has reached its usage limit"), { httpStatus: 400 });
+        }
+        const [usageRow] = await tx.select({ cnt: count() }).from(couponUsagesTable).where(
+          and(eq(couponUsagesTable.couponId, coupon.id), eq(couponUsagesTable.customerId, customerId))
+        );
+        if ((usageRow?.cnt ?? 0) >= coupon.perCustomerLimit) {
+          throw Object.assign(new Error("You have already used this coupon"), { httpStatus: 400 });
+        }
 
-  // Record coupon usage and increment counter
-  if (couponId && discountApplied) {
-    await Promise.all([
-      db.insert(couponUsagesTable).values({
-        couponId,
-        customerId,
-        serviceId: service.id,
-        discountApplied: String(discountApplied),
-      }),
-      db.update(couponsTable)
-        .set({ usedCount: sql`${couponsTable.usedCount} + 1` })
-        .where(eq(couponsTable.id, couponId)),
-    ]);
+        const value = parseFloat(String(coupon.value));
+        const orderAmt = estimatedPrice ?? 0;
+        serverDiscount = coupon.type === "percent"
+          ? Math.round((orderAmt * value) / 100)
+          : value;
+        if (coupon.maxDiscount !== null) {
+          serverDiscount = Math.min(serverDiscount, parseFloat(String(coupon.maxDiscount)));
+        }
+        resolvedCouponId = coupon.id;
+      }
+
+      const bookingMeta = [
+        timeSlot ? `Time: ${timeSlot}` : null,
+        estimatedPrice ? `Est. price: ₹${estimatedPrice}` : null,
+        serverDiscount ? `Discount: ₹${serverDiscount}` : null,
+        notes || null,
+        "Source: customer app",
+      ].filter(Boolean).join(" | ");
+
+      const [service] = await tx
+        .insert(servicesTable)
+        .values({ customerId, serviceType, scheduledDate, notes: bookingMeta, status: "pending" })
+        .returning();
+
+      if (resolvedCouponId) {
+        await tx.insert(couponUsagesTable).values({
+          couponId: resolvedCouponId,
+          customerId,
+          serviceId: service.id,
+          discountApplied: String(serverDiscount),
+        });
+        await tx.update(couponsTable)
+          .set({ usedCount: sql`${couponsTable.usedCount} + 1` })
+          .where(eq(couponsTable.id, resolvedCouponId));
+      }
+
+      return { service, discount: serverDiscount };
+    });
+  } catch (err: unknown) {
+    const typed = err as { httpStatus?: number; message?: string };
+    if (typed.httpStatus) {
+      return res.status(typed.httpStatus).json({ error: typed.message });
+    }
+    throw err;
   }
 
-  // Fire SMS confirmation (non-blocking)
+  // Fire SMS confirmation (non-blocking, after transaction commits)
   notify({
     type: "service_scheduled",
     to: customer.phone,
     recipientName: customer.name,
     message:
       `Hi ${customer.name}, your ${serviceType} service has been booked for ${scheduledDate}` +
-      `${timeSlot ? ` (${timeSlot})` : ""}. Booking ID: #SVC-${service.id}. ` +
+      `${timeSlot ? ` (${timeSlot})` : ""}. Booking ID: #SVC-${bookingResult.service.id}. ` +
       `Our team will confirm shortly. – GreenVolt / Sun House Solar`,
-    serviceId: service.id,
+    serviceId: bookingResult.service.id,
   }).catch(() => {});
 
   return res.status(201).json({
-    bookingId: service.id,
-    service,
+    bookingId: bookingResult.service.id,
+    service: bookingResult.service,
     message: "Booking confirmed. You'll receive an SMS shortly.",
   });
 });

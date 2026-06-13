@@ -27,10 +27,20 @@ router.get("/dashboard", async (req, res) => {
     [{ newContactsUnread }],
     [{ totalStaff }],
     [{ activeStaff }],
+    [{ totalServices }],
+    [{ upcomingServices }],
+    [{ expiringSubscriptions }],
+    [{ newCustomers }],
+    [{ availableStaff }],
+    [{ assignedStaff }],
+    [{ serviceRevenue }],
+    [{ subscriptionRevenue }],
     recentServicesRaw,
-    recentPaymentsRaw,
   ] = await Promise.all([
-    db.select({ totalCustomers: sql<number>`count(*)` }).from(customersTable),
+    db
+      .select({ totalCustomers: sql<number>`count(*)` })
+      .from(customersTable)
+      .where(sql`deleted_at IS NULL`),
     db
       .select({ activeSubscriptions: sql<number>`count(*)` })
       .from(subscriptionsTable)
@@ -54,20 +64,51 @@ router.get("/dashboard", async (req, res) => {
     db
       .select({ monthlyRevenue: sql<number>`coalesce(sum(amount), 0)` })
       .from(paymentsTable)
-      .where(
-        sql`status = 'paid' AND created_at >= date_trunc('month', now())`
-      ),
+      .where(sql`status = 'paid' AND created_at >= date_trunc('month', now())`),
     db
       .select({ newContactsUnread: sql<number>`count(*)` })
       .from(contactTable)
       .where(eq(contactTable.isRead, false)),
-    db.select({ totalStaff: sql<number>`count(*)` }).from(staffTable),
+    db
+      .select({ totalStaff: sql<number>`count(*)` })
+      .from(staffTable)
+      .where(sql`deleted_at IS NULL`),
     db
       .select({ activeStaff: sql<number>`count(*)` })
       .from(staffTable)
-      .where(eq(staffTable.isActive, true)),
+      .where(sql`is_active = true AND deleted_at IS NULL`),
+    db.select({ totalServices: sql<number>`count(*)` }).from(servicesTable),
+    db
+      .select({ upcomingServices: sql<number>`count(*)` })
+      .from(servicesTable)
+      .where(sql`scheduled_date >= current_date AND status IN ('pending', 'in_progress')`),
+    db
+      .select({ expiringSubscriptions: sql<number>`count(*)` })
+      .from(subscriptionsTable)
+      .where(sql`status = 'active' AND end_date <= current_date + interval '30 days'`),
+    db
+      .select({ newCustomers: sql<number>`count(*)` })
+      .from(customersTable)
+      .where(sql`deleted_at IS NULL AND created_at >= now() - interval '30 days'`),
+    db
+      .select({ availableStaff: sql<number>`count(*)` })
+      .from(staffTable)
+      .where(
+        sql`is_active = true AND deleted_at IS NULL AND id NOT IN (SELECT DISTINCT staff_id FROM services WHERE status = 'in_progress' AND staff_id IS NOT NULL)`
+      ),
+    db
+      .select({ assignedStaff: sql<number>`count(DISTINCT staff_id)` })
+      .from(servicesTable)
+      .where(sql`status = 'in_progress' AND staff_id IS NOT NULL`),
+    db
+      .select({ serviceRevenue: sql<number>`coalesce(sum(amount), 0)` })
+      .from(paymentsTable)
+      .where(sql`status = 'paid' AND service_id IS NOT NULL`),
+    db
+      .select({ subscriptionRevenue: sql<number>`coalesce(sum(amount), 0)` })
+      .from(paymentsTable)
+      .where(sql`status = 'paid' AND subscription_id IS NOT NULL`),
     db.select().from(servicesTable).orderBy(sql`created_at DESC`).limit(5),
-    db.select().from(paymentsTable).orderBy(sql`created_at DESC`).limit(5),
   ]);
 
   res.json({
@@ -81,8 +122,16 @@ router.get("/dashboard", async (req, res) => {
     newContactsUnread: Number(newContactsUnread),
     totalStaff: Number(totalStaff),
     activeStaff: Number(activeStaff),
+    totalServices: Number(totalServices),
+    upcomingServices: Number(upcomingServices),
+    expiringSubscriptions: Number(expiringSubscriptions),
+    newCustomers: Number(newCustomers),
+    availableStaff: Number(availableStaff),
+    assignedStaff: Number(assignedStaff),
+    serviceRevenue: Number(serviceRevenue),
+    subscriptionRevenue: Number(subscriptionRevenue),
     recentServices: recentServicesRaw,
-    recentPayments: recentPaymentsRaw,
+    recentPayments: [],
   });
 });
 

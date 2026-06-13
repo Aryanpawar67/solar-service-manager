@@ -44,8 +44,10 @@ app.use("/uploads", express.static(uploadsDir));
 // Global rate limit
 app.use("/api", rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false }));
 
-// Stricter limit on login
+// Stricter limits on brute-forceable auth endpoints
 app.use("/api/auth/login", rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false }));
+app.use("/api/auth/forgot-password", rateLimit({ windowMs: 15 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }));
+app.use("/api/auth/register", rateLimit({ windowMs: 60 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false }));
 
 app.get("/", (_req, res) => res.redirect("/api/healthz"));
 app.use("/api", router);

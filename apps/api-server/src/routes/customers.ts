@@ -6,7 +6,7 @@ import { requireAuth, requireRole } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
   const { search, page = "1", limit = "20" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
@@ -36,7 +36,7 @@ router.get("/", async (req, res) => {
   res.json({ data, total: Number(count), page: pageNum, limit: limitNum });
 });
 
-router.get("/export", async (req, res) => {
+router.get("/export", requireAuth, requireRole("admin"), async (req, res) => {
   const { search } = req.query as Record<string, string>;
   const notDeleted = isNull(customersTable.deletedAt);
   let filter = notDeleted;
@@ -67,7 +67,7 @@ router.get("/export", async (req, res) => {
   res.send(csv);
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireAuth, requireRole("admin"), async (req, res) => {
   const id = parseInt(req.params.id);
   const [customer] = await db
     .select()
@@ -77,7 +77,7 @@ router.get("/:id", async (req, res) => {
   return res.json(customer);
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   const parsed = insertCustomerSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 

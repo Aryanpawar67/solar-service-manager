@@ -277,8 +277,9 @@ export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
 
 export const PaymentStatus = {
   pending: "pending",
-  success: "success",
+  paid: "paid",
   failed: "failed",
+  refunded: "refunded",
 } as const;
 
 export interface Payment {
@@ -300,8 +301,9 @@ export type CreatePaymentInputStatus =
 
 export const CreatePaymentInputStatus = {
   pending: "pending",
-  success: "success",
+  paid: "paid",
   failed: "failed",
+  refunded: "refunded",
 } as const;
 
 export interface CreatePaymentInput {
@@ -319,8 +321,9 @@ export type UpdatePaymentInputStatus =
 
 export const UpdatePaymentInputStatus = {
   pending: "pending",
-  success: "success",
+  paid: "paid",
   failed: "failed",
+  refunded: "refunded",
 } as const;
 
 export interface UpdatePaymentInput {
@@ -417,6 +420,14 @@ export interface DashboardAnalytics {
   newContactsUnread: number;
   totalStaff: number;
   activeStaff: number;
+  totalServices: number;
+  upcomingServices: number;
+  expiringSubscriptions: number;
+  newCustomers: number;
+  availableStaff: number;
+  assignedStaff: number;
+  serviceRevenue: number;
+  subscriptionRevenue: number;
   recentServices: Service[];
   recentPayments: Payment[];
 }

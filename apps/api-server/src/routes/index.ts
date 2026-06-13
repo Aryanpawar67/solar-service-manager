@@ -49,7 +49,10 @@ router.post("/subscriptions", async (req, res) => {
   if (!plan.trim()) return res.status(400).json({ error: "plan is required" });
 
   const config = PLAN_CONFIGS[plan.toLowerCase()];
-  const visitsPerMonth = body.visitsPerMonth ?? config?.visitsPerMonth ?? 1;
+  if (!config) return res.status(400).json({ error: "Invalid plan. Must be basic, standard, or premium" });
+
+  // Server-side only: never accept visitsPerMonth, amount, or status from caller
+  const visitsPerMonth = config.visitsPerMonth;
   const startDate = body.startDate || new Date().toISOString().split("T")[0];
   let endDate = body.endDate;
   if (!endDate) {
@@ -57,9 +60,7 @@ router.post("/subscriptions", async (req, res) => {
     endDateObj.setMonth(endDateObj.getMonth() + 1);
     endDate = endDateObj.toISOString().split("T")[0];
   }
-  const validStatuses = ["active", "expired", "cancelled"];
-  const status = validStatuses.includes(body.status) ? body.status : "active";
-  const dataToInsert = { ...body, visitsPerMonth, endDate, status, amount: body.amount !== undefined ? String(body.amount) : "0" };
+  const dataToInsert = { ...body, visitsPerMonth, endDate, status: "active", amount: "0" };
   const parsed = insertSubscriptionSchema.safeParse(dataToInsert);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
   const [subscription] = await db.insert(subscriptionsTable).values(parsed.data).returning();

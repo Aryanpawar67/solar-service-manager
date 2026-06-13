@@ -10,6 +10,7 @@ import {
   Switch,
 } from "react-native";
 import { router } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetMyProfile, useUpdateMyProfile, useUpdateNotificationPrefs } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +18,7 @@ import { useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 
 export default function CustomerProfileScreen() {
+  const queryClient = useQueryClient();
   const { data: profile, isLoading, refetch } = useGetMyProfile();
   const update = useUpdateMyProfile();
   const updateNotifs = useUpdateNotificationPrefs();
@@ -48,7 +50,7 @@ export default function CustomerProfileScreen() {
 
   const startEdit = () => {
     setPhone(profile?.phone ?? "");
-    setCity((profile as typeof profile & { city?: string })?.city ?? profile?.address ?? "");
+    setCity((profile as typeof profile & { city?: string })?.city ?? "");
     setNameField(profile?.name ?? "");
     setEmailField((profile as typeof profile & { email?: string })?.email ?? "");
     setEditing(true);
@@ -80,6 +82,7 @@ export default function CustomerProfileScreen() {
         text: "Log Out",
         style: "destructive",
         onPress: async () => {
+          queryClient.clear();
           await clearToken();
           router.replace("/(auth)/login");
         },

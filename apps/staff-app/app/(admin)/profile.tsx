@@ -8,11 +8,13 @@ import {
   Alert,
 } from "react-native";
 import { router } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetMe } from "@workspace/api-client-react";
 import { clearToken } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function AdminProfileScreen() {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useGetMe();
   const user = data?.user;
 
@@ -23,6 +25,7 @@ export default function AdminProfileScreen() {
         text: "Log Out",
         style: "destructive",
         onPress: async () => {
+          queryClient.clear();
           await clearToken();
           router.replace("/(auth)/login");
         },
