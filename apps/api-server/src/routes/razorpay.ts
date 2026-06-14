@@ -12,6 +12,8 @@ import {
 import { eq, sql } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middleware/requireAuth";
 import { notify } from "../lib/notifications";
+import { sendEmail } from "../lib/email";
+import { paymentReceiptEmail } from "../lib/email-templates";
 
 function getRazorpay() {
   const keyId = process.env.RAZORPAY_KEY_ID;
@@ -184,6 +186,14 @@ customerRazorpayRouter.post("/verify", async (req, res) => {
       `${timeSlot ? ` (${timeSlot})` : ""}. Booking ID: #SVC-${service.id}. – GreenVolt / Sun House Solar`,
     serviceId: service.id,
   }).catch(() => {});
+
+  // Payment receipt email (non-blocking)
+  if (req.user!.email) {
+    sendEmail({
+      to: req.user!.email,
+      ...paymentReceiptEmail(customer.name, String(finalAmount), serviceType, service.id, scheduledDate),
+    }).catch(() => {});
+  }
 
   return res.json({ verified: true, bookingId: service.id, serviceId: service.id });
 });

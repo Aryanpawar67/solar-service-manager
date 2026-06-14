@@ -2,6 +2,8 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { subscriptionsTable, customersTable, insertSubscriptionSchema, updateSubscriptionSchema } from "@workspace/db/schema";
 import { eq, sql, and } from "drizzle-orm";
+import { sendEmail } from "../lib/email";
+import { subscriptionActivatedEmail } from "../lib/email-templates";
 
 const router: IRouter = Router();
 
@@ -94,6 +96,27 @@ router.post("/", async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
   const [subscription] = await db.insert(subscriptionsTable).values(parsed.data).returning();
+
+  // Fire activation email (non-blocking)
+  if (subscription.customerId) {
+    const [customer] = await db
+      .select({ name: customersTable.name, email: customersTable.email })
+      .from(customersTable)
+      .where(eq(customersTable.id, subscription.customerId));
+    if (customer?.email) {
+      sendEmail({
+        to: customer.email,
+        ...subscriptionActivatedEmail(
+          customer.name,
+          subscription.plan,
+          subscription.startDate,
+          subscription.endDate,
+          subscription.visitsPerMonth
+        ),
+      }).catch(() => {});
+    }
+  }
+
   return res.status(201).json(subscription);
 });
 

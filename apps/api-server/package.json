@@ -25,6 +25,7 @@
     "pino": "^9",
     "pino-http": "^10",
     "razorpay": "^2.9.6",
+    "resend": "^6.12.4",
     "twilio": "^5.13.1"
   },
   "devDependencies": {

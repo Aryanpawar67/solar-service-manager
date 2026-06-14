@@ -16,6 +16,8 @@ import notificationsRouter from "./notifications";
 import meRouter from "./me";
 import { customerRazorpayRouter, razorpayWebhookRouter } from "./razorpay";
 import { requireAuth } from "../middleware/requireAuth";
+import { sendEmail, ADMIN_EMAIL } from "../lib/email";
+import { staffAccountCreatedEmail, newContactInquiryEmail } from "../lib/email-templates";
 
 const router: IRouter = Router();
 
@@ -27,6 +29,13 @@ router.post("/contact", async (req, res) => {
   const parsed = insertContactSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
   const [contact] = await db.insert(contactTable).values(parsed.data).returning();
+  // Notify admin of new inquiry (non-blocking)
+  if (ADMIN_EMAIL) {
+    sendEmail({
+      to: ADMIN_EMAIL,
+      ...newContactInquiryEmail(contact.name, contact.email ?? "", contact.phone ?? null, contact.message ?? ""),
+    }).catch(() => {});
+  }
   return res.status(201).json(contact);
 });
 
@@ -87,9 +96,15 @@ router.post("/admin/create-staff", async (req, res) => {
   const [existing] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, email.toLowerCase().trim()));
   if (existing) return res.status(409).json({ error: "Email already in use" });
   const bcrypt = (await import("bcrypt")).default;
-  const passwordHash = await bcrypt.hash(password, 10);
+  const plainTextPassword = password;
+  const passwordHash = await bcrypt.hash(plainTextPassword, 10);
   const [staffMember] = await db.insert(staffTable).values({ name, phone, role: staffRole, workArea: workArea || null, isActive: true }).returning();
   await db.insert(usersTable).values({ name, email: email.toLowerCase().trim(), passwordHash, role: "staff", staffId: staffMember.id });
+  // Send staff welcome email with credentials (non-blocking)
+  sendEmail({
+    to: email.toLowerCase().trim(),
+    ...staffAccountCreatedEmail(name, email.toLowerCase().trim(), plainTextPassword),
+  }).catch(() => {});
   return res.status(201).json({ ok: true, staff: staffMember });
 });
 

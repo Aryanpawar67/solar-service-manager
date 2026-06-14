@@ -5,6 +5,13 @@ import { db } from "@workspace/db";
 import { usersTable, staffTable, customersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/requireAuth";
+import { sendEmail, ADMIN_EMAIL, APP_URL } from "../lib/email";
+import {
+  welcomeEmail,
+  forgotPasswordEmail,
+  passwordChangedEmail,
+  newCustomerAdminEmail,
+} from "../lib/email-templates";
 
 const router = Router();
 
@@ -99,6 +106,8 @@ router.post("/change-password", requireAuth, async (req, res) => {
   if (!isValid) return res.status(401).json({ error: "Current password is incorrect" });
   const newHash = await bcrypt.hash(newPassword, 10);
   await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, req.user!.userId));
+  // Fire security alert email (non-blocking)
+  sendEmail({ to: user.email, ...passwordChangedEmail(user.name, new Date().toLocaleString("en-IN")) }).catch(() => {});
   return res.json({ ok: true, message: "Password updated successfully" });
 });
 
@@ -157,12 +166,12 @@ router.post("/forgot-password", async (req, res) => {
   const { email } = req.body as { email?: string };
   if (!email?.trim()) return res.status(400).json({ error: "email is required" });
 
-  const [user] = await db.select({ id: usersTable.id, name: usersTable.name, role: usersTable.role })
+  const [user] = await db.select({ id: usersTable.id, name: usersTable.name, role: usersTable.role, email: usersTable.email })
     .from(usersTable).where(eq(usersTable.email, email.trim().toLowerCase()));
 
   if (!user) {
     // Generic response to prevent email enumeration
-    return res.json({ ok: true, message: "If that email exists, a reset code has been generated." });
+    return res.json({ ok: true, message: "If that email exists, a reset link has been sent." });
   }
 
   const secret = process.env.JWT_SECRET;
@@ -175,9 +184,13 @@ router.post("/forgot-password", async (req, res) => {
     { expiresIn: "15m" }
   );
 
-  // Store token for reset-password route — do NOT return it in the response (security: prevents token leakage)
-  // In production: send via SMS/email. For now the token is valid for 15 min and usable via /reset-password.
-  void resetToken; // token is generated and valid but intentionally not returned
+  const resetLink = `${APP_URL}/reset-password?token=${resetToken}`;
+  try {
+    await sendEmail({ to: user.email, ...forgotPasswordEmail(user.name, resetLink) });
+  } catch {
+    // sendEmail never throws, but guard anyway — always return success to prevent enumeration
+  }
+
   return res.json({
     ok: true,
     message: "If that email exists, a reset link has been sent.",
@@ -252,6 +265,12 @@ router.post("/register", async (req, res) => {
       secret,
       { expiresIn: "8h" }
     );
+
+    // Fire welcome + admin alert emails (non-blocking)
+    sendEmail({ to: newUser.email, ...welcomeEmail(newUser.name) }).catch(() => {});
+    if (ADMIN_EMAIL) {
+      sendEmail({ to: ADMIN_EMAIL, ...newCustomerAdminEmail(newUser.name, newUser.email, phone.trim()) }).catch(() => {});
+    }
 
     return res.status(201).json({
       token,

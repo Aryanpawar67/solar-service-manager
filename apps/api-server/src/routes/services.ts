@@ -15,6 +15,8 @@ import fs from "fs";
 import { uploadsDir } from "./upload";
 import { notify } from "../lib/notifications";
 import { notifyJobAssigned, notifyCustomer } from "../lib/push";
+import { sendEmail, APP_URL } from "../lib/email";
+import { serviceScheduledEmail, serviceCompletedEmail } from "../lib/email-templates";
 
 const router: IRouter = Router();
 
@@ -224,7 +226,7 @@ router.post("/", async (req, res) => {
 
   const [service] = await db.insert(servicesTable).values(parsed.data).returning();
 
-  // Fire notification (non-blocking) — re-fetch full customer for phone/name
+  // Fire notification (non-blocking) — re-fetch full customer for phone/name/email
   const [fullCustomer] = await db
     .select().from(customersTable).where(eq(customersTable.id, service.customerId));
   if (fullCustomer?.phone) {
@@ -243,6 +245,12 @@ router.post("/", async (req, res) => {
       `Your ${service.serviceType ?? "maintenance"} service is booked for ${service.scheduledDate}.`,
       { serviceId: service.id, screen: "customer-service-detail" }
     ).catch(() => {});
+  }
+  if (fullCustomer?.email) {
+    sendEmail({
+      to: fullCustomer.email,
+      ...serviceScheduledEmail(fullCustomer.name, service.serviceType ?? "Maintenance", service.scheduledDate, null, null),
+    }).catch(() => {});
   }
 
   return res.status(201).json(service);
@@ -297,6 +305,13 @@ router.put("/:id", async (req, res) => {
         `Your solar service on ${service.scheduledDate} is done! Tap to view your report.`,
         { serviceId: service.id, screen: "customer-service-detail" }
       ).catch(() => {});
+    }
+    if (customer?.email) {
+      const reportUrl = `${APP_URL}/api/services/${service.id}/report`;
+      sendEmail({
+        to: customer.email,
+        ...serviceCompletedEmail(customer.name, service.serviceType ?? "Maintenance", service.scheduledDate, reportUrl),
+      }).catch(() => {});
     }
   }
   return;

@@ -6,6 +6,8 @@ import {
 } from "@workspace/db/schema";
 import { eq, and, gte, lte, isNull, isNotNull } from "drizzle-orm";
 import { logger } from "./logger";
+import { sendEmail } from "./email";
+import { subscriptionExpiryEmail } from "./email-templates";
 
 type NotificationType = "service_scheduled" | "service_completed" | "subscription_expiry";
 
@@ -92,7 +94,7 @@ export async function checkSubscriptionExpiry(): Promise<number> {
   let sent = 0;
 
   for (const { subscription, customer } of expiring) {
-    if (!customer?.phone) continue;
+    if (!customer?.phone && !customer?.email) continue;
 
     // Check if we already sent an expiry notification for this subscription recently (within 25 days)
     const cutoff = new Date(today);
@@ -116,13 +118,22 @@ export async function checkSubscriptionExpiry(): Promise<number> {
       (new Date(subscription.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    await notify({
-      type: "subscription_expiry",
-      to: customer.phone,
-      recipientName: customer.name,
-      message: `Hi ${customer.name}, your GreenVolt solar maintenance plan expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"} (${subscription.endDate}). Renew now to keep your system protected. – GreenVolt Solar`,
-      subscriptionId: subscription.id,
-    });
+    if (customer.phone) {
+      await notify({
+        type: "subscription_expiry",
+        to: customer.phone,
+        recipientName: customer.name,
+        message: `Hi ${customer.name}, your GreenVolt solar maintenance plan expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"} (${subscription.endDate}). Renew now to keep your system protected. – GreenVolt Solar`,
+        subscriptionId: subscription.id,
+      });
+    }
+
+    if (customer.email) {
+      sendEmail({
+        to: customer.email,
+        ...subscriptionExpiryEmail(customer.name, subscription.plan, subscription.endDate, daysLeft),
+      }).catch(() => {});
+    }
 
     sent++;
   }
