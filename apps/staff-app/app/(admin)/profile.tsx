@@ -81,6 +81,23 @@ export default function AdminProfileScreen() {
         <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={styles.sectionCard}
+        onPress={() => router.push("/(admin)/payments")}
+        activeOpacity={0.85}
+      >
+        <View style={styles.sectionCardLeft}>
+          <View style={styles.sectionIcon}>
+            <Ionicons name="card-outline" size={22} color="#00450d" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionCardTitle}>Payments</Text>
+            <Text style={styles.sectionCardSub}>View customer transactions, collected revenue, and pending dues.</Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.sectionCard} onPress={() => Alert.alert("System Settings", "System configuration is managed via the admin web dashboard at greenvolt.in/admin")} activeOpacity={0.85}>
         <View style={styles.sectionCardLeft}>
           <View style={styles.sectionIcon}>

@@ -12,6 +12,7 @@ import { useLocalSearchParams, router, Stack } from "expo-router";
 import { useGetCustomer, useListServices } from "@workspace/api-client-react";
 import { Ionicons } from "@expo/vector-icons";
 import { ErrorState } from "@/components/ErrorState";
+import { useState } from "react";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
   pending:     { color: "#d97706", bg: "#fef3c7",  label: "PENDING" },
@@ -20,9 +21,21 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; label: string }
   cancelled:   { color: "#6b7280", bg: "#f3f4f6",  label: "CANCELLED" },
 };
 
+const STATUS_FILTERS = ["All", "Pending", "In Progress", "Completed"] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+function filterKey(f: StatusFilter): string | null {
+  if (f === "Pending") return "pending";
+  if (f === "In Progress") return "in_progress";
+  if (f === "Completed") return "completed";
+  return null;
+}
+
 export default function AdminCustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const customerId = Number(id);
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
 
   const { data: customer, isLoading, isError, refetch } = useGetCustomer(customerId);
   const { data: services } = useListServices({ customerId, limit: 20 });
@@ -32,7 +45,8 @@ export default function AdminCustomerDetailScreen() {
   }
   if (isError || !customer) return <ErrorState onRetry={refetch} />;
 
-  const serviceList = services?.data ?? [];
+  const key = filterKey(statusFilter);
+  const serviceList = (services?.data ?? []).filter((s) => !key || s.status === key);
   const customerId_ = `CUS-${String(customer.id).padStart(4, "0")}-X`;
 
   return (
@@ -115,16 +129,35 @@ export default function AdminCustomerDetailScreen() {
         <View style={styles.section}>
           <View style={styles.sectionTop}>
             <Text style={styles.sectionTitle}>Service History</Text>
-            <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert("Filter", "Filter by status coming soon")} activeOpacity={0.7}>
-              <Ionicons name="options-outline" size={14} color="#6b7280" />
-              <Text style={styles.filterText}>FILTER</Text>
+            <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilters((v) => !v)} activeOpacity={0.7}>
+              <Ionicons name="options-outline" size={14} color={showFilters ? "#00450d" : "#6b7280"} />
+              <Text style={[styles.filterText, showFilters && { color: "#00450d" }]}>
+                {statusFilter === "All" ? "FILTER" : statusFilter.toUpperCase()}
+              </Text>
             </TouchableOpacity>
           </View>
+
+          {showFilters && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipRow}>
+              {STATUS_FILTERS.map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[styles.filterChip, statusFilter === f && styles.filterChipActive]}
+                  onPress={() => setStatusFilter(f)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.filterChipText, statusFilter === f && styles.filterChipTextActive]}>{f}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
           {serviceList.length === 0 ? (
             <View style={styles.emptyServices}>
               <Ionicons name="construct-outline" size={36} color="#d1d5db" />
-              <Text style={styles.emptyText}>No services recorded yet.</Text>
+              <Text style={styles.emptyText}>
+                {statusFilter === "All" ? "No services recorded yet." : `No ${statusFilter.toLowerCase()} services.`}
+              </Text>
             </View>
           ) : (
             <View style={styles.table}>
@@ -236,6 +269,14 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: "700", color: "#111827" },
   filterBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   filterText: { fontSize: 11, fontWeight: "700", color: "#6b7280", letterSpacing: 0.3 },
+  filterChipRow: { gap: 8, paddingBottom: 4 },
+  filterChip: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+    backgroundColor: "#f3f4f6", borderWidth: 1, borderColor: "#f3f4f6",
+  },
+  filterChipActive: { backgroundColor: "#00450d", borderColor: "#00450d" },
+  filterChipText: { fontSize: 12, fontWeight: "600", color: "#6b7280" },
+  filterChipTextActive: { color: "#fff" },
 
   emptyServices: { alignItems: "center", padding: 20, gap: 8 },
   emptyText: { fontSize: 13, color: "#9ca3af" },

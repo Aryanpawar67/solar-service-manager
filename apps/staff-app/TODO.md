@@ -230,9 +230,9 @@
 | `useGetMySubscription` 404 → null fix | ✅ |
 | API server `.env.example` | ✅ |
 | Staff app `.env.example` | ✅ |
-| `google-services.json` in place | ❌ Needs Firebase setup |
-| EAS account logged in | ❌ Run `eas login` |
-| EAS project linked (`eas init`) | ❌ Run `eas init` in apps/staff-app/ |
+| `google-services.json` in place | ✅ real Firebase config (project `greenvolt-a3a03`) |
+| EAS account logged in | ✅ logged in as @saiiiiiiiiiidiiii |
+| EAS project linked (`eas init`) | ✅ @saiiiiiiiiiidiiii/greenvolt-staff (89e8a3b4-…) |
 | Signing keystore created | ❌ Needs `eas credentials` |
 | Privacy policy URL | ❌ Not yet created |
 | Data Safety form | ❌ Play Console action needed |

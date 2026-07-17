@@ -2,10 +2,11 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { paymentsTable, customersTable, insertPaymentSchema, updatePaymentSchema } from "@workspace/db/schema";
 import { eq, sql, and, gte, lte } from "drizzle-orm";
+import { requireAuth, requireRole } from "../middleware/requireAuth";
 
 const router: IRouter = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, requireRole("admin"), async (req, res) => {
   const { customerId, status, page = "1", limit = "20" } = req.query as Record<string, string>;
   const pageNum = Math.max(1, parseInt(page));
   const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
@@ -33,7 +34,7 @@ router.get("/", async (req, res) => {
   res.json({ data, total: Number(count), page: pageNum, limit: limitNum });
 });
 
-router.get("/export", async (req, res) => {
+router.get("/export", requireAuth, requireRole("admin"), async (req, res) => {
   const { customerId, status, startDate, endDate } = req.query as Record<string, string>;
 
   const filters = [];
@@ -67,8 +68,8 @@ router.get("/export", async (req, res) => {
   res.send(csv);
 });
 
-router.get("/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.get("/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   const [row] = await db
     .select({ payment: paymentsTable, customer: customersTable })
     .from(paymentsTable)
@@ -79,7 +80,7 @@ router.get("/:id", async (req, res) => {
   return res.json({ ...row.payment, customer: row.customer });
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
   const body = { ...req.body };
   if (body.amount !== undefined) body.amount = String(body.amount);
   const parsed = insertPaymentSchema.safeParse(body);
@@ -89,8 +90,8 @@ router.post("/", async (req, res) => {
   return res.status(201).json(payment);
 });
 
-router.put("/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
+router.put("/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  const id = parseInt(req.params.id as string);
   const parsed = updatePaymentSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 

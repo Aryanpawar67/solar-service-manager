@@ -1,0 +1,31 @@
+# staff-app Android audit — outstanding items
+
+Audit date: 2026-07-17. Status as of the implementation pass on 2026-07-17 (same day): all items below are now fixed except the ones explicitly marked still-open in the last section.
+
+## Fixed directly
+
+- Reverted an uncommitted `apps/api-server/.env.example` change that had leaked a real production Supabase `DATABASE_URL` with plaintext password.
+- Fixed `newArchEnabled` in `apps/staff-app/app.json` — it was nested under `experiments` where Expo's config-plugin never reads it, so `android/gradle.properties` kept generating with `newArchEnabled=true` despite commit `80de2ff` intending to disable it for `react-native-razorpay` compatibility. Moved to top-level `expo.newArchEnabled` and re-ran `expo prebuild --platform android --clean` to confirm `gradle.properties` now has `newArchEnabled=false`.
+- **Gitignored native build dirs**: added `/android` and `/ios` to `apps/staff-app/.gitignore` (they're `expo prebuild` output, not hand-maintained).
+- **Removed dead root-level Expo artifacts**: deleted the stray root `app.json` (`{"expo":{}}`, unreferenced) and the committed-but-unused root `eas.json` (real config lives in `apps/staff-app/eas.json`; nothing referenced the root copy). Kept the root `.env.example` — on inspection it's a legitimate, comprehensive master template covering every app's env vars, not an accident.
+- **Implemented the customer filter-by-status stub**: `app/(admin)/customers/[id].tsx` — the "Filter" button under Service History now opens a real chip-based status filter (All/Pending/In Progress/Completed), mirroring the pattern already used in `app/(admin)/jobs.tsx`.
+- **Built the missing admin payments screen**: new `app/(admin)/payments.tsx` — fleet-wide payments list with search, status filter chips, collected/pending summary cards, and a tap-to-view detail alert per transaction. Registered as a hidden tab route and linked from a new "Payments" card on the admin profile screen, next to "Manage Staff".
+- **Verified `google-services.json`**: contains real, filled-in Firebase values (`project_id: greenvolt-a3a03`, real API key/project number) — confirmed production config, not the dev placeholder.
+- **Verified and corrected EAS state in `TODO.md`**: `eas whoami` and `eas project:info` both confirm the account is logged in and the project is linked (`@saiiiiiiiiiidiiii/greenvolt-staff`). The "Play Store Readiness Checklist" table had stale ❌ rows for `google-services.json`/EAS login/EAS init that contradicted the (correct) running log above it — updated to ✅.
+
+## Bugs found during the fix pass (not in the original audit) — also fixed
+
+- **Monorepo-wide typecheck was completely broken.** Root `tsconfig.json` and `tsconfig.base.json` were deleted in commit `a46d7b4` under the mistaken belief they were "Replit-specific," but every package's `tsconfig.json` (`extends: "../../tsconfig.base.json"`) and the `tsc --build` project-reference graph depended on them. Restored both files from git history (pre-`a46d7b4` content) — `pnpm run typecheck` now runs clean across all 6 workspace projects.
+- **Stale `dist/` build output** in `lib/api-client-react` was missing the `city` field on `UpdateMyProfileBody` (already present in `src/me.ts`), causing a false type error in `apps/(customer)/profile.tsx`. Rebuilt via `pnpm run typecheck:libs` (`tsc --build`) after restoring the root tsconfig.
+- **Two invalid Ionicons names** that would throw/render blank at runtime: `"hash"` in `app/(customer)/book/success.tsx` → `"receipt-outline"`, and `"camera-add-outline"` in `app/job/[id].tsx` → `"camera-outline"`.
+- **Express req.params typing quirk** (5 call sites in `apps/api-server/src/routes/customers.ts` and `staff.ts`): passing multiple middleware handlers to a route loses TS's literal path-param inference, widening `req.params.id` to `string | string[]`. Cast to `string` at each flagged call site (not a runtime bug — Express always gives a plain string for `:id`).
+- **Live security gap: `apps/api-server/src/routes/payments.ts` had no role guard at all** — only the blanket `requireAuth` applied globally, no `requireRole("admin")`. Any authenticated user (including a plain customer account) could call `GET /api/payments` to dump every customer's full payment history, `GET /api/payments/export` to download it as CSV, or `POST`/`PUT` to forge/modify payment records — the same PII-leakage class of bug the `/customers` routes were hardened against in the last security commit, but `/payments` was missed. Added `requireAuth, requireRole("admin")` to all 5 routes. Verified no non-admin caller (mobile app, customer-website) currently hits the generic `/payments` endpoints — customers use the separately-scoped `/me/payments` — so this is a pure hardening fix with no functional regression.
+- **Live bug in admin-dashboard web app**: `apps/admin-dashboard/src/pages/Payments.tsx` still used the pre-hardening payment status enum (`'pending' | 'success' | 'failed'`) after the backend/mobile were migrated to `'pending' | 'paid' | 'failed' | 'refunded'` in commit `7c5dec2`. This meant recording/updating a payment from the web admin dashboard would fail backend validation (default status `"success"` isn't a valid enum value), and any real `paid`/`refunded` payment rendered with the wrong (red "failed") status badge. Fixed the zod schema, dropdown options, defaults, and badge color logic to match the current enum.
+
+## Still open (not fixed — need a product/ops decision, not a code fix)
+
+- No real device testing done yet (TODO.md Milestone 2 entirely unchecked).
+- No Play Store listing/assets/privacy policy/Data Safety form (TODO.md Milestone 4 entirely unchecked).
+- No production `.aab` has been built yet.
+- `/api/analytics/dashboard` deliberately always returns `recentPayments: []` (full `SELECT *` on payments broke when Razorpay columns weren't yet in DB). Harmless today since no mobile screen renders it, but worth fixing properly (selecting only the safe columns) before anything relies on that field.
+- The Orval-generated API client (`lib/api-client-react/src/generated/api.ts`) is stale relative to recent hand-patches to `api.schemas.ts` (e.g., the 8 new `DashboardAnalytics` fields). A future real `orval` codegen run will silently drop those manual edits unless the generator's source schema is updated first.

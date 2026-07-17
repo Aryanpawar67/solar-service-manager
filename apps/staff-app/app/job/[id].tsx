@@ -375,7 +375,7 @@ function PhotoSlot({ label, uri, onCapture }: { label: string; uri: string | nul
         <Image source={{ uri }} style={styles.photoImg} resizeMode="cover" />
       ) : (
         <View style={styles.photoEmpty}>
-          <Ionicons name="camera-add-outline" size={26} color="#9ca3af" />
+          <Ionicons name="camera-outline" size={26} color="#9ca3af" />
         </View>
       )}
       <Text style={styles.photoLabel}>{label}</Text>

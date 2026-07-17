@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 const paymentSchema = z.object({
   customerId: z.coerce.number().min(1, "Customer is required"),
   amount: z.coerce.number().min(1, "Amount is required"),
-  status: z.enum(["pending", "success", "failed"]),
+  status: z.enum(["pending", "paid", "failed", "refunded"]),
   paymentMethod: z.string().optional(),
   transactionId: z.string().optional()
 });
@@ -57,12 +57,12 @@ export default function PaymentsPage() {
 
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
-    defaultValues: { customerId: undefined, amount: 0, status: "success", paymentMethod: "Card", transactionId: "" }
+    defaultValues: { customerId: undefined, amount: 0, status: "paid", paymentMethod: "Card", transactionId: "" }
   });
 
   const openAddDialog = () => {
     setSelectedPayment(null);
-    form.reset({ customerId: undefined, amount: 0, status: "success", paymentMethod: "Card", transactionId: "" });
+    form.reset({ customerId: undefined, amount: 0, status: "paid", paymentMethod: "Card", transactionId: "" });
     setIsDialogOpen(true);
   };
 
@@ -152,8 +152,9 @@ export default function PaymentsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={
-                        payment.status === 'success' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
+                        payment.status === 'paid' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' :
                         payment.status === 'pending' ? 'bg-amber-100 text-amber-800 border-amber-200' :
+                        payment.status === 'refunded' ? 'bg-blue-100 text-blue-800 border-blue-200' :
                         'bg-red-100 text-red-800 border-red-200'
                       }>
                         {payment.status.toUpperCase()}
@@ -202,8 +203,9 @@ export default function PaymentsPage() {
                       <FormControl><SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="success">Success</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
                         <SelectItem value="failed">Failed</SelectItem>
+                        <SelectItem value="refunded">Refunded</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

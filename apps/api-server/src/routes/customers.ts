@@ -68,7 +68,7 @@ router.get("/export", requireAuth, requireRole("admin"), async (req, res) => {
 });
 
 router.get("/:id", requireAuth, requireRole("admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const [customer] = await db
     .select()
     .from(customersTable)
@@ -86,7 +86,7 @@ router.post("/", requireAuth, requireRole("admin"), async (req, res) => {
 });
 
 router.put("/:id", requireAuth, requireRole("admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const parsed = updateCustomerSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error });
 
@@ -100,7 +100,7 @@ router.put("/:id", requireAuth, requireRole("admin"), async (req, res) => {
 });
 
 router.delete("/:id", requireAuth, requireRole("admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const [customer] = await db
     .update(customersTable)
     .set({ deletedAt: new Date(), updatedAt: new Date() })

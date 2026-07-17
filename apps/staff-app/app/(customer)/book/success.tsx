@@ -62,7 +62,7 @@ export default function BookSuccessScreen() {
         <Animated.View style={[styles.titleBlock, { opacity: checkOpacity }]}>
           <Text style={styles.successTitle}>Booking Confirmed!</Text>
           <View style={styles.bookingIdBadge}>
-            <Ionicons name="hash" size={13} color="#6b7280" />
+            <Ionicons name="receipt-outline" size={13} color="#6b7280" />
             <Text style={styles.bookingIdText}>BOOKING ID: GV-{String(bookingId ?? "0").padStart(5, "0")}</Text>
           </View>
         </Animated.View>

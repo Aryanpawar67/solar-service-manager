@@ -61,7 +61,9 @@ export default function LoginScreen() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
-          signal: controller.signal,
+          // RN's ambient fetch types and lib.dom's AbortSignal are structurally
+          // identical at runtime but declared under different global names.
+          signal: controller.signal as RequestInit["signal"],
         });
       } finally {
         clearTimeout(timeout);
