@@ -84,9 +84,9 @@
       ],
       "@sentry/react-native"
     ],
+    "newArchEnabled": false,
     "experiments": {
-      "typedRoutes": true,
-      "newArchEnabled": false
+      "typedRoutes": true
     },
     "extra": {
       "eas": {
